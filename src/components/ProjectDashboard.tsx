@@ -1,0 +1,4262 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { ProgressBar } from "@/components/ProgressBar";
+import OrdersChart from "@/components/OrdersChart";
+import CompetitorScatterChart, { CompetitorPoint } from "@/components/CompetitorScatterChart";
+import { useSimulatedProgress } from "@/lib/useSimulatedProgress";
+import { ProjectDTO, KeywordDTO } from "@/lib/types";
+import { normalizeDomain } from "@/lib/domain";
+import { LOCATIONS, LANGUAGES } from "@/lib/locations";
+import { ProjectStats } from "@/lib/projectStats";
+
+// Where the "quiero que me ayude un experto" banner points. Change this to
+// a contact page, WhatsApp link, or booking page whenever you decide —
+// defaults to a mailto so it works out of the box.
+const EXPERT_CONTACT_URL =
+  process.env.NEXT_PUBLIC_EXPERT_CONTACT_URL ||
+  "mailto:israel@kreativoz.com.mx?subject=Quiero%20ayuda%20con%20la%20velocidad%20de%20mi%20sitio";
+
+function SortHeader({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-0.5 hover:text-neutral-600 transition-colors ${
+        active ? "text-neutral-700 font-medium" : ""
+      }`}
+    >
+      {label}
+      <span className="text-[9px]">{active ? (dir === "asc" ? "▲" : "▼") : ""}</span>
+    </button>
+  );
+}
+
+function ConnectBanner({
+  connected,
+  error,
+  label,
+}: {
+  connected?: boolean;
+  error?: string;
+  label: string;
+}) {
+  if (!connected && !error) return null;
+  return (
+    <p
+      className={`mb-4 text-sm rounded-lg px-3 py-2 border ${
+        error
+          ? "text-red-700 border-red-200 bg-red-50"
+          : "text-emerald-700 border-emerald-200 bg-emerald-50"
+      }`}
+    >
+      {error || `${label} conectado correctamente.`}
+    </p>
+  );
+}
+
+function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1">
+      <p className="text-[11px] text-neutral-400 uppercase tracking-wide">
+        {label}
+      </p>
+      <p className="text-xl font-semibold text-neutral-900 mt-0.5">{value}</p>
+      {hint && <p className="text-[11px] text-neutral-400 mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+const NAV_ITEMS = [
+  { id: "panel", label: "Panel" },
+  { id: "analiticas", label: "Analiticas" },
+  { id: "rankings", label: "Rankings" },
+  { id: "planificacion", label: "Planificacion" },
+  { id: "seo-ia", label: "SEO IA" },
+  { id: "competencia", label: "Competencia" },
+  { id: "velocidad", label: "Velocidad" },
+  { id: "youtube", label: "SEO Youtube" },
+  { id: "ecommerce", label: "Ecommerce" },
+  { id: "apps", label: "Apps iOS/Android", comingSoon: true },
+  { id: "marketplaces", label: "Marketplaces", comingSoon: true },
+  { id: "conexiones", label: "Conexiones" },
+  { id: "configuracion", label: "Configuracion" },
+] as const;
+
+type NavId = (typeof NAV_ITEMS)[number]["id"];
+
+// Minimal line icons (GSC-style: 20px, single stroke) for the nav rail.
+const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
+  panel: (
+    <>
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
+    </>
+  ),
+  analiticas: (
+    <>
+      <path d="M3 3v18h18" />
+      <path d="m7 15 4-5 3 3 5-7" />
+    </>
+  ),
+  rankings: <path d="M4 19V10m6 9V4m6 15v-7m6 7V8" />,
+  planificacion: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  "seo-ia": (
+    <>
+      <rect x="4" y="7" width="16" height="12" rx="2" />
+      <path d="M12 7V3m-4 8v2m8-2v2" />
+      <circle cx="9" cy="13" r="1" />
+      <circle cx="15" cy="13" r="1" />
+    </>
+  ),
+  competencia: (
+    <>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M2 20c0-3 2.5-5 6-5s6 2 6 5M15 20c0-2.2 1.6-4 4.5-4" />
+    </>
+  ),
+  velocidad: <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />,
+  youtube: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="m10 9 5 3-5 3Z" />
+    </>
+  ),
+  ecommerce: (
+    <>
+      <path d="M6 8h12l-1 12H7L6 8Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
+  apps: (
+    <>
+      <rect x="6" y="2" width="12" height="20" rx="2" />
+      <path d="M11 18h2" />
+    </>
+  ),
+  marketplaces: (
+    <>
+      <path d="M3 9 4.5 4h15L21 9" />
+      <path d="M4 9h16v11H4Z" />
+      <path d="M9 20v-6h6v6" />
+    </>
+  ),
+  conexiones: (
+    <>
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="6" r="2.5" />
+      <circle cx="18" cy="18" r="2.5" />
+      <path d="m8.3 10.9 7.4-3.8M8.3 13.1l7.4 3.8" />
+    </>
+  ),
+  configuracion: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" />
+    </>
+  ),
+};
+
+function NavIcon({ id }: { id: NavId }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+    >
+      {NAV_ICON_PATHS[id]}
+    </svg>
+  );
+}
+
+function ComingSoonBadge() {
+  return (
+    <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
+      Soon
+    </span>
+  );
+}
+
+function ComingSoonSection({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-xl px-4 py-8 flex flex-col items-center text-center gap-2">
+      <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
+        Soon
+      </span>
+      <p className="text-sm font-medium text-neutral-900 mt-1">{title}</p>
+      <p className="text-neutral-500 text-xs max-w-md">{description}</p>
+    </div>
+  );
+}
+
+function SummaryTile({
+  label,
+  value,
+  hint,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  onClick?: () => void;
+}) {
+  const Comp = onClick ? "button" : "div";
+  return (
+    <Comp
+      onClick={onClick}
+      className={`bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1 text-left w-full ${
+        onClick ? "hover:shadow-elevation-2 transition-shadow cursor-pointer" : ""
+      }`}
+    >
+      <p className="text-[11px] text-neutral-400 uppercase tracking-wide">{label}</p>
+      <p className="text-lg font-semibold text-neutral-900 mt-0.5">{value}</p>
+      {hint && <p className="text-[11px] text-neutral-400 mt-0.5">{hint}</p>}
+    </Comp>
+  );
+}
+
+// A quick "at a glance" grid summarizing every connected tool/tab, each
+// clickable to jump straight to that tab.
+function PanelSummaryGrid({
+  project,
+  onNavigate,
+}: {
+  project: ProjectDTO;
+  onNavigate: (id: NavId) => void;
+}) {
+  const tech: { name: string }[] = project.techDetectedJson ? JSON.parse(project.techDetectedJson) : [];
+  const uniqueTech = new Set(tech.map((t) => t.name)).size;
+  const platformLabel =
+    project.ecommercePlatform === "shopify"
+      ? "Shopify"
+      : project.ecommercePlatform === "woocommerce"
+      ? "WooCommerce"
+      : "Sin detectar";
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <SummaryTile
+        label="Competidores"
+        value={String(project.competitors.length)}
+        hint="rastreados"
+        onClick={() => onNavigate("competencia")}
+      />
+      <SummaryTile
+        label="Tecnologias"
+        value={project.techCheckedAt ? String(uniqueTech) : "—"}
+        hint="detectadas"
+        onClick={() => onNavigate("panel")}
+      />
+      <SummaryTile
+        label="Velocidad"
+        value={project.psiPerformanceScore != null ? String(project.psiPerformanceScore) : "—"}
+        hint="rendimiento /100"
+        onClick={() => onNavigate("velocidad")}
+      />
+      <SummaryTile
+        label="Ecommerce"
+        value={platformLabel}
+        hint={project.ecommerceProductCount != null ? `${project.ecommerceProductCount} productos` : undefined}
+        onClick={() => onNavigate("ecommerce")}
+      />
+      {project.youtubeChannelId && (
+        <SummaryTile
+          label="YouTube"
+          value={(project.youtubeSubscribers ?? 0).toLocaleString("es-MX")}
+          hint="suscriptores"
+          onClick={() => onNavigate("youtube")}
+        />
+      )}
+      {project.gaConnectedAt && (
+        <SummaryTile
+          label="Trafico organico"
+          value={(project.gaSessionsOrganic28d ?? 0).toLocaleString("es-MX")}
+          hint="sesiones (28d)"
+          onClick={() => onNavigate("panel")}
+        />
+      )}
+    </div>
+  );
+}
+
+// Top 5 keywords by own position, best-first or worst-first.
+function ChangeBadgeMini({ delta }: { delta: number | null }) {
+  if (delta == null || delta === 0) return <span className="text-neutral-300 text-xs">—</span>;
+  const improved = delta < 0;
+  return (
+    <span className={`text-xs font-medium shrink-0 ${improved ? "text-emerald-600" : "text-red-500"}`}>
+      {improved ? "▲" : "▼"} {Math.abs(delta)}
+    </span>
+  );
+}
+
+function BestWorstKeywordsCard({
+  title,
+  keywords,
+  ownDomain,
+  order,
+  limit = 5,
+}: {
+  title: string;
+  keywords: KeywordDTO[];
+  ownDomain: string;
+  order: "best" | "worst" | "change";
+  limit?: number;
+}) {
+  function ownHistory(keyword: KeywordDTO) {
+    return keyword.rankings
+      .filter((r) => r.domain === ownDomain && r.position != null)
+      .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime());
+  }
+
+  const withPosition = keywords
+    .map((k) => {
+      const history = ownHistory(k);
+      const current = history[0] ?? null;
+      const previous = history[1]?.position ?? null;
+      const change =
+        current?.position != null && previous != null ? current.position - previous : null;
+      return { keyword: k, ranking: current, change };
+    })
+    .filter((r) => r.ranking?.position != null) as {
+    keyword: KeywordDTO;
+    ranking: KeywordDTO["rankings"][number];
+    change: number | null;
+  }[];
+
+  const pool = order === "change" ? withPosition.filter((r) => r.change != null) : withPosition;
+
+  const sorted = [...pool].sort((a, b) => {
+    if (order === "best") return (a.ranking.position as number) - (b.ranking.position as number);
+    if (order === "worst") return (b.ranking.position as number) - (a.ranking.position as number);
+    // change: biggest movers first, regardless of direction
+    return Math.abs(b.change as number) - Math.abs(a.change as number);
+  });
+  const top = sorted.slice(0, limit);
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <p className="text-sm font-medium text-neutral-900 mb-2">{title}</p>
+      {top.length === 0 ? (
+        <p className="text-xs text-neutral-400">
+          {order === "change"
+            ? "Aun no hay suficiente historial para calcular cambios."
+            : "Aun no hay keywords con posicion rastreada."}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {top.map(({ keyword, ranking, change }) => (
+            <div key={keyword.id} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-sm">
+              <div className="min-w-0">
+                <p className="text-neutral-700 truncate">{keyword.text}</p>
+                {ranking.url && (
+                  <a
+                    href={ranking.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
+                  >
+                    {ranking.url.replace(/^https?:\/\//, "")}
+                  </a>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {order === "change" && <ChangeBadgeMini delta={change} />}
+                <PositionBadgeMini position={ranking.position} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PositionBadgeMini({ position }: { position: number | null }) {
+  if (position == null) return <span className="text-neutral-400 text-xs">—</span>;
+  const color =
+    position <= 3 ? "text-emerald-600" : position <= 10 ? "text-amber-600" : "text-neutral-600";
+  return <span className={`font-semibold text-xs shrink-0 ${color}`}>#{position}</span>;
+}
+
+export default function ProjectDashboard({
+  project,
+  stats,
+  gscConnected,
+  gscError,
+  gaConnected,
+  gaError,
+}: {
+  project: ProjectDTO;
+  stats: ProjectStats;
+  gscConnected?: boolean;
+  gscError?: string;
+  gaConnected?: boolean;
+  gaError?: string;
+}) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<NavId>("panel");
+  const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>(
+    project.keywords[0]?.id ?? null
+  );
+
+  useEffect(() => {
+    if (
+      project.keywords.length > 0 &&
+      !project.keywords.some((k) => k.id === selectedKeywordId)
+    ) {
+      setSelectedKeywordId(project.keywords[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.keywords]);
+
+  const selectedKeyword =
+    project.keywords.find((k) => k.id === selectedKeywordId) ?? null;
+
+  const [keywordSortBy, setKeywordSortBy] = useState<
+    "keyword" | "date" | "position" | "change" | "best"
+  >("date");
+  const [keywordSortDir, setKeywordSortDir] = useState<"asc" | "desc">("desc");
+
+  function toggleKeywordSort(column: "keyword" | "date" | "position" | "change" | "best") {
+    if (keywordSortBy === column) {
+      setKeywordSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setKeywordSortBy(column);
+      setKeywordSortDir(column === "keyword" ? "asc" : "desc");
+    }
+  }
+
+  function ownLatestRanking(keyword: (typeof project.keywords)[number]) {
+    let latest: (typeof keyword.rankings)[number] | null = null;
+    for (const r of keyword.rankings) {
+      if (r.domain !== project.domain) continue;
+      if (!latest || new Date(r.checkedAt) > new Date(latest.checkedAt)) latest = r;
+    }
+    return latest;
+  }
+
+  function ownHistory(keyword: (typeof project.keywords)[number]) {
+    return keyword.rankings
+      .filter((r) => r.domain === project.domain && r.position != null)
+      .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime());
+  }
+
+  function ownChange(keyword: (typeof project.keywords)[number]) {
+    const history = ownHistory(keyword);
+    const current = history[0]?.position ?? null;
+    const previous = history[1]?.position ?? null;
+    if (current == null || previous == null) return null;
+    return current - previous;
+  }
+
+  function ownBestPosition(keyword: (typeof project.keywords)[number]) {
+    const history = ownHistory(keyword);
+    if (history.length === 0) return null;
+    return Math.min(...history.map((r) => r.position as number));
+  }
+
+  const sortedKeywords = [...project.keywords].sort((a, b) => {
+    const dir = keywordSortDir === "asc" ? 1 : -1;
+    if (keywordSortBy === "keyword") {
+      return a.text.localeCompare(b.text) * dir;
+    }
+    const latestA = ownLatestRanking(a);
+    const latestB = ownLatestRanking(b);
+    if (keywordSortBy === "date") {
+      const ta = latestA ? new Date(latestA.checkedAt).getTime() : -Infinity;
+      const tb = latestB ? new Date(latestB.checkedAt).getTime() : -Infinity;
+      return (ta - tb) * dir;
+    }
+    if (keywordSortBy === "change") {
+      // Positive delta = worse (position number went up). Keywords with no
+      // change data sort last regardless of direction.
+      const ca = ownChange(a);
+      const cb = ownChange(b);
+      if (ca == null && cb == null) return 0;
+      if (ca == null) return 1;
+      if (cb == null) return -1;
+      return (ca - cb) * dir;
+    }
+    if (keywordSortBy === "best") {
+      const ba = ownBestPosition(a);
+      const bb = ownBestPosition(b);
+      if (ba == null && bb == null) return 0;
+      if (ba == null) return 1;
+      if (bb == null) return -1;
+      return (ba - bb) * dir;
+    }
+    // position — keywords with no position sort last regardless of direction
+    const pa = latestA?.position;
+    const pb = latestB?.position;
+    if (pa == null && pb == null) return 0;
+    if (pa == null) return 1;
+    if (pb == null) return -1;
+    return (pa - pb) * dir;
+  });
+
+  const [checkedKeywordIds, setCheckedKeywordIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkChecking, setBulkChecking] = useState(false);
+  const bulkCheckProgress = useSimulatedProgress();
+
+  function toggleChecked(id: string) {
+    setCheckedKeywordIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleCheckAll() {
+    setCheckedKeywordIds((prev) =>
+      prev.size === sortedKeywords.length ? new Set() : new Set(sortedKeywords.map((k) => k.id))
+    );
+  }
+
+  async function handleBulkDelete() {
+    setBulkDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(checkedKeywordIds).map((id) =>
+          fetch(`/api/keywords/${id}`, { method: "DELETE" })
+        )
+      );
+      if (checkedKeywordIds.has(selectedKeywordId ?? "")) setSelectedKeywordId(null);
+      setCheckedKeywordIds(new Set());
+      router.refresh();
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  async function handleBulkCheck() {
+    setBulkChecking(true);
+    bulkCheckProgress.start();
+    try {
+      await fetch(`/api/projects/${project.id}/check-selected`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywordIds: Array.from(checkedKeywordIds) }),
+      });
+      bulkCheckProgress.finish();
+      router.refresh();
+    } finally {
+      setTimeout(() => setBulkChecking(false), 300);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 relative">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/"
+              title="Volver a proyectos"
+              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </Link>
+            <div className="min-w-0">
+              <h1 className="text-base font-medium tracking-tight text-neutral-900 truncate">
+                {project.name}
+              </h1>
+              <p className="text-neutral-500 text-xs truncate">{project.domain}</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-6">
+        <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:w-52 shrink-0">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex items-center gap-3 text-left text-sm px-4 py-2.5 rounded-full whitespace-nowrap transition-colors ${
+                activeTab === item.id
+                  ? "bg-[#D3E3FD] text-[#041E49] font-medium"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <NavIcon id={item.id} />
+              {item.label}
+              {"comingSoon" in item && item.comingSoon && <ComingSoonBadge />}
+            </button>
+          ))}
+        </nav>
+
+        <div className="flex-1 min-w-0">
+          {activeTab === "panel" && (
+            <div className="flex flex-col gap-6">
+              <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard label="Keywords" value={String(stats.trackedKeywords)} />
+                <StatCard
+                  label="Posicion prom."
+                  value={stats.avgPosition != null ? stats.avgPosition.toFixed(1) : "—"}
+                />
+                <StatCard label="En Top 3" value={String(stats.top3)} />
+                <StatCard label="En Top 10" value={String(stats.top10)} />
+              </section>
+
+              <section>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Resumen general
+                </h2>
+                <PanelSummaryGrid project={project} onNavigate={setActiveTab} />
+              </section>
+
+              <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <BestWorstKeywordsCard
+                  title="Mejor posicionadas"
+                  keywords={project.keywords}
+                  ownDomain={project.domain}
+                  order="best"
+                  limit={10}
+                />
+                <BestWorstKeywordsCard
+                  title="Necesitan atencion"
+                  keywords={project.keywords}
+                  ownDomain={project.domain}
+                  order="worst"
+                  limit={5}
+                />
+                <BestWorstKeywordsCard
+                  title="Mayor cambio"
+                  keywords={project.keywords}
+                  ownDomain={project.domain}
+                  order="change"
+                  limit={5}
+                />
+              </section>
+
+              <section>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Tecnologias detectadas
+                </h2>
+                <TechDetectSection project={project} />
+              </section>
+            </div>
+          )}
+
+          {activeTab === "analiticas" && (
+            <section>
+              <AnalyticsSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "conexiones" && (
+            <section className="flex flex-col gap-6">
+              <div>
+                <ConnectBanner connected={gscConnected} error={gscError} label="Search Console" />
+                <ConnectBanner connected={gaConnected} error={gaError} label="Google Analytics" />
+              </div>
+              <GscSection project={project} />
+              <GaSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "configuracion" && (
+            <section className="flex flex-col gap-6">
+              <div>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Ubicacion e idioma
+                </h2>
+                <LocationSection project={project} />
+              </div>
+              <div>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Proyecto
+                </h2>
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5 text-sm text-neutral-600">
+                  <p><span className="text-neutral-400">Nombre:</span> {project.name}</p>
+                  <p className="mt-1"><span className="text-neutral-400">Dominio:</span> {project.domain}</p>
+                  <p className="mt-1"><span className="text-neutral-400">Creado:</span> {new Date(project.createdAt).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === "planificacion" && (
+            <section>
+              <PlanningSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "seo-ia" && (
+            <section>
+              <AiVisibilitySection project={project} />
+            </section>
+          )}
+
+          {activeTab === "rankings" && (
+            <div className="flex flex-col gap-6">
+              <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard label="Keywords" value={String(stats.trackedKeywords)} />
+                <StatCard
+                  label="Posicion prom."
+                  value={stats.avgPosition != null ? stats.avgPosition.toFixed(1) : "—"}
+                />
+                <StatCard label="En Top 3" value={String(stats.top3)} />
+                <StatCard label="En Top 10" value={String(stats.top10)} />
+              </section>
+
+              <section>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Agregar keyword
+                </h2>
+                <AddKeywordForm projectId={project.id} />
+              </section>
+
+              {project.keywords.length === 0 ? (
+                <p className="text-neutral-400 text-sm">
+                  Aun no hay keywords en este proyecto.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {selectedKeyword && (
+                    <KeywordDetailCard
+                      keyword={selectedKeyword}
+                      ownDomain={project.domain}
+                      competitorDomains={project.competitors.map((c) => c.domain)}
+                    />
+                  )}
+
+                  <section>
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide">
+                        Todas las keywords
+                      </h2>
+                      {checkedKeywordIds.size > 0 && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleBulkCheck}
+                            disabled={bulkChecking}
+                            className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-2.5 py-1 transition-colors"
+                          >
+                            {bulkChecking
+                              ? "Rastreando..."
+                              : `Rastrear ${checkedKeywordIds.size} seleccionada${checkedKeywordIds.size > 1 ? "s" : ""}`}
+                          </button>
+                          <ConfirmButton
+                            onConfirm={handleBulkDelete}
+                            label={
+                              bulkDeleting
+                                ? "Eliminando..."
+                                : `Eliminar ${checkedKeywordIds.size} seleccionada${checkedKeywordIds.size > 1 ? "s" : ""}`
+                            }
+                            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg px-2.5 py-1 transition-colors"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {bulkChecking && (
+                      <div className="pb-2">
+                        <ProgressBar percent={bulkCheckProgress.percent} />
+                      </div>
+                    )}
+                    <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-[11px] text-neutral-400 border-b border-neutral-200">
+                              <th className="pl-3 pr-2 py-2 text-left w-8">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    sortedKeywords.length > 0 &&
+                                    checkedKeywordIds.size === sortedKeywords.length
+                                  }
+                                  onChange={toggleCheckAll}
+                                  className="w-4 h-4 accent-[#1A73E8] cursor-pointer"
+                                />
+                              </th>
+                              <th className="px-2 py-2 text-left font-normal">
+                                <SortHeader
+                                  label="Keyword"
+                                  active={keywordSortBy === "keyword"}
+                                  dir={keywordSortDir}
+                                  onClick={() => toggleKeywordSort("keyword")}
+                                />
+                              </th>
+                              <th className="px-2 py-2 text-right font-normal">
+                                <span className="inline-flex justify-end w-full">
+                                  <SortHeader
+                                    label="Posicion"
+                                    active={keywordSortBy === "position"}
+                                    dir={keywordSortDir}
+                                    onClick={() => toggleKeywordSort("position")}
+                                  />
+                                </span>
+                              </th>
+                              <th className="px-2 py-2 text-right font-normal">
+                                <span className="inline-flex justify-end w-full">
+                                  <SortHeader
+                                    label="Cambio"
+                                    active={keywordSortBy === "change"}
+                                    dir={keywordSortDir}
+                                    onClick={() => toggleKeywordSort("change")}
+                                  />
+                                </span>
+                              </th>
+                              <th className="px-2 py-2 text-right font-normal hidden sm:table-cell">
+                                <span className="inline-flex justify-end w-full">
+                                  <SortHeader
+                                    label="Mejor"
+                                    active={keywordSortBy === "best"}
+                                    dir={keywordSortDir}
+                                    onClick={() => toggleKeywordSort("best")}
+                                  />
+                                </span>
+                              </th>
+                              <th className="px-2 py-2 text-left font-normal hidden md:table-cell">URL</th>
+                              <th className="px-2 py-2 text-right font-normal hidden sm:table-cell">
+                                <span className="inline-flex justify-end w-full">
+                                  <SortHeader
+                                    label="Actualizado"
+                                    active={keywordSortBy === "date"}
+                                    dir={keywordSortDir}
+                                    onClick={() => toggleKeywordSort("date")}
+                                  />
+                                </span>
+                              </th>
+                              <th className="px-2 py-2 w-20" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedKeywords.map((keyword) => (
+                              <KeywordListItem
+                                key={keyword.id}
+                                keyword={keyword}
+                                ownDomain={project.domain}
+                                competitorDomains={project.competitors.map((c) => c.domain)}
+                                selected={keyword.id === selectedKeywordId}
+                                onSelect={() => setSelectedKeywordId(keyword.id)}
+                                checked={checkedKeywordIds.has(keyword.id)}
+                                onToggleChecked={() => toggleChecked(keyword.id)}
+                                onDeleted={() => {
+                                  if (selectedKeywordId === keyword.id) {
+                                    setSelectedKeywordId(null);
+                                  }
+                                }}
+                              />
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "competencia" && (
+            <section>
+              <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                Competidores
+              </h2>
+              <CompetitorsSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "velocidad" && (
+            <section>
+              <PageSpeedSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "youtube" && (
+            <section>
+              <YoutubeSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "ecommerce" && (
+            <section>
+              <EcommerceSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "apps" && (
+            <section>
+              <ComingSoonSection
+                title="Apps iOS y Android"
+                description="Busca tu app (o la de tus competidores) en Google Play y la App Store: calificacion, numero de reseñas y precio. Lo estamos afinando antes de activarlo."
+              />
+            </section>
+          )}
+
+          {activeTab === "marketplaces" && (
+            <section>
+              <ComingSoonSection
+                title="Marketplaces"
+                description="Analiza tus productos en Mercado Libre y Amazon: precios, calificaciones, posicion en busquedas del marketplace y mas. Muy pronto."
+              />
+            </section>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+interface DetectedTechRow {
+  name: string;
+  category: string;
+  icon: string;
+  url: string;
+}
+
+function TechDetectSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const autoRunTriggered = useRef(false);
+
+  const hasResult = project.techCheckedAt != null;
+  const detected: DetectedTechRow[] = project.techDetectedJson
+    ? JSON.parse(project.techDetectedJson)
+    : [];
+
+  const byCategory = detected.reduce<Record<string, DetectedTechRow[]>>((acc, t) => {
+    acc[t.category] = acc[t.category] ?? [];
+    acc[t.category].push(t);
+    return acc;
+  }, {});
+
+  async function handleRun() {
+    setLoading(true);
+    setError(null);
+    startProgress();
+    try {
+      const res = await fetch(`/api/projects/${project.id}/tech/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al analizar");
+      finishProgress();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al analizar");
+    } finally {
+      setTimeout(() => setLoading(false), 300);
+    }
+  }
+
+  useEffect(() => {
+    if (!hasResult && !loading && !autoRunTriggered.current) {
+      autoRunTriggered.current = true;
+      handleRun();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasResult]);
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-neutral-500 text-xs">
+          Detecta la plataforma, herramientas de analitica, apps de reseñas,
+          email marketing y mas, leyendo el HTML publico de {project.domain}.
+        </p>
+        <button
+          onClick={handleRun}
+          disabled={loading}
+          className="text-sm bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+        >
+          {loading ? "Analizando..." : hasResult ? "Volver a analizar" : "Detectar tecnologias"}
+        </button>
+      </div>
+
+      {loading && (
+        <div className="mt-3">
+          <ProgressBar percent={progress} />
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+
+      {hasResult && detected.length === 0 && (
+        <p className="text-xs text-neutral-400 mt-3">
+          No reconocimos ninguna tecnologia conocida en el HTML publico.
+        </p>
+      )}
+
+      {hasResult && detected.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4 mt-4">
+          {Object.entries(byCategory).map(([category, items]) => (
+            <div key={category}>
+              <p className="text-xs text-neutral-500 mb-2">{category}</p>
+              <div className="flex flex-col gap-2">
+                {items.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 group"
+                  >
+                    <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-neutral-200 text-xs shrink-0">
+                      {item.icon}
+                    </span>
+                    <span className="text-sm text-neutral-700 group-hover:text-[#1A73E8] group-hover:underline transition-colors">
+                      {item.name}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface KeywordSuggestionRow {
+  keyword: string;
+  searchVolume: number | null;
+  competition: number | null;
+  cpc: number | null;
+}
+
+function HeaderTip({
+  label,
+  tip,
+  align = "left",
+}: {
+  label: React.ReactNode;
+  tip: string;
+  align?: "left" | "right";
+}) {
+  return (
+    <span className="relative inline-flex items-center gap-1 group cursor-help">
+      {label}
+      <span className="text-neutral-300">ⓘ</span>
+      <span
+        className={`pointer-events-none absolute ${
+          align === "right" ? "right-0" : "left-0"
+        } top-full mt-1.5 hidden group-hover:block w-max max-w-[220px] whitespace-normal bg-neutral-900 text-white text-[11px] leading-snug rounded-lg px-2.5 py-1.5 z-30 shadow-lg text-left font-normal normal-case`}
+      >
+        {tip}
+      </span>
+    </span>
+  );
+}
+
+type PlanningSortColumn = "keyword" | "volume" | "competition" | "cpc";
+
+function PlanningSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [seed, setSeed] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<KeywordSuggestionRow[]>([]);
+  const [addingKeyword, setAddingKeyword] = useState<string | null>(null);
+  const [addingBulk, setAddingBulk] = useState(false);
+  const [checkedSuggestions, setCheckedSuggestions] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<PlanningSortColumn>("volume");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const trackedTexts = new Set(project.keywords.map((k) => k.text.toLowerCase()));
+
+  function toggleSort(column: PlanningSortColumn) {
+    if (sortBy === column) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortDir(column === "keyword" ? "asc" : "desc");
+    }
+  }
+
+  const sortedSuggestions = [...suggestions].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    if (sortBy === "keyword") return a.keyword.localeCompare(b.keyword) * dir;
+    const key = sortBy === "volume" ? "searchVolume" : sortBy === "competition" ? "competition" : "cpc";
+    const va = a[key];
+    const vb = b[key];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return (va - vb) * dir;
+  });
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/planning/suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seedKeyword: seed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al buscar sugerencias");
+      setSuggestions(data.suggestions ?? []);
+      setCheckedSuggestions(new Set());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al buscar sugerencias");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function addKeywordRequest(keyword: string) {
+    await fetch(`/api/projects/${project.id}/keywords`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: keyword,
+        engine: "google",
+        device: "desktop",
+        source: "planning",
+      }),
+    });
+  }
+
+  async function handleAdd(keyword: string) {
+    setAddingKeyword(keyword);
+    try {
+      await addKeywordRequest(keyword);
+      router.refresh();
+    } finally {
+      setAddingKeyword(null);
+    }
+  }
+
+  function toggleSuggestionChecked(keyword: string) {
+    setCheckedSuggestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(keyword)) next.delete(keyword);
+      else next.add(keyword);
+      return next;
+    });
+  }
+
+  const selectableSuggestions = sortedSuggestions.filter(
+    (s) => !trackedTexts.has(s.keyword.toLowerCase())
+  );
+
+  function toggleCheckAllSuggestions() {
+    setCheckedSuggestions((prev) =>
+      prev.size === selectableSuggestions.length
+        ? new Set()
+        : new Set(selectableSuggestions.map((s) => s.keyword))
+    );
+  }
+
+  async function handleAddBulk() {
+    setAddingBulk(true);
+    try {
+      await Promise.all(Array.from(checkedSuggestions).map((k) => addKeywordRequest(k)));
+      setCheckedSuggestions(new Set());
+      router.refresh();
+    } finally {
+      setAddingBulk(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <p className="text-sm font-medium text-neutral-900">Planificacion de keywords</p>
+        <p className="text-neutral-500 text-xs mt-0.5 mb-3">
+          Escribe una palabra clave y te damos ideas relacionadas con
+          volumen de busqueda real, para que elijas cuales vale la pena
+          rastrear.
+        </p>
+        <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
+            <label className="text-[11px] text-neutral-500">Palabra clave semilla</label>
+            <input
+              value={seed}
+              onChange={(e) => setSeed(e.target.value)}
+              placeholder="mobiliario para hoteles"
+              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !seed}
+            className="bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 text-sm transition-colors"
+          >
+            {loading ? "Buscando..." : "Buscar ideas"}
+          </button>
+        </form>
+        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      </div>
+
+      {suggestions.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {checkedSuggestions.size > 0 && (
+            <div className="flex items-center justify-between bg-blue-50 border border-[#1A73E8]/20 rounded-xl px-3 py-2">
+              <p className="text-xs text-neutral-600">
+                {checkedSuggestions.size} keyword{checkedSuggestions.size > 1 ? "s" : ""} seleccionada{checkedSuggestions.size > 1 ? "s" : ""}
+              </p>
+              <button
+                onClick={handleAddBulk}
+                disabled={addingBulk}
+                className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3 py-1.5 transition-colors"
+              >
+                {addingBulk ? "Agregando..." : `+ Rastrear ${checkedSuggestions.size} seleccionada${checkedSuggestions.size > 1 ? "s" : ""}`}
+              </button>
+            </div>
+          )}
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-neutral-100">
+              <tr>
+                <th className="px-3 py-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectableSuggestions.length > 0 &&
+                      checkedSuggestions.size === selectableSuggestions.length
+                    }
+                    onChange={toggleCheckAllSuggestions}
+                    className="w-4 h-4 accent-[#1A73E8] cursor-pointer"
+                  />
+                </th>
+                <th className="text-left font-medium text-neutral-500 text-xs px-3 py-2">
+                  <SortHeader label="Keyword" active={sortBy === "keyword"} dir={sortDir} onClick={() => toggleSort("keyword")} />
+                </th>
+                <th className="text-right font-medium text-neutral-500 text-xs px-3 py-2">
+                  <span className="inline-flex justify-end">
+                    <HeaderTip
+                      label={<SortHeader label="Volumen/mes" active={sortBy === "volume"} dir={sortDir} onClick={() => toggleSort("volume")} />}
+                      tip="Cuantas veces al mes se busca esta palabra en Google, en promedio."
+                      align="right"
+                    />
+                  </span>
+                </th>
+                <th className="text-right font-medium text-neutral-500 text-xs px-3 py-2">
+                  <span className="inline-flex justify-end">
+                    <HeaderTip
+                      label={<SortHeader label="Competencia" active={sortBy === "competition"} dir={sortDir} onClick={() => toggleSort("competition")} />}
+                      tip="Que tan disputada esta la keyword entre anunciantes de pago. Mas alto = mas dificil de posicionar organicamente tambien."
+                      align="right"
+                    />
+                  </span>
+                </th>
+                <th className="text-right font-medium text-neutral-500 text-xs px-3 py-2">
+                  <span className="inline-flex justify-end">
+                    <HeaderTip
+                      label={<SortHeader label="CPC" active={sortBy === "cpc"} dir={sortDir} onClick={() => toggleSort("cpc")} />}
+                      tip="Costo por clic: lo que pagaria un anunciante por cada clic en Google Ads con esta keyword. Sirve como señal de que tan 'valiosa' es comercialmente."
+                      align="right"
+                    />
+                  </span>
+                </th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {sortedSuggestions.map((s) => {
+                const already = trackedTexts.has(s.keyword.toLowerCase());
+                return (
+                  <tr key={s.keyword} className="border-t border-neutral-200">
+                    <td className="px-3 py-2">
+                      {!already && (
+                        <input
+                          type="checkbox"
+                          checked={checkedSuggestions.has(s.keyword)}
+                          onChange={() => toggleSuggestionChecked(s.keyword)}
+                          className="w-4 h-4 accent-[#1A73E8] cursor-pointer"
+                        />
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-800">{s.keyword}</td>
+                    <td className="px-3 py-2 text-right text-neutral-600">
+                      {s.searchVolume?.toLocaleString("es-MX") ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right text-neutral-600">
+                      {s.competition != null ? `${Math.round(s.competition * 100)}%` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right text-neutral-600">
+                      {s.cpc != null ? `$${s.cpc.toFixed(2)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {already ? (
+                        <span className="text-[11px] text-neutral-400">Ya rastreada</span>
+                      ) : (
+                        <button
+                          onClick={() => handleAdd(s.keyword)}
+                          disabled={addingKeyword === s.keyword}
+                          className="text-xs bg-white border border-neutral-200 hover:border-[#1A73E8] disabled:opacity-50 text-neutral-700 rounded-full px-2.5 py-1 transition-colors"
+                        >
+                          {addingKeyword === s.keyword ? "Agregando..." : "+ Rastrear"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AiKeywordRow({
+  keyword,
+  ownDomain,
+  competitorDomains,
+  latest,
+  mentionCount,
+  checksWithData,
+  checked,
+  onToggleChecked,
+}: {
+  keyword: KeywordDTO;
+  ownDomain: string;
+  competitorDomains: string[];
+  latest: KeywordDTO["rankings"][number] | null;
+  mentionCount: number;
+  checksWithData: number;
+  checked: boolean;
+  onToggleChecked: () => void;
+}) {
+  const citedDomains: string[] = latest?.aiCitedDomainsJson
+    ? JSON.parse(latest.aiCitedDomainsJson)
+    : [];
+  const competitorSet = new Set(competitorDomains);
+
+  return (
+    <div className="px-3 py-2.5 rounded-lg bg-white">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0 flex items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={onToggleChecked}
+            className="shrink-0 w-4 h-4 accent-[#1A73E8] cursor-pointer"
+          />
+          <div className="min-w-0">
+            <p className="text-sm text-neutral-900 truncate">{keyword.text}</p>
+            <p className="text-[11px] text-neutral-400">
+              {checksWithData > 0 ? `${mentionCount} mencion${mentionCount === 1 ? "" : "es"} de ${checksWithData} rastreos` : "Sin datos todavia"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {checksWithData > 0 && (
+            <span
+              className={`text-[11px] rounded-full px-2 py-0.5 ${
+                latest?.aiMentioned
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-neutral-100 text-neutral-400"
+              }`}
+            >
+              {latest?.aiMentioned ? "Mencionado" : "No mencionado"}
+            </span>
+          )}
+        </div>
+      </div>
+      {latest?.aiOverviewText && (
+        <p className="text-xs text-neutral-500 mt-2 leading-relaxed border-t border-neutral-100 pt-2">
+          &ldquo;{latest.aiOverviewText}&rdquo;
+        </p>
+      )}
+      {citedDomains.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {citedDomains.map((d) => (
+            <span
+              key={d}
+              className={`text-[10px] rounded-full px-2 py-0.5 ${
+                d === ownDomain
+                  ? "bg-emerald-50 text-emerald-700"
+                  : competitorSet.has(d)
+                  ? "bg-amber-50 text-amber-700"
+                  : "bg-neutral-100 text-neutral-500"
+              }`}
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type AiSortColumn = "keyword" | "mentions" | "status";
+
+// Real, automatic evidence of AI visibility: visits Google Analytics
+// attributes to an AI assistant (ChatGPT, Perplexity, Gemini, Claude,
+// Copilot, Grok, you.com, Meta AI...) by referrer domain, or to a UTM tag
+// mentioning one of those. Unlike Google's AI Overview detection (Google
+// only, needs a rastreo) or manual logging (removed, unreliable), this
+// works for every AI engine automatically — as long as GA4 is connected.
+function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+
+  const connected = Boolean(project.gaConnectedAt);
+  const hasData = project.gaAnalyticsUpdatedAt != null;
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError(null);
+    startProgress();
+    try {
+      const res = await fetch(`/api/projects/${project.id}/ga/refresh-stats`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      finishProgress();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setTimeout(() => setRefreshing(false), 300);
+    }
+  }
+
+  if (!connected) {
+    return (
+      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+        Conecta Google Analytics en Conexiones para ver, de forma
+        automatica, cuantas visitas te mandan ChatGPT, Perplexity,
+        Gemini, Claude, Copilot y otros agentes de IA (por dominio de
+        referencia o por etiquetas UTM).
+      </p>
+    );
+  }
+
+  const bySource: { label: string; sessions: number }[] = project.gaAiTrafficBySourceJson
+    ? JSON.parse(project.gaAiTrafficBySourceJson)
+    : [];
+  const landingPages: { path: string; sessions: number }[] = project.gaAiLandingPagesJson
+    ? JSON.parse(project.gaAiLandingPagesJson)
+    : [];
+  const totalSessions = project.gaAiTrafficSessions28d ?? 0;
+
+  return (
+    <div className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">
+            Trafico real desde IA (Google Analytics, ultimos 28 dias)
+          </p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Visitas reales que llegaron desde ChatGPT, Perplexity, Gemini,
+            Claude, Copilot u otros agentes — detectadas por dominio de
+            referencia o por UTM. Esto confirma que de verdad te estan
+            enviando gente, no solo que te mencionan.
+          </p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="text-xs bg-white border border-purple-200 hover:border-purple-300 disabled:opacity-50 text-purple-700 font-medium rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+        >
+          {refreshing ? "Actualizando..." : "Actualizar"}
+        </button>
+      </div>
+
+      {refreshing && (
+        <div className="mt-3">
+          <ProgressBar percent={progress} />
+        </div>
+      )}
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+
+      {!hasData ? (
+        <p className="text-xs text-neutral-400 mt-3">
+          Dale a &quot;Actualizar&quot; para traer el trafico real que te
+          mandan los agentes de IA.
+        </p>
+      ) : (
+      <div className="mt-3">
+        <StatCard label="Sesiones desde IA" value={totalSessions.toLocaleString("es-MX")} />
+      </div>
+      )}
+      {hasData && (
+      <>
+      {totalSessions === 0 ? (
+        <p className="text-xs text-neutral-400 mt-3">
+          Sin visitas detectadas desde IA en este periodo todavia.
+        </p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-3 mt-3">
+          <div>
+            <p className="text-[11px] text-purple-700 uppercase tracking-wide mb-1.5">Por agente</p>
+            <div className="flex flex-col gap-1">
+              {bySource.map((s) => (
+                <div key={s.label} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                  <span className="text-neutral-700 truncate">{s.label}</span>
+                  <span className="text-neutral-400 shrink-0">{s.sessions.toLocaleString("es-MX")}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] text-purple-700 uppercase tracking-wide mb-1.5">Paginas de aterrizaje</p>
+            <div className="flex flex-col gap-1">
+              {landingPages.map((p) => (
+                <a
+                  key={p.path}
+                  href={`https://${project.domain}${p.path}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs hover:bg-purple-100/60 transition-colors"
+                >
+                  <span className="text-neutral-700 hover:text-[#1A73E8] hover:underline truncate">{p.path}</span>
+                  <span className="text-neutral-400 shrink-0">{p.sessions.toLocaleString("es-MX")}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      </>
+      )}
+    </div>
+  );
+}
+
+// No analytics tool (GA4 included) reveals the actual prompt someone typed
+// into ChatGPT/Perplexity — those platforms don't share it. The closest
+// available proxy: cross-reference the pages AI sends traffic to (GA4)
+// against the real Google queries Search Console already tracks for those
+// same pages. Framed honestly as "related queries", not "the AI prompt".
+function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const gscConnected = Boolean(project.gscSiteUrl);
+  const hasLandingPages = Boolean(
+    project.gaAiLandingPagesJson && JSON.parse(project.gaAiLandingPagesJson).length > 0
+  );
+
+  async function handleRun() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/seo-ia/query-crossref`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al cruzar datos");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cruzar datos");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!gscConnected) {
+    return (
+      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+        Conecta Search Console en Conexiones para ver que consultas reales
+        de Google se asocian a las paginas que la IA esta mandando visitar
+        — no podemos saber la pregunta exacta que le hicieron a la IA,
+        pero esto es la mejor pista disponible.
+      </p>
+    );
+  }
+
+  const crossRef: { path: string; queries: { query: string; impressions: number; clicks: number; position: number }[] }[] =
+    project.aiQueryCrossRefJson ? JSON.parse(project.aiQueryCrossRefJson) : [];
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Posibles preguntas detras del trafico de IA</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Cruza las paginas donde aterriza el trafico de IA con las
+            consultas reales que Google ya registra para esas mismas
+            paginas en Search Console. No es la pregunta exacta que se le
+            hizo a la IA (eso nadie lo comparte), pero es la mejor
+            aproximacion disponible.
+          </p>
+        </div>
+        <button
+          onClick={handleRun}
+          disabled={loading || !hasLandingPages}
+          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+        >
+          {loading ? "Cruzando..." : "Cruzar con Search Console"}
+        </button>
+      </div>
+
+      {!hasLandingPages && (
+        <p className="text-xs text-neutral-400 mt-2">
+          Primero actualiza el trafico de IA arriba para tener paginas de
+          aterrizaje que cruzar.
+        </p>
+      )}
+
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+
+      {crossRef.length > 0 && (
+        <div className="flex flex-col gap-2 mt-3">
+          {crossRef.map((r) => (
+            <div key={r.path} className="bg-white border border-neutral-100 rounded-lg px-3 py-2.5">
+              <a
+                href={`https://${project.domain}${r.path}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-neutral-800 hover:text-[#1A73E8] hover:underline"
+              >
+                {r.path}
+              </a>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {r.queries.map((q) => (
+                  <span
+                    key={q.query}
+                    title={`${q.impressions.toLocaleString("es-MX")} impresiones · posicion ${q.position.toFixed(1)}`}
+                    className="text-[11px] bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5"
+                  >
+                    {q.query}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {project.aiQueryCrossRefUpdatedAt && crossRef.length === 0 && hasLandingPages && (
+        <p className="text-xs text-neutral-400 mt-3">
+          No encontramos consultas de Search Console para esas paginas
+          especificas todavia.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AiVisibilitySection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [sortBy, setSortBy] = useState<AiSortColumn>("status");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  function toggleSort(column: AiSortColumn) {
+    if (sortBy === column) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortDir(column === "keyword" ? "asc" : "desc");
+    }
+  }
+
+  function toggleChecked(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    setBulkDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(checkedIds).map((id) => fetch(`/api/keywords/${id}`, { method: "DELETE" }))
+      );
+      setCheckedIds(new Set());
+      router.refresh();
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  // Only Google is automatic (AI Overview, checked whenever you rastrea the
+  // keyword in Rankings) — there's no reliable automatic way to check
+  // ChatGPT/Perplexity mentions today, so this tool only reports Google.
+  const aiRelevantKeywords = project.keywords.filter((k) => k.engine === "google");
+
+  const rows = aiRelevantKeywords.map((keyword) => {
+    const ownRankings = keyword.rankings
+      .filter((r) => r.aiMentioned != null)
+      .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime());
+    const latest = ownRankings[0] ?? null;
+    const mentionCount = ownRankings.filter((r) => r.aiMentioned).length;
+    return { keyword, latest, checksWithData: ownRankings.length, mentionCount };
+  });
+
+  const visibleRowsUnsorted = rows.filter((r) => r.checksWithData > 0);
+  const mentionedNow = visibleRowsUnsorted.filter((r) => r.latest?.aiMentioned).length;
+
+  const visibleRows = [...visibleRowsUnsorted].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    if (sortBy === "keyword") return a.keyword.text.localeCompare(b.keyword.text) * dir;
+    if (sortBy === "mentions") return (a.mentionCount - b.mentionCount) * dir;
+    // status: mentioned > not mentioned
+    const score = (r: (typeof rows)[number]) => (r.latest?.aiMentioned ? 1 : 0);
+    return (score(a) - score(b)) * dir;
+  });
+
+  const selectableIds = visibleRows.map((r) => r.keyword.id);
+  function toggleCheckAll() {
+    setCheckedIds((prev) =>
+      prev.size === selectableIds.length ? new Set() : new Set(selectableIds)
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <p className="text-sm font-medium text-neutral-900">Visibilidad en IA</p>
+        <p className="text-neutral-500 text-xs mt-0.5">
+          Numero de veces que tu dominio aparece mencionado en el AI
+          Overview de Google para tus keywords rastreadas (se revisa
+          automaticamente cada vez que rastreas en Rankings).
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+          <StatCard label="Menciones a tu dominio" value={String(mentionedNow)} />
+          <StatCard label="Keywords con datos de IA" value={String(visibleRowsUnsorted.length)} />
+          <StatCard
+            label="Tasa de mencion"
+            value={
+              visibleRowsUnsorted.length > 0
+                ? `${Math.round((mentionedNow / visibleRowsUnsorted.length) * 100)}%`
+                : "—"
+            }
+          />
+        </div>
+      </div>
+
+      <AiTrafficFromAnalytics project={project} />
+      <AiQueryCrossRefSection project={project} />
+
+      {visibleRows.length === 0 ? (
+        <p className="text-xs text-neutral-400">
+          Aun no hay datos de IA. Rastrea tus keywords de Google en
+          Rankings — el AI Overview se revisa automaticamente en cada
+          rastreo.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3 px-3">
+            <div className="flex items-center gap-2.5 text-[11px] text-neutral-400">
+              <input
+                type="checkbox"
+                checked={selectableIds.length > 0 && checkedIds.size === selectableIds.length}
+                onChange={toggleCheckAll}
+                className="w-4 h-4 accent-[#1A73E8] cursor-pointer"
+              />
+              <SortHeader label="Keyword" active={sortBy === "keyword"} dir={sortDir} onClick={() => toggleSort("keyword")} />
+              <span className="text-neutral-200">·</span>
+              <SortHeader label="Menciones" active={sortBy === "mentions"} dir={sortDir} onClick={() => toggleSort("mentions")} />
+              <span className="text-neutral-200">·</span>
+              <SortHeader label="Estado" active={sortBy === "status"} dir={sortDir} onClick={() => toggleSort("status")} />
+            </div>
+            {checkedIds.size > 0 && (
+              <ConfirmButton
+                onConfirm={handleBulkDelete}
+                label={
+                  bulkDeleting
+                    ? "Eliminando..."
+                    : `Eliminar ${checkedIds.size} seleccionada${checkedIds.size > 1 ? "s" : ""}`
+                }
+                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg px-2.5 py-1 transition-colors"
+              />
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5 bg-neutral-50 border border-neutral-200 rounded-xl p-1.5">
+            {visibleRows.map(({ keyword, latest, mentionCount, checksWithData }) => (
+              <AiKeywordRow
+                key={keyword.id}
+                keyword={keyword}
+                ownDomain={project.domain}
+                competitorDomains={project.competitors.map((c) => c.domain)}
+                latest={latest}
+                mentionCount={mentionCount}
+                checksWithData={checksWithData}
+                checked={checkedIds.has(keyword.id)}
+                onToggleChecked={() => toggleChecked(keyword.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GscSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [importing, setImporting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const connected = Boolean(project.gscSiteUrl);
+
+  async function handleImport() {
+    setImporting(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/gsc/import`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al importar");
+      setMessage(
+        `${data.keywords} keywords, ${data.rankingsImported} posiciones historicas importadas desde GSC.`
+      );
+      router.refresh();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Error al importar");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleRefreshStats() {
+    setRefreshing(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/gsc/refresh-stats`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      router.refresh();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await fetch(`/api/projects/${project.id}/gsc/disconnect`, {
+        method: "POST",
+      });
+      router.refresh();
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (!connected) {
+    return (
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">
+            Google Search Console
+          </p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Importa tus keywords y posiciones reales de {project.domain}.
+          </p>
+        </div>
+        <a
+          href={`/api/gsc/auth?projectId=${project.id}`}
+          className="text-sm bg-white border border-blue-200 hover:border-blue-300 text-blue-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+        >
+          Conectar Google Search Console
+        </a>
+      </div>
+    );
+  }
+
+  const hasStats = project.gscClicks28d != null;
+
+  return (
+    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 flex flex-col gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-sm text-neutral-700">
+          Conectado a{" "}
+          <span className="text-blue-700 font-medium">
+            {project.gscSiteUrl}
+          </span>
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={handleRefreshStats}
+            disabled={refreshing}
+            className="text-xs bg-white border border-blue-200 hover:border-blue-300 disabled:opacity-50 text-blue-700 font-medium rounded-full px-3 py-1.5"
+          >
+            {refreshing ? "Actualizando..." : "Actualizar metricas"}
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={importing}
+            className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3 py-1.5"
+          >
+            {importing ? "Importando..." : "Importar desde GSC"}
+          </button>
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
+          >
+            Desconectar
+          </button>
+        </div>
+      </div>
+
+      {hasStats && (
+        <div className="flex flex-wrap gap-4 text-xs text-neutral-600 border-t border-blue-100 pt-2">
+          <span>
+            <strong className="text-neutral-900">
+              {(project.gscClicks28d ?? 0).toLocaleString("es-MX")}
+            </strong>{" "}
+            clics (28d)
+          </span>
+          <span>
+            <strong className="text-neutral-900">
+              {(project.gscImpressions28d ?? 0).toLocaleString("es-MX")}
+            </strong>{" "}
+            impresiones (28d)
+          </span>
+          <span>
+            Pos. prom. GSC{" "}
+            <strong className="text-neutral-900">
+              {project.gscAvgPosition28d?.toFixed(1) ?? "—"}
+            </strong>
+          </span>
+        </div>
+      )}
+
+      {message && <p className="text-xs text-neutral-500">{message}</p>}
+    </div>
+  );
+}
+
+type MetricLevel = "good" | "ok" | "bad";
+
+function levelStyles(level: MetricLevel) {
+  if (level === "good") return { dot: "bg-emerald-500", text: "text-emerald-700" };
+  if (level === "ok") return { dot: "bg-amber-500", text: "text-amber-700" };
+  return { dot: "bg-red-500", text: "text-red-700" };
+}
+
+function overallVerdict(score: number | null) {
+  if (score == null) return null;
+  if (score >= 90)
+    return {
+      level: "good" as MetricLevel,
+      headline: "Tu sitio tiene buen rendimiento",
+      detail: "Carga rápido para la mayoría de tus visitantes.",
+    };
+  if (score >= 50)
+    return {
+      level: "ok" as MetricLevel,
+      headline: "Tu sitio necesita mejoras",
+      detail: "Funciona, pero algunos visitantes notan que es lento.",
+    };
+  return {
+    level: "bad" as MetricLevel,
+    headline: "Tu sitio tiene problemas de velocidad",
+    detail: "Esto puede estar alejando visitantes y afectando tu posición en Google.",
+  };
+}
+
+function lcpStatus(ms: number | null) {
+  if (ms == null) return null;
+  const seconds = ms / 1000;
+  if (ms <= 2500)
+    return { level: "good" as MetricLevel, text: "Tu contenido aparece rápido", advice: null };
+  if (ms <= 4000)
+    return {
+      level: "ok" as MetricLevel,
+      text: "Tu contenido tarda un poco en aparecer",
+      advice: "Prueba comprimir imágenes grandes y usar un buen hosting.",
+    };
+  return {
+    level: "bad" as MetricLevel,
+    text: `Tu contenido tarda ${seconds.toFixed(1)}s en aparecer — es lento`,
+    advice: "Comprime imágenes, activa caché y revisa la velocidad de tu hosting.",
+  };
+}
+
+function clsStatus(value: number | null) {
+  if (value == null) return null;
+  if (value <= 0.1)
+    return { level: "good" as MetricLevel, text: "La página no se mueve al cargar", advice: null };
+  if (value <= 0.25)
+    return {
+      level: "ok" as MetricLevel,
+      text: "La página se mueve un poco mientras carga",
+      advice: "Dale un tamaño fijo a tus imágenes y banners.",
+    };
+  return {
+    level: "bad" as MetricLevel,
+    text: "La página salta mucho mientras carga",
+    advice: "Dale un tamaño fijo a imágenes, videos y anuncios para que no empujen el contenido.",
+  };
+}
+
+function inpStatus(ms: number | null) {
+  if (ms == null) return null;
+  if (ms <= 200)
+    return { level: "good" as MetricLevel, text: "Responde rápido cuando alguien hace clic", advice: null };
+  if (ms <= 500)
+    return {
+      level: "ok" as MetricLevel,
+      text: "Responde con algo de retraso a los clics",
+      advice: "Revisa si hay scripts pesados o plugins de más.",
+    };
+  return {
+    level: "bad" as MetricLevel,
+    text: "Tarda en reaccionar cuando alguien interactua",
+    advice: "Reduce plugins y scripts de terceros que bloqueen el navegador.",
+  };
+}
+
+function MetricRow({
+  label,
+  status,
+}: {
+  label: string;
+  status: { level: MetricLevel; text: string; advice: string | null } | null;
+}) {
+  if (!status) return null;
+  const styles = levelStyles(status.level);
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${styles.dot}`} />
+      <div>
+        <p className="text-sm text-neutral-800">
+          <span className="text-neutral-500">{label}:</span> {status.text}
+        </p>
+        {status.advice && (
+          <p className="text-xs text-neutral-500 mt-0.5">{status.advice}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// Small, non-invasive banner — a single line, not a modal or popup.
+function ExpertBanner() {
+  return (
+    <a
+      href={EXPERT_CONTACT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between gap-3 text-xs bg-white border border-dashed border-neutral-200 hover:border-[#1A73E8]/40 rounded-lg px-3 py-2 text-neutral-500 hover:text-neutral-700 transition-colors"
+    >
+      <span>¿Prefieres que un experto te ayude a corregir esto?</span>
+      <span className="text-[#1A73E8] font-medium whitespace-nowrap">Quiero que me ayude un experto →</span>
+    </a>
+  );
+}
+
+function PageSpeedSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const [resolvedIssueIds, setResolvedIssueIds] = useState<Set<string>>(new Set());
+
+  const hasResult = project.psiUpdatedAt != null;
+  const verdict = overallVerdict(project.psiPerformanceScore);
+  const issues: { id: string; title: string; description: string; displayValue: string | null; score: number | null }[] =
+    project.psiIssuesJson ? JSON.parse(project.psiIssuesJson) : [];
+
+  function toggleResolved(id: string) {
+    setResolvedIssueIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleRun() {
+    setLoading(true);
+    setError(null);
+    startProgress();
+    try {
+      const res = await fetch(`/api/projects/${project.id}/pagespeed/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al analizar");
+      finishProgress();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al analizar");
+    } finally {
+      setTimeout(() => setLoading(false), 300);
+    }
+  }
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4 flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">
+            Velocidad de tu sitio
+          </p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Que tan bien carga {project.domain} en celulares.
+          </p>
+        </div>
+        <button
+          onClick={handleRun}
+          disabled={loading}
+          className="text-sm bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+        >
+          {loading
+            ? "Analizando..."
+            : hasResult
+            ? "Volver a analizar"
+            : "Analizar velocidad"}
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex flex-col gap-1.5">
+          <ProgressBar percent={progress} />
+          <p className="text-[11px] text-neutral-400">
+            Analizando tu sitio con PageSpeed Insights, esto puede tardar
+            unos segundos...
+          </p>
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {hasResult && !loading && (
+        <div className="flex flex-col gap-4">
+          {verdict ? (
+            <div className="flex items-center gap-3 bg-white border border-neutral-200 rounded-lg px-4 py-3">
+              <div
+                className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                  verdict.level === "good"
+                    ? "bg-emerald-500"
+                    : verdict.level === "ok"
+                    ? "bg-amber-500"
+                    : "bg-red-500"
+                }`}
+              >
+                {project.psiPerformanceScore}
+              </div>
+              <div>
+                <p className={`text-sm font-semibold ${levelStyles(verdict.level).text}`}>
+                  {verdict.headline}
+                </p>
+                <p className="text-xs text-neutral-500">{verdict.detail}</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  Calificacion de rendimiento: {project.psiPerformanceScore}/100
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-neutral-400 bg-white border border-neutral-200 rounded-lg px-4 py-3">
+              No pudimos calcular una calificacion general, pero aqui esta lo
+              que si pudimos medir:
+            </p>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <MetricRow label="Velocidad de carga" status={lcpStatus(project.psiLcpMs)} />
+            <MetricRow label="Estabilidad visual" status={clsStatus(project.psiCls)} />
+            <MetricRow label="Capacidad de respuesta" status={inpStatus(project.psiInpMs)} />
+            {!verdict &&
+              project.psiLcpMs == null &&
+              project.psiCls == null &&
+              project.psiInpMs == null && (
+                <p className="text-xs text-neutral-400">
+                  Google no devolvio metricas para este sitio todavia.
+                  Intenta analizar de nuevo en unos minutos.
+                </p>
+              )}
+          </div>
+
+          <p className="text-[11px] text-neutral-400">
+            {project.psiFieldDataSource === "field"
+              ? "Basado en datos reales de visitantes de tu sitio."
+              : "Estimado con una prueba simulada (aun no hay suficientes visitas reales medidas)."}
+          </p>
+
+          {issues.length > 0 && (
+            <div>
+              <h3 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                Que corregir ({resolvedIssueIds.size}/{issues.length})
+              </h3>
+              <div className="flex flex-col gap-2">
+                {issues.map((issue) => {
+                  const resolved = resolvedIssueIds.has(issue.id);
+                  return (
+                    <label
+                      key={issue.id}
+                      className="flex items-start gap-2.5 bg-white border border-neutral-200 rounded-lg px-3 py-2.5 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={resolved}
+                        onChange={() => toggleResolved(issue.id)}
+                        className="mt-0.5 w-4 h-4 accent-[#1A73E8] cursor-pointer shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <p
+                            className={`text-sm font-medium ${
+                              resolved ? "text-neutral-400 line-through" : "text-neutral-900"
+                            }`}
+                          >
+                            {issue.title}
+                          </p>
+                          {issue.displayValue && (
+                            <span className="text-[11px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
+                              {issue.displayValue}
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-1 ${resolved ? "text-neutral-300" : "text-neutral-500"}`}>
+                          {issue.description}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {hasResult && issues.length === 0 && (
+            <p className="text-xs text-neutral-400">
+              No encontramos problemas importantes que corregir — bien ahi.
+            </p>
+          )}
+
+          <ExpertBanner />
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface YoutubeVideo {
+  videoId: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+  thumbnailUrl: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  aiTitles?: string[];
+  aiDescription?: string;
+  aiSuggestedAt?: string;
+}
+
+type YoutubeSortColumn = "title" | "date" | "views" | "likes" | "comments";
+
+function YoutubeVideoRow({
+  video,
+  projectId,
+  isTop5,
+}: {
+  video: YoutubeVideo;
+  projectId: string;
+  isTop5: boolean;
+}) {
+  const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
+  const [improving, setImproving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+
+  async function handleImprove() {
+    setImproving(true);
+    setError(null);
+    startProgress();
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/youtube/videos/${video.videoId}/improve`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al generar sugerencias");
+      finishProgress();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al generar sugerencias");
+    } finally {
+      setTimeout(() => setImproving(false), 300);
+    }
+  }
+
+  return (
+    <div className="rounded-lg overflow-hidden">
+      <div className="flex items-center gap-3 px-1.5 py-2 hover:bg-white transition-colors">
+        <a
+          href={`https://www.youtube.com/watch?v=${video.videoId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-16 shrink-0 relative"
+        >
+          {video.thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={video.thumbnailUrl} alt="" className="w-16 h-10 rounded object-cover" />
+          )}
+          {isTop5 && (
+            <span className="absolute -top-1 -left-1 text-[10px] bg-[#1A73E8] text-white rounded-full w-4 h-4 flex items-center justify-center">
+              🔥
+            </span>
+          )}
+        </a>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-sm text-neutral-800 truncate flex-1 text-left hover:text-[#1A73E8] transition-colors"
+        >
+          {video.title}
+        </button>
+        <span className="text-xs text-neutral-400 w-16 text-right shrink-0">
+          {new Date(video.publishedAt).toLocaleDateString("es-MX", { month: "short", day: "numeric" })}
+        </span>
+        <span className="text-xs text-neutral-600 w-16 text-right shrink-0">
+          {video.viewCount.toLocaleString("es-MX")}
+        </span>
+        <span className="text-xs text-neutral-400 w-14 text-right shrink-0 hidden sm:inline">
+          {video.likeCount.toLocaleString("es-MX")}
+        </span>
+        <span className="text-xs text-neutral-400 w-14 text-right shrink-0 hidden sm:inline">
+          {video.commentCount.toLocaleString("es-MX")}
+        </span>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-neutral-400 hover:text-[#1A73E8] hover:bg-blue-50 transition-colors"
+          title="Ver descripcion y sugerencias de IA"
+        >
+          {expanded ? "▲" : "▼"}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 flex flex-col gap-3">
+          <div>
+            <p className="text-[10px] text-neutral-400 uppercase tracking-wide mb-1">Descripcion actual</p>
+            <p className="text-xs text-neutral-600 whitespace-pre-line bg-white border border-neutral-100 rounded-lg px-3 py-2">
+              {video.description || "Sin descripcion."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleImprove}
+              disabled={improving}
+              className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3 py-1.5 transition-colors"
+            >
+              {improving ? "Generando..." : video.aiTitles?.length ? "Volver a generar con IA" : "Mejorar con IA"}
+            </button>
+            {video.aiSuggestedAt && !improving && (
+              <span className="text-[10px] text-neutral-400">
+                Generado {new Date(video.aiSuggestedAt).toLocaleDateString("es-MX", { month: "short", day: "numeric" })}
+              </span>
+            )}
+          </div>
+
+          {improving && <ProgressBar percent={progress} />}
+          {error && <p className="text-xs text-red-600">{error}</p>}
+
+          {!improving && (video.aiTitles?.length || video.aiDescription) && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 flex flex-col gap-2.5">
+              {video.aiTitles && video.aiTitles.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">
+                    Titulos sugeridos (con intencion viral)
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {video.aiTitles.map((t, i) => (
+                      <p key={i} className="text-xs text-neutral-700 bg-white rounded px-2 py-1.5">
+                        {t}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {video.aiDescription && (
+                <div>
+                  <p className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">
+                    Descripcion sugerida
+                  </p>
+                  <p className="text-xs text-neutral-700 bg-white rounded px-2 py-1.5 whitespace-pre-line">
+                    {video.aiDescription}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function YoutubeSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [input, setInput] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<YoutubeSortColumn>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const connected = Boolean(project.youtubeChannelId);
+  const videos: YoutubeVideo[] = project.youtubeRecentVideosJson
+    ? (JSON.parse(project.youtubeRecentVideosJson) as Partial<YoutubeVideo>[]).map((v) => ({
+        videoId: v.videoId ?? "",
+        title: v.title ?? "",
+        description: v.description ?? "",
+        publishedAt: v.publishedAt ?? "",
+        thumbnailUrl: v.thumbnailUrl ?? null,
+        viewCount: v.viewCount ?? 0,
+        likeCount: v.likeCount ?? 0,
+        commentCount: v.commentCount ?? 0,
+        aiTitles: v.aiTitles,
+        aiDescription: v.aiDescription,
+        aiSuggestedAt: v.aiSuggestedAt,
+      }))
+    : [];
+
+  const top5ViewIds = new Set(
+    [...videos]
+      .sort((a, b) => b.viewCount - a.viewCount)
+      .slice(0, 5)
+      .map((v) => v.videoId)
+  );
+
+  function toggleSort(column: YoutubeSortColumn) {
+    if (sortBy === column) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortDir(column === "title" ? "asc" : "desc");
+    }
+  }
+
+  const sortedVideos = [...videos].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortBy) {
+      case "title":
+        return a.title.localeCompare(b.title) * dir;
+      case "views":
+        return (a.viewCount - b.viewCount) * dir;
+      case "likes":
+        return (a.likeCount - b.likeCount) * dir;
+      case "comments":
+        return (a.commentCount - b.commentCount) * dir;
+      default:
+        return (
+          (new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime()) * dir
+        );
+    }
+  });
+
+  const channelAgeYears = project.youtubeChannelPublishedAt
+    ? (
+        (Date.now() - new Date(project.youtubeChannelPublishedAt).getTime()) /
+        (1000 * 60 * 60 * 24 * 365)
+      ).toFixed(1)
+    : null;
+  const avgViews =
+    videos.length > 0
+      ? Math.round(videos.reduce((sum, v) => sum + v.viewCount, 0) / videos.length)
+      : null;
+  const avgEngagement =
+    videos.length > 0
+      ? videos.reduce((sum, v) => {
+          const rate = v.viewCount > 0 ? (v.likeCount + v.commentCount) / v.viewCount : 0;
+          return sum + rate;
+        }, 0) / videos.length
+      : null;
+
+  async function handleConnect(e: React.FormEvent) {
+    e.preventDefault();
+    setConnecting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/youtube/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al conectar");
+      setInput("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al conectar");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/youtube/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await fetch(`/api/projects/${project.id}/youtube/disconnect`, {
+        method: "POST",
+      });
+      router.refresh();
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (!connected) {
+    return (
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <p className="text-sm font-medium text-neutral-900">SEO de YouTube</p>
+        <p className="text-neutral-500 text-xs mt-0.5 mb-3">
+          Conecta tu canal para ver suscriptores, vistas, engagement y tus
+          videos recientes.
+        </p>
+        <form onSubmit={handleConnect} className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
+            <label className="text-[11px] text-neutral-500">
+              Canal (@handle, ID o URL)
+            </label>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="@acehrproyectos"
+              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={connecting || !input}
+            className="bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 text-sm transition-colors"
+          >
+            {connecting ? "Conectando..." : "Conectar canal"}
+          </button>
+        </form>
+        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            {project.youtubeThumbnailUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={project.youtubeThumbnailUrl}
+                alt=""
+                className="w-10 h-10 rounded-full"
+              />
+            )}
+            <div>
+              <p className="text-sm font-medium text-neutral-900">
+                {project.youtubeChannelTitle}
+              </p>
+              <p className="text-[11px] text-neutral-400">
+                {project.youtubeCountry ? `${project.youtubeCountry} · ` : ""}
+                {channelAgeYears ? `${channelAgeYears} años en YouTube` : ""}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 rounded-full px-3 py-1.5 transition-colors"
+            >
+              {refreshing ? "Actualizando..." : "Actualizar"}
+            </button>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
+            >
+              Desconectar
+            </button>
+          </div>
+        </div>
+
+        {project.youtubeDescription && (
+          <p className="text-xs text-neutral-500 mt-2 line-clamp-2">
+            {project.youtubeDescription}
+          </p>
+        )}
+
+        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
+          <StatCard label="Suscriptores" value={(project.youtubeSubscribers ?? 0).toLocaleString("es-MX")} />
+          <StatCard label="Vistas totales" value={(project.youtubeViews ?? 0).toLocaleString("es-MX")} />
+          <StatCard label="Videos" value={String(project.youtubeVideoCount ?? 0)} />
+          <StatCard label="Vistas prom. (recientes)" value={avgViews != null ? avgViews.toLocaleString("es-MX") : "—"} />
+          <StatCard
+            label="Engagement prom."
+            value={avgEngagement != null ? `${(avgEngagement * 100).toFixed(1)}%` : "—"}
+          />
+        </div>
+      </div>
+
+      {videos.length > 0 && (
+        <div>
+          <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+            Videos recientes — los 5 mas vistos llevan insignia 🔥
+          </h2>
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-3 py-2 text-[11px] text-neutral-400 border-b border-neutral-200">
+              <span className="w-16 shrink-0" />
+              <SortHeader label="Titulo" active={sortBy === "title"} dir={sortDir} onClick={() => toggleSort("title")} />
+              <span className="flex-1" />
+              <span className="w-16 text-right"><SortHeader label="Fecha" active={sortBy === "date"} dir={sortDir} onClick={() => toggleSort("date")} /></span>
+              <span className="w-16 text-right"><SortHeader label="Vistas" active={sortBy === "views"} dir={sortDir} onClick={() => toggleSort("views")} /></span>
+              <span className="w-14 text-right hidden sm:inline"><SortHeader label="Likes" active={sortBy === "likes"} dir={sortDir} onClick={() => toggleSort("likes")} /></span>
+              <span className="w-14 text-right hidden sm:inline"><SortHeader label="Coment." active={sortBy === "comments"} dir={sortDir} onClick={() => toggleSort("comments")} /></span>
+            </div>
+            <div className="flex flex-col p-1.5 gap-1">
+              {sortedVideos.map((v) => (
+                <YoutubeVideoRow
+                  key={v.videoId}
+                  video={v}
+                  projectId={project.id}
+                  isTop5={top5ViewIds.has(v.videoId)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface FlaggedProduct {
+  title: string;
+  handle: string;
+  issues: string[];
+}
+
+function EcommerceSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+
+  const hasResult = project.ecommerceCheckedAt != null;
+  const flagged: FlaggedProduct[] = project.ecommerceFlaggedJson
+    ? JSON.parse(project.ecommerceFlaggedJson)
+    : [];
+
+  async function handleRun() {
+    setLoading(true);
+    setError(null);
+    startProgress();
+    try {
+      const res = await fetch(`/api/projects/${project.id}/ecommerce/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al analizar");
+      finishProgress();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al analizar");
+    } finally {
+      setTimeout(() => setLoading(false), 300);
+    }
+  }
+
+  const topVendors: { name: string; count: number }[] = project.ecommerceTopVendorsJson
+    ? JSON.parse(project.ecommerceTopVendorsJson)
+    : [];
+  const topTypes: { name: string; count: number }[] = project.ecommerceTopTypesJson
+    ? JSON.parse(project.ecommerceTopTypesJson)
+    : [];
+  const topTags: { name: string; count: number }[] = project.ecommerceTopTagsJson
+    ? JSON.parse(project.ecommerceTopTagsJson)
+    : [];
+
+  const platformLabel =
+    project.ecommercePlatform === "shopify"
+      ? "Shopify"
+      : project.ecommercePlatform === "woocommerce"
+      ? "WooCommerce"
+      : null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-neutral-900">
+              Auditoria de catalogo {platformLabel ? `(${platformLabel})` : ""}
+            </p>
+            <p className="text-neutral-500 text-xs mt-0.5">
+              Lee el catalogo publico de {project.domain} — funciona con
+              Shopify o WooCommerce, sin API keys, sin volver a poner la URL.
+            </p>
+          </div>
+          <button
+            onClick={handleRun}
+            disabled={loading}
+            className="text-sm bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+          >
+            {loading ? "Analizando..." : hasResult ? "Volver a analizar" : "Analizar tienda"}
+          </button>
+        </div>
+
+        {loading && (
+          <div className="mt-3">
+            <ProgressBar percent={progress} />
+          </div>
+        )}
+
+        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+
+        {hasResult && !platformLabel && (
+          <p className="text-xs text-neutral-400 mt-3">
+            No detectamos un catalogo publico de Shopify ni WooCommerce en
+            este dominio.
+          </p>
+        )}
+
+        {hasResult && platformLabel && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+            <StatCard
+              label="Productos"
+              value={`${project.ecommerceProductCount ?? 0}${project.ecommerceProductCountIsMin ? "+" : ""}`}
+              hint={project.ecommerceProductCountIsMin ? "Shopify solo permite leer hasta 1000" : undefined}
+            />
+            <StatCard
+              label="Colecciones/categorias"
+              value={`${project.ecommerceCollectionCount ?? 0}${project.ecommerceCollectionCountIsMin ? "+" : ""}`}
+              hint={project.ecommerceCollectionCountIsMin ? "Shopify solo permite leer hasta 250" : undefined}
+            />
+            {project.ecommerceTotalVariants != null && (
+              <StatCard label="Variantes totales" value={String(project.ecommerceTotalVariants)} />
+            )}
+            <StatCard
+              label="Rango de precios"
+              value={
+                project.ecommercePriceMin != null && project.ecommercePriceMax != null
+                  ? `${project.ecommercePriceMin.toFixed(0)} - ${project.ecommercePriceMax.toFixed(0)}`
+                  : "—"
+              }
+            />
+            <StatCard
+              label="Precio promedio"
+              value={project.ecommerceAvgPrice != null ? project.ecommerceAvgPrice.toFixed(0) : "—"}
+            />
+            {project.ecommerceNewestProductAt && (
+              <StatCard
+                label="Ultimo producto agregado"
+                value={new Date(project.ecommerceNewestProductAt).toLocaleDateString("es-MX", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              />
+            )}
+            <StatCard label="Sin descripcion" value={String(project.ecommerceMissingDescCount ?? 0)} />
+            <StatCard label="Sin imagenes" value={String(project.ecommerceMissingImageCount ?? 0)} />
+            <StatCard label="Sin texto alt" value={String(project.ecommerceMissingAltCount ?? 0)} />
+            {project.ecommerceThinTitleCount != null && (
+              <StatCard label="Titulos cortos" value={String(project.ecommerceThinTitleCount)} />
+            )}
+          </div>
+        )}
+      </div>
+
+      {hasResult && (topVendors.length > 0 || topTypes.length > 0 || topTags.length > 0) && (
+        <div className="grid sm:grid-cols-3 gap-3">
+          {topVendors.length > 0 && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Marcas / vendedores</p>
+              <div className="flex flex-col gap-1">
+                {topVendors.map((v) => (
+                  <div key={v.name} className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-700 truncate">{v.name}</span>
+                    <span className="text-neutral-400 shrink-0">{v.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {topTypes.length > 0 && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Categorias / tipos</p>
+              <div className="flex flex-col gap-1">
+                {topTypes.map((v) => (
+                  <div key={v.name} className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-700 truncate">{v.name}</span>
+                    <span className="text-neutral-400 shrink-0">{v.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {topTags.length > 0 && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Tags mas usados</p>
+              <div className="flex flex-wrap gap-1.5">
+                {topTags.map((v) => (
+                  <span
+                    key={v.name}
+                    className="text-[11px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                  >
+                    {v.name} · {v.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {hasResult && flagged.length > 0 && (
+        <div>
+          <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+            Productos con oportunidades de mejora ({flagged.length})
+          </h2>
+          <div className="flex flex-col gap-1 bg-neutral-50 border border-neutral-200 rounded-xl p-1.5">
+            {flagged.map((p) => (
+              <a
+                key={p.handle}
+                href={`https://${project.domain}/products/${p.handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
+              >
+                <p className="text-sm text-neutral-800 truncate">{p.title}</p>
+                <span className="text-[11px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
+                  {p.issues.join(", ")}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasResult && flagged.length === 0 && (
+        <p className="text-xs text-neutral-400">
+          No encontramos productos con estos problemas comunes de SEO.
+        </p>
+      )}
+    </div>
+  );
+}
+
+interface GaProperty {
+  propertyId: string;
+  displayName: string;
+  accountName: string;
+}
+
+function AnalyticsSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const connected = Boolean(project.gaConnectedAt);
+  const hasData = project.gaAnalyticsUpdatedAt != null;
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/ga/refresh-stats`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  if (!connected) {
+    return (
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Analiticas</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Conecta Google Analytics para ver ventas, paginas mas visitadas,
+            paises y dispositivos de tus visitantes.
+          </p>
+        </div>
+        <a
+          href={`/api/ga/auth?projectId=${project.id}`}
+          className="text-sm bg-white border border-blue-200 hover:border-blue-300 text-blue-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+        >
+          Conectar Google Analytics
+        </a>
+      </div>
+    );
+  }
+
+  if (!project.gaPropertyId) {
+    return (
+      <p className="text-xs text-neutral-400">
+        Termina de conectar tu propiedad de GA4 en el Panel para ver Analiticas.
+      </p>
+    );
+  }
+
+  const topPages: { path: string; views: number }[] = project.gaTopPagesJson
+    ? JSON.parse(project.gaTopPagesJson)
+    : [];
+  const topCountries: { country: string; sessions: number }[] = project.gaTopCountriesJson
+    ? JSON.parse(project.gaTopCountriesJson)
+    : [];
+  const device: { mobile: number; desktop: number; tablet: number } = project.gaDeviceBreakdownJson
+    ? JSON.parse(project.gaDeviceBreakdownJson)
+    : { mobile: 0, desktop: 0, tablet: 0 };
+  const deviceTotal = device.mobile + device.desktop + device.tablet;
+  const topCampaigns: { source: string; sessions: number }[] = project.gaTopCampaignsJson
+    ? JSON.parse(project.gaTopCampaignsJson)
+    : [];
+  const topSources: { name: string; sessions: number }[] = project.gaTopSourcesJson
+    ? JSON.parse(project.gaTopSourcesJson)
+    : [];
+  const topMediums: { name: string; sessions: number }[] = project.gaTopMediumsJson
+    ? JSON.parse(project.gaTopMediumsJson)
+    : [];
+  const ordersByDate: { date: string; transactions: number; revenue: number }[] =
+    project.gaOrdersByDateJson ? JSON.parse(project.gaOrdersByDateJson) : [];
+  const topProducts: { name: string; unitsSold: number; revenue: number }[] =
+    project.gaTopProductsJson ? JSON.parse(project.gaTopProductsJson) : [];
+
+  const channels = {
+    organic: project.gaSessionsOrganic28d ?? 0,
+    paid: project.gaSessionsPaid28d ?? 0,
+    direct: project.gaSessionsDirect28d ?? 0,
+    referral: project.gaSessionsReferral28d ?? 0,
+    ai: project.gaSessionsAi28d ?? 0,
+  };
+  const channelsTotal = channels.organic + channels.paid + channels.direct + channels.referral + channels.ai;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Analiticas (ultimos 28 dias)</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Datos reales de Google Analytics para {project.domain}.
+          </p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 rounded-full px-3 py-1.5 transition-colors"
+        >
+          {refreshing ? "Actualizando..." : "Actualizar"}
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {!hasData ? (
+        <p className="text-xs text-neutral-400">
+          Dale a &quot;Actualizar&quot; para traer tus datos de Analytics.
+        </p>
+      ) : (
+        <>
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-4">
+            <p className="text-[11px] text-emerald-700 uppercase tracking-wide font-medium mb-2">
+              Ventas (ecommerce de GA4)
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <StatCard
+                label="Ingresos"
+                value={(project.gaRevenue28d ?? 0).toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
+              />
+              <StatCard label="Pedidos" value={String(project.gaTransactions28d ?? 0)} />
+              <StatCard
+                label="Ticket promedio"
+                value={(project.gaAvgOrderValue28d ?? 0).toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
+              />
+            </div>
+            {(project.gaTransactions28d ?? 0) === 0 && (
+              <p className="text-[11px] text-emerald-700/70 mt-2">
+                Si estos numeros estan en cero, tu tienda probablemente no
+                tiene el seguimiento de ecommerce de GA4 activado (Shopify
+                lo manda automaticamente si conectaste GA4 desde el admin
+                de Shopify, o vía Google &amp; YouTube channel app).
+              </p>
+            )}
+          </div>
+
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <p className="text-sm font-medium text-neutral-900 mb-2">Pedidos por dia</p>
+            <OrdersChart data={ordersByDate} />
+            {ordersByDate.length > 0 && (
+              <div className="mt-3 max-h-48 overflow-y-auto border border-neutral-100 rounded-lg">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-neutral-50">
+                    <tr className="text-neutral-400">
+                      <th className="text-left font-normal px-3 py-1.5">Fecha</th>
+                      <th className="text-right font-normal px-3 py-1.5">Pedidos</th>
+                      <th className="text-right font-normal px-3 py-1.5">Ingresos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...ordersByDate].reverse().map((d) => (
+                      <tr key={d.date} className="border-t border-neutral-100">
+                        <td className="px-3 py-1.5 text-neutral-600">
+                          {new Date(`${d.date}T00:00:00`).toLocaleDateString("es-MX", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </td>
+                        <td className="px-3 py-1.5 text-right text-neutral-700">{d.transactions}</td>
+                        <td className="px-3 py-1.5 text-right text-neutral-700">
+                          {d.revenue.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-[10px] text-neutral-400 mt-2">
+              GA4 no expone el detalle de pedidos individuales (numero de
+              orden, productos por orden) via API sin conectar BigQuery —
+              esta tabla es el nivel de detalle diario que si esta disponible.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Usuarios nuevos" value={(project.gaNewUsers28d ?? 0).toLocaleString("es-MX")} />
+            <StatCard
+              label="Tasa de interaccion"
+              value={project.gaEngagementRate28d != null ? `${Math.round(project.gaEngagementRate28d * 100)}%` : "—"}
+            />
+            <StatCard
+              label="Duracion prom. sesion"
+              value={project.gaAvgSessionSec28d != null ? `${Math.round(project.gaAvgSessionSec28d / 60)} min` : "—"}
+            />
+            <StatCard
+              label="Dispositivo principal"
+              value={
+                deviceTotal > 0
+                  ? device.mobile >= device.desktop
+                    ? `Movil (${Math.round((device.mobile / deviceTotal) * 100)}%)`
+                    : `Escritorio (${Math.round((device.desktop / deviceTotal) * 100)}%)`
+                  : "—"
+              }
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Paginas mas visitadas</p>
+              {topPages.length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin datos.</p>
+              ) : (
+                <div className="flex flex-col gap-1 max-h-72 overflow-y-auto pr-1">
+                  {topPages.map((p) => (
+                    <a
+                      key={p.path}
+                      href={`https://${project.domain}${p.path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="text-neutral-700 hover:text-[#1A73E8] hover:underline truncate">{p.path}</span>
+                      <span className="text-neutral-400 shrink-0">{p.views.toLocaleString("es-MX")}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Paises con mas visitas</p>
+              {topCountries.length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin datos.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {topCountries.map((c) => (
+                    <div key={c.country} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                      <span className="text-neutral-700 truncate">{c.country}</span>
+                      <span className="text-neutral-400 shrink-0">{c.sessions.toLocaleString("es-MX")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {deviceTotal > 0 && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
+              <div className="flex h-3 rounded-full overflow-hidden">
+                <div className="bg-[#1A73E8]" style={{ width: `${(device.mobile / deviceTotal) * 100}%` }} />
+                <div className="bg-emerald-500" style={{ width: `${(device.desktop / deviceTotal) * 100}%` }} />
+                <div className="bg-amber-500" style={{ width: `${(device.tablet / deviceTotal) * 100}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
+                <span><span className="inline-block w-2 h-2 rounded-full bg-[#1A73E8] mr-1.5" />Movil {Math.round((device.mobile / deviceTotal) * 100)}%</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Escritorio {Math.round((device.desktop / deviceTotal) * 100)}%</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Tablet {Math.round((device.tablet / deviceTotal) * 100)}%</span>
+              </div>
+            </div>
+          )}
+
+          {channelsTotal > 0 && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
+              <div className="flex h-3 rounded-full overflow-hidden">
+                <div className="bg-emerald-500" style={{ width: `${(channels.organic / channelsTotal) * 100}%` }} />
+                <div className="bg-[#1A73E8]" style={{ width: `${(channels.paid / channelsTotal) * 100}%` }} />
+                <div className="bg-neutral-400" style={{ width: `${(channels.direct / channelsTotal) * 100}%` }} />
+                <div className="bg-amber-500" style={{ width: `${(channels.referral / channelsTotal) * 100}%` }} />
+                <div className="bg-purple-500" style={{ width: `${(channels.ai / channelsTotal) * 100}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
+                <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Organico {channels.organic.toLocaleString("es-MX")}</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-[#1A73E8] mr-1.5" />Pago {channels.paid.toLocaleString("es-MX")}</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-neutral-400 mr-1.5" />Directo {channels.direct.toLocaleString("es-MX")}</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Referencia {channels.referral.toLocaleString("es-MX")}</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1.5" />IA {channels.ai.toLocaleString("es-MX")}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Fuentes de trafico</p>
+              {topSources.length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin datos.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {topSources.map((s) => (
+                    <div key={s.name} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                      <span className="text-neutral-700 truncate">{s.name}</span>
+                      <span className="text-neutral-400 shrink-0">{s.sessions.toLocaleString("es-MX")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Medio</p>
+              {topMediums.length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin datos.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {topMediums.map((m) => (
+                    <div key={m.name} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                      <span className="text-neutral-700 truncate">{m.name}</span>
+                      <span className="text-neutral-400 shrink-0">{m.sessions.toLocaleString("es-MX")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Campañas (UTM)</p>
+              {topCampaigns.length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin datos.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {topCampaigns.map((s) => (
+                    <div key={s.source} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                      <span className="text-neutral-700 truncate">{s.source}</span>
+                      <span className="text-neutral-400 shrink-0">{s.sessions.toLocaleString("es-MX")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Productos mas vendidos</p>
+              {topProducts.length === 0 ? (
+                <p className="text-xs text-neutral-400">
+                  Sin datos — necesita el seguimiento de ecommerce de GA4 activado.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {topProducts.map((p) => (
+                    <div key={p.name} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                      <span className="text-neutral-700 truncate">{p.name}</span>
+                      <span className="text-neutral-400 shrink-0 text-right">
+                        {p.unitsSold} uds ·{" "}
+                        {p.revenue.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function GaSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [properties, setProperties] = useState<GaProperty[]>([]);
+  const [propertyId, setPropertyId] = useState(project.gaPropertyId ?? "");
+  const [loadingProperties, setLoadingProperties] = useState(false);
+  const [savingProperty, setSavingProperty] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const connected = Boolean(project.gaConnectedAt);
+  const hasStats = project.gaStatsUpdatedAt != null;
+
+  useEffect(() => {
+    if (!connected || project.gaPropertyId) return;
+    setLoadingProperties(true);
+    setError(null);
+    fetch(`/api/projects/${project.id}/ga/properties`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) throw new Error(data.error);
+        setProperties(data.properties ?? []);
+        if (data.properties?.[0]) setPropertyId(data.properties[0].propertyId);
+      })
+      .catch((err) => setError(err.message || "Error al listar propiedades"))
+      .finally(() => setLoadingProperties(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, project.gaPropertyId, project.id]);
+
+  async function handleSaveProperty(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingProperty(true);
+    setError(null);
+    try {
+      await fetch(`/api/projects/${project.id}/ga/set-property`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId }),
+      });
+      router.refresh();
+    } finally {
+      setSavingProperty(false);
+    }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/ga/refresh-stats`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await fetch(`/api/projects/${project.id}/ga/disconnect`, {
+        method: "POST",
+      });
+      router.refresh();
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (!connected) {
+    return (
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">
+            Google Analytics (GA4)
+          </p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Cruza posiciones con trafico y conversiones reales de {project.domain}.
+          </p>
+        </div>
+        <a
+          href={`/api/ga/auth?projectId=${project.id}`}
+          className="text-sm bg-white border border-blue-200 hover:border-blue-300 text-blue-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+        >
+          Conectar Google Analytics
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 flex flex-col gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-sm text-neutral-700">Google Analytics conectado</p>
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
+        >
+          Desconectar
+        </button>
+      </div>
+
+      {!project.gaPropertyId ? (
+        <form onSubmit={handleSaveProperty} className="flex items-end gap-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-neutral-500">Propiedad GA4</label>
+            {loadingProperties ? (
+              <p className="text-xs text-neutral-400 py-1.5">Cargando propiedades...</p>
+            ) : properties.length > 0 ? (
+              <select
+                value={propertyId}
+                onChange={(e) => setPropertyId(e.target.value)}
+                className="bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#1A73E8] transition-colors w-64"
+              >
+                {properties.map((p) => (
+                  <option key={p.propertyId} value={p.propertyId}>
+                    {p.accountName} — {p.displayName} ({p.propertyId})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-xs text-neutral-400 py-1.5">
+                No se encontraron propiedades accesibles con esta cuenta.
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={savingProperty || !propertyId}
+            className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3 py-1.5"
+          >
+            Guardar
+          </button>
+        </form>
+      ) : (
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <p className="text-xs text-neutral-500">
+            Property{" "}
+            <span className="text-blue-700 font-medium">
+              {project.gaPropertyId}
+            </span>
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-xs bg-white border border-blue-200 hover:border-blue-300 disabled:opacity-50 text-blue-700 font-medium rounded-full px-3 py-1.5"
+          >
+            {refreshing ? "Actualizando..." : "Actualizar metricas"}
+          </button>
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {hasStats && (
+        <div className="flex flex-wrap gap-4 text-xs text-neutral-600 border-t border-blue-100 pt-2">
+          <span>
+            <strong className="text-neutral-900">
+              {(project.gaSessions28d ?? 0).toLocaleString("es-MX")}
+            </strong>{" "}
+            sesiones (28d)
+          </span>
+          <span>
+            <strong className="text-neutral-900">
+              {(project.gaUsers28d ?? 0).toLocaleString("es-MX")}
+            </strong>{" "}
+            usuarios (28d)
+          </span>
+          <span>
+            <strong className="text-neutral-900">
+              {(project.gaConversions28d ?? 0).toLocaleString("es-MX")}
+            </strong>{" "}
+            conversiones (28d)
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LocationSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [locationCode, setLocationCode] = useState(project.locationCode);
+  const [languageCode, setLanguageCode] = useState(project.languageCode);
+  const [saving, setSaving] = useState(false);
+
+  const dirty =
+    locationCode !== project.locationCode ||
+    languageCode !== project.languageCode;
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locationCode, languageCode }),
+      });
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-end gap-2 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+      <div className="flex flex-col gap-1">
+        <label className="text-[11px] text-neutral-500">Pais</label>
+        <select
+          value={locationCode}
+          onChange={(e) => setLocationCode(e.target.value)}
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        >
+          {LOCATIONS.map((loc) => (
+            <option key={loc.code} value={loc.code}>
+              {loc.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-[11px] text-neutral-500">Idioma</label>
+        <select
+          value={languageCode}
+          onChange={(e) => setLanguageCode(e.target.value)}
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        >
+          {LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {dirty && (
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3 py-2"
+        >
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
+      )}
+      <p className="text-[11px] text-neutral-400 pb-2">
+        Aplica a todas las keywords de este proyecto.
+      </p>
+    </div>
+  );
+}
+
+function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][number] }) {
+  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const [showKeywords, setShowKeywords] = useState(false);
+  const [kwSortBy, setKwSortBy] = useState<"keyword" | "volume" | "position">("position");
+  const [kwSortDir, setKwSortDir] = useState<"asc" | "desc">("asc");
+
+  const hasData = competitor.trafficCheckedAt != null || competitor.ecommerceCheckedAt != null;
+  const rankedKeywords: { keyword: string; position: number | null; searchVolume: number | null; url: string | null }[] =
+    competitor.rankedKeywordsJson ? JSON.parse(competitor.rankedKeywordsJson) : [];
+
+  function toggleKwSort(column: "keyword" | "volume" | "position") {
+    if (kwSortBy === column) {
+      setKwSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setKwSortBy(column);
+      setKwSortDir(column === "keyword" ? "asc" : column === "position" ? "asc" : "desc");
+    }
+  }
+
+  const sortedRankedKeywords = [...rankedKeywords].sort((a, b) => {
+    const dir = kwSortDir === "asc" ? 1 : -1;
+    if (kwSortBy === "keyword") return a.keyword.localeCompare(b.keyword) * dir;
+    const key = kwSortBy === "volume" ? "searchVolume" : "position";
+    const va = a[key];
+    const vb = b[key];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return (va - vb) * dir;
+  });
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    startProgress();
+    try {
+      await fetch(`/api/competitors/${competitor.id}/refresh`, { method: "POST" });
+      finishProgress();
+      router.refresh();
+    } finally {
+      setTimeout(() => setRefreshing(false), 300);
+    }
+  }
+
+  async function handleRemove() {
+    setRemoving(true);
+    try {
+      await fetch(`/api/competitors/${competitor.id}`, { method: "DELETE" });
+      router.refresh();
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  return (
+    <div className="bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-neutral-900">{competitor.domain}</p>
+          {competitor.ecommerceIsShopify && (
+            <span className="text-[10px] uppercase tracking-wide bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
+              Shopify
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-xs bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 rounded-full px-3 py-1.5 transition-colors"
+          >
+            {refreshing ? "Analizando..." : hasData ? "Actualizar" : "Analizar"}
+          </button>
+          <button
+            onClick={handleRemove}
+            disabled={removing}
+            className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
+          >
+            Quitar
+          </button>
+        </div>
+      </div>
+
+      {refreshing && (
+        <div className="mt-3">
+          <ProgressBar percent={progress} />
+        </div>
+      )}
+
+      {hasData && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-xs">
+          {competitor.ecommerceProductCount != null && (
+            <div>
+              <p className="text-neutral-400">Productos</p>
+              <p className="text-neutral-800 font-medium">{competitor.ecommerceProductCount}</p>
+            </div>
+          )}
+          {competitor.organicTrafficEstimate != null && (
+            <div>
+              <p className="text-neutral-400">Trafico organico est.</p>
+              <p className="text-neutral-800 font-medium">
+                {competitor.organicTrafficEstimate.toLocaleString("es-MX")}/mes
+              </p>
+            </div>
+          )}
+          {competitor.paidTrafficEstimate != null && (
+            <div>
+              <p className="text-neutral-400">Trafico pago est.</p>
+              <p className="text-neutral-800 font-medium">
+                {competitor.paidTrafficEstimate.toLocaleString("es-MX")}/mes
+              </p>
+            </div>
+          )}
+          {competitor.organicKeywords != null && (
+            <div>
+              <p className="text-neutral-400">Keywords posicionadas</p>
+              <p className="text-neutral-800 font-medium">
+                {competitor.organicKeywords.toLocaleString("es-MX")}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {rankedKeywords.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-neutral-100">
+          <button
+            onClick={() => setShowKeywords((v) => !v)}
+            className="text-xs text-neutral-500 hover:text-[#1A73E8] transition-colors"
+          >
+            {showKeywords ? "Ocultar" : "Ver"} keywords posicionadas ({rankedKeywords.length}) {showKeywords ? "▲" : "▼"}
+          </button>
+          {showKeywords && (
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-neutral-400">
+                    <th className="text-left font-normal px-2 py-1.5">
+                      <SortHeader label="Keyword" active={kwSortBy === "keyword"} dir={kwSortDir} onClick={() => toggleKwSort("keyword")} />
+                    </th>
+                    <th className="text-left font-normal px-2 py-1.5">URL</th>
+                    <th className="text-right font-normal px-2 py-1.5">
+                      <span className="inline-flex justify-end">
+                        <SortHeader label="Volumen/mes" active={kwSortBy === "volume"} dir={kwSortDir} onClick={() => toggleKwSort("volume")} />
+                      </span>
+                    </th>
+                    <th className="text-right font-normal px-2 py-1.5">
+                      <span className="inline-flex justify-end">
+                        <SortHeader label="Posicion" active={kwSortBy === "position"} dir={kwSortDir} onClick={() => toggleKwSort("position")} />
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedRankedKeywords.map((k) => (
+                    <tr key={k.keyword} className="odd:bg-neutral-50">
+                      <td className="px-2 py-1.5 text-neutral-700 whitespace-nowrap">{k.keyword}</td>
+                      <td className="px-2 py-1.5 max-w-[220px]">
+                        {k.url ? (
+                          <a
+                            href={k.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
+                          >
+                            {k.url.replace(/^https?:\/\//, "")}
+                          </a>
+                        ) : (
+                          <span className="text-neutral-300">—</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-neutral-400 whitespace-nowrap">
+                        {k.searchVolume != null ? `${k.searchVolume.toLocaleString("es-MX")}/mes` : "—"}
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        <span className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600 font-medium">
+                          #{k.position ?? "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {competitor.techDetectedJson &&
+        (() => {
+          const tech: { name: string; icon: string }[] = JSON.parse(
+            competitor.techDetectedJson
+          );
+          const unique = Array.from(new Map(tech.map((t) => [t.name, t])).values());
+          if (unique.length === 0) return null;
+          return (
+            <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-neutral-100">
+              {unique.map((t) => (
+                <span
+                  key={t.name}
+                  className="flex items-center gap-1 text-[11px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                >
+                  <span>{t.icon}</span>
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+    </div>
+  );
+}
+
+function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [refreshingOwn, setRefreshingOwn] = useState(false);
+
+  const competitorsWithData = project.competitors.filter(
+    (c) => c.organicTrafficEstimate != null || c.trafficValueEstimate != null
+  );
+  const ownHasData = project.domainOrganicTrafficEstimate != null;
+
+  const allDomains = [
+    project.domain,
+    ...competitorsWithData.map((c) => c.domain),
+  ];
+  const [visibleDomains, setVisibleDomains] = useState<Set<string>>(new Set(allDomains));
+
+  function toggleDomain(d: string) {
+    setVisibleDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
+  }
+
+  async function handleRefreshOwn() {
+    setRefreshingOwn(true);
+    try {
+      await fetch(`/api/projects/${project.id}/traffic-overview/refresh`, { method: "POST" });
+      router.refresh();
+    } finally {
+      setRefreshingOwn(false);
+    }
+  }
+
+  const points: CompetitorPoint[] = [];
+  if (ownHasData) {
+    points.push({
+      domain: project.domain,
+      organicTraffic: project.domainOrganicTrafficEstimate ?? 0,
+      trafficValue: project.domainTrafficValueEstimate ?? 0,
+      organicKeywords: project.domainOrganicKeywords ?? 0,
+      isOwn: true,
+    });
+  }
+  for (const c of competitorsWithData) {
+    points.push({
+      domain: c.domain,
+      organicTraffic: c.organicTrafficEstimate ?? 0,
+      trafficValue: c.trafficValueEstimate ?? 0,
+      organicKeywords: c.organicKeywords ?? 0,
+      isOwn: false,
+    });
+  }
+
+  const visiblePoints = points.filter((p) => visibleDomains.has(p.domain));
+
+  if (!ownHasData && competitorsWithData.length === 0) {
+    return (
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
+            <p className="text-neutral-500 text-xs mt-0.5">
+              Compara tu trafico organico estimado contra tus competidores,
+              como en SEMrush/Ahrefs.
+            </p>
+          </div>
+          <button
+            onClick={handleRefreshOwn}
+            disabled={refreshingOwn}
+            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {refreshingOwn ? "Analizando..." : "Analizar mi dominio"}
+          </button>
+        </div>
+        <p className="text-xs text-neutral-400 mt-3">
+          Analiza tu dominio arriba y agrega/analiza al menos un competidor
+          abajo para ver la comparacion.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Tamaño del circulo = keywords organicas. Eje X = valor estimado
+            del trafico. Eje Y = trafico organico estimado.
+          </p>
+        </div>
+        <button
+          onClick={handleRefreshOwn}
+          disabled={refreshingOwn}
+          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+        >
+          {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2">
+        {points.map((p) => (
+          <label key={p.domain} className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={visibleDomains.has(p.domain)}
+              onChange={() => toggleDomain(p.domain)}
+              className="w-3.5 h-3.5 accent-[#1A73E8] cursor-pointer"
+            />
+            <span className={p.isOwn ? "text-[#1A73E8] font-medium" : "text-neutral-600"}>
+              {p.domain}
+              {p.isOwn ? " (tu)" : ""}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      <CompetitorScatterChart points={visiblePoints} />
+
+      <div className="overflow-x-auto mt-3">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-neutral-400 border-b border-neutral-200">
+              <th className="text-left font-normal px-2 py-1.5">Dominio</th>
+              <th className="text-right font-normal px-2 py-1.5">Keywords organicas</th>
+              <th className="text-right font-normal px-2 py-1.5">Trafico organico est.</th>
+              <th className="text-right font-normal px-2 py-1.5">Valor est.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {points
+              .slice()
+              .sort((a, b) => b.organicTraffic - a.organicTraffic)
+              .map((p) => (
+                <tr key={p.domain} className="border-t border-neutral-100">
+                  <td className="px-2 py-1.5">
+                    <span className={p.isOwn ? "text-[#1A73E8] font-medium" : "text-neutral-700"}>
+                      {p.domain}
+                      {p.isOwn ? " (tu)" : ""}
+                    </span>
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-neutral-600">
+                    {p.organicKeywords.toLocaleString("es-MX")}
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-neutral-600">
+                    {p.organicTraffic.toLocaleString("es-MX")}/mes
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-neutral-600">
+                    ${p.trafficValue.toLocaleString("es-MX")}/mes
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CompetitorsSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [domain, setDomain] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await fetch(`/api/projects/${project.id}/competitors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain }),
+      });
+      setDomain("");
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <CompetitorComparisonOverview project={project} />
+
+      <form onSubmit={handleAdd} className="flex gap-2">
+        <input
+          value={domain}
+          onChange={(e) => setDomain(normalizeDomain(e.target.value))}
+          placeholder="competidor.com o su tienda Shopify"
+          className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        />
+        <button
+          type="submit"
+          disabled={saving || !domain}
+          className="text-sm bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 transition-colors"
+        >
+          {saving ? "Agregando..." : "Agregar"}
+        </button>
+      </form>
+
+      <p className="text-[11px] text-neutral-400">
+        El trafico es un estimado (como el de SEMrush/Ahrefs), no un dato
+        real — nadie fuera del dueño del sitio puede ver trafico o ventas
+        reales de otra tienda. Si el dominio es una tienda Shopify,
+        detectamos su catalogo publico automaticamente.
+      </p>
+
+      {project.competitors.length === 0 ? (
+        <p className="text-neutral-400 text-sm">Sin competidores agregados.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {project.competitors.map((c) => (
+            <CompetitorCard key={c.id} competitor={c} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddKeywordForm({ projectId }: { projectId: string }) {
+  const router = useRouter();
+  const [text, setText] = useState("");
+  const [engine, setEngine] = useState("google");
+  const [device, setDevice] = useState("desktop");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/keywords`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, engine, device }),
+      });
+      if (res.ok) {
+        setText("");
+        router.refresh();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4"
+    >
+      <div className="flex flex-col gap-1">
+        <label className="text-[11px] text-neutral-500">Keyword</label>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="ej. mobiliario para hoteles"
+          required
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-neutral-500">Motor</label>
+          <select
+            value={engine}
+            onChange={(e) => setEngine(e.target.value)}
+            className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+          >
+            <option value="google">Google</option>
+            <option value="bing">Bing</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-neutral-500">Dispositivo</label>
+          <select
+            value={device}
+            onChange={(e) => setDevice(e.target.value)}
+            className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+          >
+            <option value="desktop">Escritorio</option>
+            <option value="mobile">Móvil</option>
+          </select>
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 text-sm transition-colors"
+        >
+          {saving ? "Agregando..." : "Agregar"}
+        </button>
+
+        <p className="text-[11px] text-neutral-400 ml-auto self-center">
+          ¿ChatGPT o Perplexity? Agrega esas keywords desde SEO IA.
+        </p>
+      </div>
+    </form>
+  );
+}
+
+interface AppSearchResult {
+  appId: string;
+  title: string;
+  icon: string | null;
+  developer: string | null;
+  rating: number | null;
+  reviewsCount: number | null;
+  isFree: boolean | null;
+  price: number | null;
+  currency: string | null;
+  url: string | null;
+}
+
+function AppResultRow({
+  app,
+  isMine,
+  onSelect,
+  selecting,
+}: {
+  app: AppSearchResult;
+  isMine: boolean;
+  onSelect: () => void;
+  selecting: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white border border-neutral-200">
+      {app.icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={app.icon} alt="" className="w-9 h-9 rounded-lg shrink-0" />
+      ) : (
+        <div className="w-9 h-9 rounded-lg bg-neutral-100 shrink-0" />
+      )}
+      <div className="min-w-0 flex-1">
+        <a
+          href={app.url ?? undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-neutral-900 truncate hover:text-[#1A73E8] hover:underline block"
+        >
+          {app.title}
+        </a>
+        <p className="text-[11px] text-neutral-400 truncate">
+          {app.developer ? `${app.developer} · ` : ""}
+          {app.rating != null ? `★ ${app.rating.toFixed(1)}` : "Sin calificacion"}
+          {app.reviewsCount != null ? ` (${app.reviewsCount.toLocaleString("es-MX")})` : ""}
+          {app.isFree === false && app.price != null
+            ? ` · ${app.currency ?? ""}${app.price}`
+            : app.isFree
+            ? " · Gratis"
+            : ""}
+        </p>
+      </div>
+      {isMine ? (
+        <span className="text-[11px] bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 shrink-0">
+          Tu app
+        </span>
+      ) : (
+        <button
+          onClick={onSelect}
+          disabled={selecting}
+          className="text-[11px] bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 rounded-full px-2.5 py-1 shrink-0 transition-colors whitespace-nowrap"
+        >
+          {selecting ? "..." : "Es mi app"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Built and working, but the tab shows a "Proximamente" placeholder for now
+// (see activeTab === "apps" above) until it's ready to launch.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function AppsSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [query, setQuery] = useState(project.appQuery ?? project.name);
+  const [loading, setLoading] = useState(false);
+  const [selectingId, setSelectingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const cached: { google?: AppSearchResult[]; apple?: AppSearchResult[] } =
+    project.appsResultsJson ? JSON.parse(project.appsResultsJson) : {};
+  const googleResults = cached.google ?? [];
+  const appleResults = cached.apple ?? [];
+  const hasResults = project.appsCheckedAt != null;
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/apps/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al buscar apps");
+      if (data.errors?.length) setError(data.errors.join(" · "));
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al buscar apps");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSelect(platform: "google" | "apple", appId: string) {
+    setSelectingId(appId);
+    try {
+      await fetch(`/api/projects/${project.id}/apps/select`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, appId }),
+      });
+      router.refresh();
+    } finally {
+      setSelectingId(null);
+    }
+  }
+
+  const hasMineData = project.googlePlayAppId || project.appleAppId;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+        <p className="text-sm font-medium text-neutral-900">Apps iOS y Android</p>
+        <p className="text-neutral-500 text-xs mt-0.5 mb-3">
+          Busca tu app (o la de tus competidores) en Google Play y la App
+          Store: calificacion, numero de reseñas y precio.
+        </p>
+        <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
+            <label className="text-[11px] text-neutral-500">Nombre de la app o marca</label>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={project.name}
+              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !query}
+            className="bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 text-sm transition-colors"
+          >
+            {loading ? "Buscando..." : "Buscar apps"}
+          </button>
+        </form>
+        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+        <p className="text-[11px] text-neutral-400 mt-2">
+          La busqueda de apps puede tardar hasta medio minuto — DataForSEO
+          procesa esta consulta como una tarea, no es instantanea.
+        </p>
+      </div>
+
+      {hasMineData && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {project.googlePlayAppRating != null && (
+            <StatCard label="Google Play — calificacion" value={project.googlePlayAppRating.toFixed(1)} />
+          )}
+          {project.googlePlayAppReviews != null && (
+            <StatCard label="Google Play — reseñas" value={project.googlePlayAppReviews.toLocaleString("es-MX")} />
+          )}
+          {project.appleAppRating != null && (
+            <StatCard label="App Store — calificacion" value={project.appleAppRating.toFixed(1)} />
+          )}
+          {project.appleAppReviews != null && (
+            <StatCard label="App Store — reseñas" value={project.appleAppReviews.toLocaleString("es-MX")} />
+          )}
+        </div>
+      )}
+
+      {hasResults && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+              Google Play
+            </h2>
+            {googleResults.length === 0 ? (
+              <p className="text-xs text-neutral-400">Sin resultados.</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {googleResults.map((app) => (
+                  <AppResultRow
+                    key={app.appId}
+                    app={app}
+                    isMine={project.googlePlayAppId === app.appId}
+                    selecting={selectingId === app.appId}
+                    onSelect={() => handleSelect("google", app.appId)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+              App Store
+            </h2>
+            {appleResults.length === 0 ? (
+              <p className="text-xs text-neutral-400">Sin resultados.</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {appleResults.map((app) => (
+                  <AppResultRow
+                    key={app.appId}
+                    app={app}
+                    isMine={project.appleAppId === app.appId}
+                    selecting={selectingId === app.appId}
+                    onSelect={() => handleSelect("apple", app.appId)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

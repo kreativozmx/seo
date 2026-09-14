@@ -1,0 +1,185 @@
+export interface RankingDTO {
+  id: string;
+  keywordId: string;
+  domain: string;
+  position: number | null;
+  url: string | null;
+  source: string;
+  aiMentioned: boolean | null;
+  snippet: string | null;
+  aiOverviewText: string | null;
+  aiCitedDomainsJson: string | null;
+  topResultsJson: string | null;
+  checkedAt: string;
+}
+
+export interface KeywordDTO {
+  id: string;
+  projectId: string;
+  text: string;
+  engine: string;
+  device: string;
+  source: string;
+  createdAt: string;
+  archivedAt: string | null;
+  rankings: RankingDTO[];
+}
+
+export interface CompetitorDTO {
+  id: string;
+  projectId: string;
+  domain: string;
+  name: string | null;
+  ecommerceIsShopify: boolean | null;
+  ecommerceProductCount: number | null;
+  ecommerceCollectionCount: number | null;
+  ecommerceCheckedAt: string | null;
+  organicKeywords: number | null;
+  organicTrafficEstimate: number | null;
+  paidKeywords: number | null;
+  paidTrafficEstimate: number | null;
+  trafficValueEstimate: number | null;
+  trafficCheckedAt: string | null;
+  techDetectedJson: string | null;
+  rankedKeywordsJson: string | null;
+}
+
+export interface ProjectDTO {
+  id: string;
+  name: string;
+  domain: string;
+  locationCode: string;
+  languageCode: string;
+  createdAt: string;
+  updatedAt: string;
+  gscSiteUrl: string | null;
+  gscConnectedAt: string | null;
+  gscClicks28d: number | null;
+  gscImpressions28d: number | null;
+  gscAvgPosition28d: number | null;
+  gscStatsUpdatedAt: string | null;
+  psiPerformanceScore: number | null;
+  psiLcpMs: number | null;
+  psiCls: number | null;
+  psiInpMs: number | null;
+  psiFieldDataSource: string | null;
+  psiIssuesJson: string | null;
+  psiUpdatedAt: string | null;
+  gaPropertyId: string | null;
+  gaConnectedAt: string | null;
+  gaSessions28d: number | null;
+  gaUsers28d: number | null;
+  gaConversions28d: number | null;
+  gaStatsUpdatedAt: string | null;
+  gaSessionsOrganic28d: number | null;
+  gaSessionsPaid28d: number | null;
+  gaSessionsDirect28d: number | null;
+  gaSessionsReferral28d: number | null;
+  gaSessionsAi28d: number | null;
+  gaChannelsUpdatedAt: string | null;
+  gaRevenue28d: number | null;
+  gaTransactions28d: number | null;
+  gaAvgOrderValue28d: number | null;
+  gaNewUsers28d: number | null;
+  gaEngagementRate28d: number | null;
+  gaAvgSessionSec28d: number | null;
+  gaTopPagesJson: string | null;
+  gaTopCountriesJson: string | null;
+  gaDeviceBreakdownJson: string | null;
+  gaTopCampaignsJson: string | null;
+  gaTopSourcesJson: string | null;
+  gaTopMediumsJson: string | null;
+  gaOrdersByDateJson: string | null;
+  gaTopProductsJson: string | null;
+  gaAnalyticsUpdatedAt: string | null;
+  gaAiTrafficSessions28d: number | null;
+  gaAiTrafficBySourceJson: string | null;
+  gaAiLandingPagesJson: string | null;
+  aiQueryCrossRefJson: string | null;
+  aiQueryCrossRefUpdatedAt: string | null;
+  shopifyShopDomain: string | null;
+  shopifyConnectedAt: string | null;
+  shopifyOrders28d: number | null;
+  shopifySales28d: number | null;
+  shopifyCurrency: string | null;
+  shopifySalesUpdatedAt: string | null;
+  gbpLocationName: string | null;
+  gbpConnectedAt: string | null;
+  gbpImpressions28d: number | null;
+  gbpCalls28d: number | null;
+  gbpWebsiteClicks28d: number | null;
+  gbpDirectionRequests28d: number | null;
+  gbpStatsUpdatedAt: string | null;
+  kgFound: boolean | null;
+  kgName: string | null;
+  kgDescription: string | null;
+  kgImageUrl: string | null;
+  kgScore: number | null;
+  kgCheckedAt: string | null;
+  safeBrowsingClean: boolean | null;
+  safeBrowsingThreats: string | null;
+  safeBrowsingCheckedAt: string | null;
+  youtubeChannelId: string | null;
+  youtubeChannelTitle: string | null;
+  youtubeDescription: string | null;
+  youtubeCountry: string | null;
+  youtubeChannelPublishedAt: string | null;
+  youtubeThumbnailUrl: string | null;
+  youtubeSubscribers: number | null;
+  youtubeViews: number | null;
+  youtubeVideoCount: number | null;
+  youtubeRecentVideosJson: string | null;
+  youtubeUpdatedAt: string | null;
+  ecommercePlatform: string | null;
+  ecommerceIsShopify: boolean | null;
+  ecommerceProductCount: number | null;
+  ecommerceProductCountIsMin: boolean | null;
+  ecommerceCollectionCount: number | null;
+  ecommerceCollectionCountIsMin: boolean | null;
+  ecommerceMissingDescCount: number | null;
+  ecommerceMissingImageCount: number | null;
+  ecommerceMissingAltCount: number | null;
+  ecommerceThinTitleCount: number | null;
+  ecommerceFlaggedJson: string | null;
+  ecommercePriceMin: number | null;
+  ecommercePriceMax: number | null;
+  ecommerceAvgPrice: number | null;
+  ecommerceTotalVariants: number | null;
+  ecommerceTopVendorsJson: string | null;
+  ecommerceTopTypesJson: string | null;
+  ecommerceTopTagsJson: string | null;
+  ecommerceNewestProductAt: string | null;
+  ecommerceCheckedAt: string | null;
+  techDetectedJson: string | null;
+  techCheckedAt: string | null;
+  domainOrganicKeywords: number | null;
+  domainOrganicTrafficEstimate: number | null;
+  domainTrafficValueEstimate: number | null;
+  domainTrafficCheckedAt: string | null;
+  appQuery: string | null;
+  appsResultsJson: string | null;
+  appsCheckedAt: string | null;
+  googlePlayAppId: string | null;
+  googlePlayAppTitle: string | null;
+  googlePlayAppIcon: string | null;
+  googlePlayAppRating: number | null;
+  googlePlayAppReviews: number | null;
+  googlePlayAppUrl: string | null;
+  appleAppId: string | null;
+  appleAppTitle: string | null;
+  appleAppIcon: string | null;
+  appleAppRating: number | null;
+  appleAppReviews: number | null;
+  appleAppUrl: string | null;
+  competitors: CompetitorDTO[];
+  keywords: KeywordDTO[];
+}
+
+export const ENGINE_LABELS: Record<string, string> = {
+  google: "Google",
+  bing: "Bing",
+  chatgpt: "ChatGPT",
+  perplexity: "Perplexity",
+};
+
+export const AUTO_ENGINES = ["google", "bing"];

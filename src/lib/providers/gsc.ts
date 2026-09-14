@@ -1,0 +1,256 @@
+import { google } from "googleapis";
+import { OAuth2Client } from "google-auth-library";
+import { normalizeDomain } from "@/lib/domain";
+
+export async function listVerifiedSites(auth: OAuth2Client) {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+  const res = await searchconsole.sites.list();
+  return (res.data.siteEntry ?? []).filter(
+    (s) => s.permissionLevel !== "siteUnverifiedUser"
+  );
+}
+
+// Picks the verified GSC property that best matches a plain domain, trying
+// the domain-property form first (sc-domain:example.com), then the common
+// URL-prefix variants.
+export function matchSiteUrl(
+  sites: { siteUrl?: string | null }[],
+  domain: string
+): string | null {
+  const target = normalizeDomain(domain);
+  const candidates = [
+    `sc-domain:${target}`,
+    `https://${target}/`,
+    `https://www.${target}/`,
+    `http://${target}/`,
+    `http://www.${target}/`,
+  ];
+  for (const candidate of candidates) {
+    const match = sites.find((s) => s.siteUrl === candidate);
+    if (match?.siteUrl) return match.siteUrl;
+  }
+  return null;
+}
+
+export interface GscQueryRow {
+  query: string;
+  position: number;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+}
+
+export async function fetchTopQueries(
+  auth: OAuth2Client,
+  siteUrl: string,
+  days = 28,
+  rowLimit = 200
+): Promise<GscQueryRow[]> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+
+  const end = new Date();
+  end.setDate(end.getDate() - 2); // GSC data has a ~2 day delay
+  const start = new Date(end);
+  start.setDate(start.getDate() - days);
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      dimensions: ["query"],
+      rowLimit,
+    },
+  });
+
+  return (res.data.rows ?? []).map((row) => ({
+    query: row.keys?.[0] ?? "",
+    position: row.position ?? 0,
+    clicks: row.clicks ?? 0,
+    impressions: row.impressions ?? 0,
+    ctr: row.ctr ?? 0,
+  }));
+}
+
+export interface GscHistoryRow {
+  query: string;
+  date: string; // YYYY-MM-DD
+  position: number;
+  clicks: number;
+  impressions: number;
+}
+
+// Per-day position history for the top queries by impressions, in a single
+// API call (dimensions: query + date). Used to backfill the ranking chart
+// with real past dates instead of a single "now" snapshot.
+export async function fetchQueryHistory(
+  auth: OAuth2Client,
+  siteUrl: string,
+  days = 30,
+  maxQueries = 30
+): Promise<GscHistoryRow[]> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+
+  const end = new Date();
+  end.setDate(end.getDate() - 2);
+  const start = new Date(end);
+  start.setDate(start.getDate() - days);
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      dimensions: ["query", "date"],
+      rowLimit: 25000,
+    },
+  });
+
+  const rows: GscHistoryRow[] = (res.data.rows ?? []).map((row) => ({
+    query: row.keys?.[0] ?? "",
+    date: row.keys?.[1] ?? "",
+    position: row.position ?? 0,
+    clicks: row.clicks ?? 0,
+    impressions: row.impressions ?? 0,
+  }));
+
+  const impressionsByQuery = new Map<string, number>();
+  for (const row of rows) {
+    impressionsByQuery.set(
+      row.query,
+      (impressionsByQuery.get(row.query) ?? 0) + row.impressions
+    );
+  }
+
+  const topQueries = new Set(
+    Array.from(impressionsByQuery.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, maxQueries)
+      .map(([query]) => query)
+  );
+
+  return rows.filter((row) => topQueries.has(row.query));
+}
+
+export interface PageQueryCrossRef {
+  path: string;
+  queries: { query: string; impressions: number; clicks: number; position: number }[];
+}
+
+// For a given set of page paths (e.g. the pages AI assistants are sending
+// traffic to), find the real Google queries that already rank for each
+// page. GSC never reveals what someone actually typed into ChatGPT/
+// Perplexity — this is a proxy: the queries Google associates with that
+// same content are a reasonable stand-in for "what people are probably
+// asking" when an AI cites or links to that page.
+export async function fetchQueriesForPages(
+  auth: OAuth2Client,
+  siteUrl: string,
+  pagePaths: string[],
+  days = 28,
+  maxQueriesPerPage = 5
+): Promise<PageQueryCrossRef[]> {
+  if (pagePaths.length === 0) return [];
+
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+
+  const end = new Date();
+  end.setDate(end.getDate() - 2);
+  const start = new Date(end);
+  start.setDate(start.getDate() - days);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      dimensions: ["page", "query"],
+      rowLimit: 25000,
+    },
+  });
+
+  function pathOf(fullUrl: string): string {
+    try {
+      const u = new URL(fullUrl);
+      return u.pathname.replace(/\/$/, "") || "/";
+    } catch {
+      return fullUrl;
+    }
+  }
+
+  const wantedPaths = new Set(pagePaths.map((p) => p.replace(/\/$/, "") || "/"));
+
+  const byPath = new Map<
+    string,
+    { query: string; impressions: number; clicks: number; position: number }[]
+  >();
+
+  for (const row of res.data.rows ?? []) {
+    const fullUrl = row.keys?.[0] ?? "";
+    const path = pathOf(fullUrl);
+    if (!wantedPaths.has(path)) continue;
+    const query = row.keys?.[1] ?? "";
+    if (!query) continue;
+    if (!byPath.has(path)) byPath.set(path, []);
+    byPath.get(path)!.push({
+      query,
+      impressions: row.impressions ?? 0,
+      clicks: row.clicks ?? 0,
+      position: row.position ?? 0,
+    });
+  }
+
+  const result: PageQueryCrossRef[] = [];
+  for (const path of Array.from(wantedPaths)) {
+    const queries = (byPath.get(path) ?? [])
+      .sort((a, b) => b.impressions - a.impressions)
+      .slice(0, maxQueriesPerPage);
+    if (queries.length > 0) result.push({ path, queries });
+  }
+  return result;
+}
+
+export interface GscSiteSummary {
+  clicks: number;
+  impressions: number;
+  avgPosition: number;
+}
+
+// Aggregate totals (no dimensions) for the site over the trailing window —
+// used to populate the cross-project dashboard without listing every query.
+export async function fetchSiteSummary(
+  auth: OAuth2Client,
+  siteUrl: string,
+  days = 28
+): Promise<GscSiteSummary> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+
+  const end = new Date();
+  end.setDate(end.getDate() - 2);
+  const start = new Date(end);
+  start.setDate(start.getDate() - days);
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      dimensions: [],
+      rowLimit: 1,
+    },
+  });
+
+  const row = res.data.rows?.[0];
+  return {
+    clicks: row?.clicks ?? 0,
+    impressions: row?.impressions ?? 0,
+    avgPosition: row?.position ?? 0,
+  };
+}
