@@ -12,6 +12,7 @@ import CompetitorScatterChart, {
   CompetitorPoint,
   XMetricKey,
   X_METRICS,
+  colorForCompetitorIndex,
 } from "@/components/CompetitorScatterChart";
 import { useSimulatedProgress } from "@/lib/useSimulatedProgress";
 import { ProjectDTO, KeywordDTO } from "@/lib/types";
@@ -4787,8 +4788,6 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
 const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
   trafficValue:
     "lo que costaria comprar ese mismo trafico organico con anuncios de pago (Google Ads) en vez de aparecer gratis en los resultados. Entre mas alto, mas dinero en publicidad le esta ahorrando el SEO cada mes.",
-  top3Percent:
-    "de las palabras clave que le rastreamos a ese sitio, que porcentaje aparece en las primeras 3 posiciones de Google — el lugar donde se lleva la mayoria de los clics.",
 };
 
 function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
@@ -4827,45 +4826,12 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
 
   const [xMetric, setXMetric] = useState<XMetricKey>("trafficValue");
 
-  // % of tracked keywords currently in the top 3 for the project's own
-  // domain, using our own real rank-tracking data (not the DataForSEO
-  // estimate) — one latest position per keyword.
-  function ownTop3Percent(): number {
-    const withPosition = project.keywords
-      .map((k) => {
-        let latest: KeywordDTO["rankings"][number] | null = null;
-        for (const r of k.rankings) {
-          if (r.domain !== project.domain || r.position == null) continue;
-          if (!latest || new Date(r.checkedAt) > new Date(latest.checkedAt)) latest = r;
-        }
-        return latest?.position ?? null;
-      })
-      .filter((p): p is number => p != null);
-    if (withPosition.length === 0) return 0;
-    const top3 = withPosition.filter((p) => p <= 3).length;
-    return (top3 / withPosition.length) * 100;
-  }
-
-  // Same idea for a competitor, but from the sampled ranked-keywords list
-  // DataForSEO gave us for that domain (up to 20 keywords) — an
-  // approximation, not full coverage.
-  function competitorTop3Percent(c: ProjectDTO["competitors"][number]): number {
-    const ranked: { position: number | null }[] = c.rankedKeywordsJson
-      ? JSON.parse(c.rankedKeywordsJson)
-      : [];
-    const withPosition = ranked.map((k) => k.position).filter((p): p is number => p != null);
-    if (withPosition.length === 0) return 0;
-    const top3 = withPosition.filter((p) => p <= 3).length;
-    return (top3 / withPosition.length) * 100;
-  }
-
   const points: CompetitorPoint[] = [];
   if (ownHasData) {
     points.push({
       domain: project.domain,
       organicTraffic: project.domainOrganicTrafficEstimate ?? 0,
       trafficValue: project.domainTrafficValueEstimate ?? 0,
-      top3Percent: ownTop3Percent(),
       organicKeywords: project.domainOrganicKeywords ?? 0,
       isOwn: true,
     });
@@ -4875,11 +4841,16 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
       domain: c.domain,
       organicTraffic: c.organicTrafficEstimate ?? 0,
       trafficValue: c.trafficValueEstimate ?? 0,
-      top3Percent: competitorTop3Percent(c),
       organicKeywords: c.organicKeywords ?? 0,
       isOwn: false,
     });
   }
+
+  const colorMap: Record<string, string> = {};
+  points.forEach((p, i) => {
+    colorMap[p.domain] = colorForCompetitorIndex(i);
+  });
+  const colorFor = (domain: string) => colorMap[domain] ?? "#a3a3a3";
 
   const visiblePoints = points.filter((p) => visibleDomains.has(p.domain));
 
@@ -4980,6 +4951,10 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
               onChange={() => toggleDomain(p.domain)}
               className="w-3.5 h-3.5 accent-[#1A73E8] cursor-pointer"
             />
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: colorFor(p.domain) }}
+            />
             <span className={p.isOwn ? "text-[#1A73E8] font-medium" : "text-neutral-600"}>
               {p.domain}
               {p.isOwn ? " (tu)" : ""}
@@ -4988,7 +4963,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         ))}
       </div>
 
-      <CompetitorScatterChart points={visiblePoints} xMetric={xMetric} />
+      <CompetitorScatterChart points={visiblePoints} xMetric={xMetric} colorFor={colorFor} />
 
       <div className="overflow-x-auto mt-3">
         <table className="w-full text-xs">
@@ -5017,9 +4992,15 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
               .map((p) => (
                 <tr key={p.domain} className="border-t border-neutral-100">
                   <td className="px-2 py-1.5">
-                    <span className={p.isOwn ? "text-[#1A73E8] font-medium" : "text-neutral-700"}>
-                      {p.domain}
-                      {p.isOwn ? " (tu)" : ""}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: colorFor(p.domain) }}
+                      />
+                      <span className={p.isOwn ? "text-[#1A73E8] font-medium" : "text-neutral-700"}>
+                        {p.domain}
+                        {p.isOwn ? " (tu)" : ""}
+                      </span>
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-right text-neutral-600">
@@ -5035,6 +5016,271 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
               ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+interface CompetitorSuggestionRow {
+  domain: string;
+  commonKeywords: number;
+  organicKeywords: number | null;
+  organicTrafficEstimate: number | null;
+}
+
+function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<CompetitorSuggestionRow[] | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState(false);
+  const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
+
+  async function handleDetect() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/competitors/discover`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al detectar competidores");
+      setSuggestions(data.suggestions ?? []);
+      setChecked(new Set());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al detectar competidores");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggle(domain: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
+      return next;
+    });
+  }
+
+  async function handleAddSelected() {
+    if (checked.size === 0) return;
+    setAdding(true);
+    const domains = Array.from(checked);
+    setAddProgress({ done: 0, total: domains.length });
+    for (const domain of domains) {
+      try {
+        await fetch(`/api/projects/${projectId}/competitors`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain }),
+        });
+      } catch {
+        // best-effort — keep going with the rest
+      }
+      setAddProgress((prev) => (prev ? { ...prev, done: prev.done + 1 } : prev));
+    }
+    setAdding(false);
+    setAddProgress(null);
+    setSuggestions(null);
+    setChecked(new Set());
+    router.refresh();
+  }
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Detectar competidores</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Buscamos hasta 20 dominios que compiten por las mismas palabras
+            clave que tu, para que elijas cuales agregar al rastreo.
+          </p>
+        </div>
+        <button
+          onClick={handleDetect}
+          disabled={loading}
+          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-3.5 py-2 transition-colors whitespace-nowrap"
+        >
+          {loading ? "Buscando..." : suggestions ? "Buscar de nuevo" : "Detectar competidores"}
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {suggestions && suggestions.length === 0 && !error && (
+        <p className="text-xs text-neutral-400">
+          No encontramos mas competidores sugeridos (o ya los tienes todos agregados).
+        </p>
+      )}
+
+      {suggestions && suggestions.length > 0 && (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-neutral-400 border-b border-neutral-200">
+                  <th className="text-left font-normal px-2 py-1.5 w-8">
+                    <input
+                      type="checkbox"
+                      checked={checked.size === suggestions.length}
+                      onChange={() =>
+                        setChecked((prev) =>
+                          prev.size === suggestions.length
+                            ? new Set()
+                            : new Set(suggestions.map((s) => s.domain))
+                        )
+                      }
+                      className="w-3.5 h-3.5 accent-[#1A73E8] cursor-pointer"
+                    />
+                  </th>
+                  <th className="text-left font-normal px-2 py-1.5">Dominio</th>
+                  <th className="text-right font-normal px-2 py-1.5">Keywords en comun</th>
+                  <th className="text-right font-normal px-2 py-1.5">Keywords organicas</th>
+                  <th className="text-right font-normal px-2 py-1.5">Trafico organico est.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {suggestions.map((s) => (
+                  <tr
+                    key={s.domain}
+                    className="border-t border-neutral-100 cursor-pointer hover:bg-white"
+                    onClick={() => toggle(s.domain)}
+                  >
+                    <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={checked.has(s.domain)}
+                        onChange={() => toggle(s.domain)}
+                        className="w-3.5 h-3.5 accent-[#1A73E8] cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-neutral-700">{s.domain}</td>
+                    <td className="px-2 py-1.5 text-right text-neutral-600">
+                      {s.commonKeywords.toLocaleString("es-MX")}
+                    </td>
+                    <td className="px-2 py-1.5 text-right text-neutral-500">
+                      {s.organicKeywords != null ? s.organicKeywords.toLocaleString("es-MX") : "—"}
+                    </td>
+                    <td className="px-2 py-1.5 text-right text-neutral-400">
+                      {s.organicTrafficEstimate != null
+                        ? `${s.organicTrafficEstimate.toLocaleString("es-MX")}/mes`
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            onClick={handleAddSelected}
+            disabled={checked.size === 0 || adding}
+            className="self-start text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3.5 py-2 transition-colors whitespace-nowrap"
+          >
+            {adding
+              ? `Agregando ${addProgress?.done ?? 0}/${addProgress?.total ?? 0}...`
+              : `Agregar ${checked.size} seleccionado${checked.size === 1 ? "" : "s"}`}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function KeywordGapSection({ project }: { project: ProjectDTO }) {
+  const competitorsWithKeywords = project.competitors.filter((c) => c.rankedKeywordsJson);
+  if (competitorsWithKeywords.length === 0) return null;
+
+  function ownPositionFor(keywordText: string): number | null {
+    const kw = project.keywords.find(
+      (k) => k.text.toLowerCase() === keywordText.toLowerCase()
+    );
+    if (!kw) return null;
+    let latest: KeywordDTO["rankings"][number] | null = null;
+    for (const r of kw.rankings) {
+      if (r.domain !== project.domain || r.position == null) continue;
+      if (!latest || new Date(r.checkedAt) > new Date(latest.checkedAt)) latest = r;
+    }
+    return latest?.position ?? null;
+  }
+
+  type GapRow = { volume: number | null; ownPosition: number | null; positions: Record<string, number | null> };
+  const rows = new Map<string, GapRow>();
+
+  for (const kw of project.keywords) {
+    const key = kw.text.toLowerCase();
+    if (!rows.has(key)) {
+      rows.set(key, { volume: null, ownPosition: ownPositionFor(kw.text), positions: {} });
+    }
+  }
+
+  for (const c of competitorsWithKeywords) {
+    const ranked: { keyword: string; position: number | null; searchVolume: number | null }[] =
+      JSON.parse(c.rankedKeywordsJson!);
+    for (const r of ranked) {
+      if (!r.keyword) continue;
+      const key = r.keyword.toLowerCase();
+      const existing = rows.get(key) ?? {
+        volume: null,
+        ownPosition: ownPositionFor(r.keyword),
+        positions: {},
+      };
+      if (existing.volume == null) existing.volume = r.searchVolume;
+      existing.positions[c.domain] = r.position;
+      rows.set(key, existing);
+    }
+  }
+
+  const sortedRows = Array.from(rows.entries())
+    .map(([keyword, data]) => ({ keyword, ...data }))
+    .sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0));
+
+  const competitorDomains = competitorsWithKeywords.map((c) => c.domain);
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <p className="text-sm font-medium text-neutral-900 mb-0.5">Comparativa de keywords</p>
+      <p className="text-neutral-400 text-[14px] mb-3">
+        Tus keywords rastreadas y las que le detectamos a cada competidor
+        (hasta 20 de muestra por competidor, no su catalogo completo), con
+        la posicion de cada quien lado a lado.
+      </p>
+      <div className="overflow-x-auto">
+        <div className="max-h-[420px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-neutral-50">
+              <tr className="text-neutral-400 border-b border-neutral-200">
+                <th className="text-left px-2 py-1.5 font-normal bg-neutral-50">Keyword</th>
+                <th className="text-right px-2 py-1.5 font-normal bg-neutral-50">Volumen</th>
+                <th className="text-right px-2 py-1.5 font-normal text-[#1A73E8] bg-neutral-50 whitespace-nowrap">
+                  Tu
+                </th>
+                {competitorDomains.map((d) => (
+                  <th key={d} className="text-right px-2 py-1.5 font-normal bg-neutral-50 whitespace-nowrap">
+                    {d}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedRows.map((row) => (
+                <tr key={row.keyword} className="border-t border-neutral-100">
+                  <td className="px-2 py-1.5 text-neutral-700 whitespace-nowrap">{row.keyword}</td>
+                  <td className="px-2 py-1.5 text-right text-neutral-400 whitespace-nowrap">
+                    {row.volume != null ? `${row.volume.toLocaleString("es-MX")}/mes` : "—"}
+                  </td>
+                  <td className="px-2 py-1.5 text-right font-medium text-[#1A73E8]">
+                    {row.ownPosition != null ? `#${row.ownPosition}` : "—"}
+                  </td>
+                  {competitorDomains.map((d) => (
+                    <td key={d} className="px-2 py-1.5 text-right text-neutral-600">
+                      {row.positions[d] != null ? `#${row.positions[d]}` : "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -5064,6 +5310,8 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
   return (
     <div className="flex flex-col gap-3">
       <CompetitorComparisonOverview project={project} />
+
+      <CompetitorDiscoverySection projectId={project.id} />
 
       <form onSubmit={handleAdd} className="flex gap-2">
         <input
@@ -5097,6 +5345,8 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
           ))}
         </div>
       )}
+
+      <KeywordGapSection project={project} />
     </div>
   );
 }

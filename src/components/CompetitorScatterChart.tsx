@@ -16,12 +16,11 @@ export interface CompetitorPoint {
   domain: string;
   organicTraffic: number;
   trafficValue: number;
-  top3Percent: number;
   organicKeywords: number;
   isOwn: boolean;
 }
 
-export type XMetricKey = "trafficValue" | "top3Percent";
+export type XMetricKey = "trafficValue";
 
 export const X_METRICS: Record<
   XMetricKey,
@@ -32,14 +31,24 @@ export const X_METRICS: Record<
     shortLabel: "Valor del trafico",
     format: (v) => `$${v.toLocaleString("es-MX")}`,
   },
-  top3Percent: {
-    label: "% de keywords en Top 3",
-    shortLabel: "% en Top 3",
-    format: (v) => `${v.toFixed(0)}%`,
-  },
 };
 
-const COLORS = ["#1A73E8", "#059669", "#d97706", "#7c3aed", "#db2777", "#0891b2", "#65a30d"];
+// Shared across the checkbox legend and the chart dots so a domain always
+// gets the same color everywhere in the Competencia tab.
+export const COMPETITOR_COLORS = [
+  "#1A73E8",
+  "#059669",
+  "#d97706",
+  "#7c3aed",
+  "#db2777",
+  "#0891b2",
+  "#65a30d",
+  "#dc2626",
+];
+
+export function colorForCompetitorIndex(i: number) {
+  return COMPETITOR_COLORS[i % COMPETITOR_COLORS.length];
+}
 
 // Simple least-squares fit across the currently visible domains, so the
 // line represents "what's typical for this group" rather than a fixed
@@ -63,9 +72,11 @@ function linearRegression(points: { x: number; y: number }[]) {
 export default function CompetitorScatterChart({
   points,
   xMetric,
+  colorFor,
 }: {
   points: CompetitorPoint[];
   xMetric: XMetricKey;
+  colorFor: (domain: string) => string;
 }) {
   if (points.length === 0) {
     return (
@@ -136,17 +147,20 @@ export default function CompetitorScatterChart({
           }}
           labelFormatter={() => ""}
         />
-        {points.map((p, i) => (
-          <Scatter
-            key={p.domain}
-            name={p.domain}
-            data={[p]}
-            fill={p.isOwn ? "#1A73E8" : COLORS[(i + 1) % COLORS.length]}
-            stroke={p.isOwn ? "#1A73E8" : COLORS[(i + 1) % COLORS.length]}
-            strokeWidth={p.isOwn ? 2 : 1}
-            fillOpacity={p.isOwn ? 0.85 : 0.45}
-          />
-        ))}
+        {points.map((p) => {
+          const color = colorFor(p.domain);
+          return (
+            <Scatter
+              key={p.domain}
+              name={p.domain}
+              data={[p]}
+              fill={color}
+              stroke={color}
+              strokeWidth={p.isOwn ? 2 : 1}
+              fillOpacity={p.isOwn ? 0.85 : 0.55}
+            />
+          );
+        })}
       </ScatterChart>
     </ResponsiveContainer>
   );

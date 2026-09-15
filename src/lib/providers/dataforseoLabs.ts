@@ -128,6 +128,76 @@ export async function fetchDomainTrafficOverview(
   };
 }
 
+export interface CompetitorSuggestion {
+  domain: string;
+  commonKeywords: number; // how many keywords this domain shares with the target
+  organicKeywords: number | null;
+  organicTrafficEstimate: number | null;
+}
+
+// "Who else ranks for the same keywords as me" — DataForSEO Labs'
+// competitors_domain endpoint, sorted by how many keywords they share with
+// the target domain. Used to suggest competitors to add, instead of the
+// merchant having to know/guess who they compete with.
+export async function fetchCompetitorSuggestions(
+  domain: string,
+  locationCode: string,
+  languageCode: string,
+  limit = 20
+): Promise<CompetitorSuggestion[]> {
+  const res = await fetch(
+    `${BASE_URL}/dataforseo_labs/google/competitors_domain/live`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: authHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        {
+          target: domain,
+          location_code: Number(locationCode),
+          language_code: languageCode,
+          limit,
+          exclude_top_domains: true,
+          order_by: ["intersections,desc"],
+        },
+      ]),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`DataForSEO Labs request failed (${res.status}): ${text}`);
+  }
+
+  const json = await res.json();
+  const task = json?.tasks?.[0];
+  if (task?.status_code && task.status_code !== 20000) {
+    throw new Error(
+      `DataForSEO task error ${task.status_code}: ${task.status_message}`
+    );
+  }
+
+  interface CompetitorItem {
+    domain?: string;
+    intersections?: number;
+    full_domain_metrics?: { organic?: { count?: number; etv?: number } };
+  }
+  const items: CompetitorItem[] = task?.result?.[0]?.items ?? [];
+  return items
+    .filter((item) => item.domain)
+    .map((item) => ({
+      domain: (item.domain as string).toLowerCase(),
+      commonKeywords: item.intersections ?? 0,
+      organicKeywords: item.full_domain_metrics?.organic?.count ?? null,
+      organicTrafficEstimate:
+        item.full_domain_metrics?.organic?.etv != null
+          ? Math.round(item.full_domain_metrics.organic.etv)
+          : null,
+    }));
+}
+
 export interface RankedKeyword {
   keyword: string;
   position: number | null;
