@@ -39,8 +39,11 @@ export interface ShopifyTokenResult {
 }
 
 // Shopify stopped accepting non-expiring offline tokens for newer apps'
-// Admin API requests — `expiring: true` here requests the new-style token
-// (1h access token + 90-day refresh token) instead of the old permanent one.
+// Admin API requests — `expiring=1` (form-encoded, must be the string "1")
+// requests the new-style token (1h access token + 90-day refresh token)
+// instead of the old permanent one. This endpoint expects
+// application/x-www-form-urlencoded, not JSON — a JSON body silently
+// ignores the `expiring` flag and falls back to a non-expiring token.
 // https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/offline-access-tokens
 export async function exchangeShopifyCode(
   shopDomain: string,
@@ -54,12 +57,15 @@ export async function exchangeShopifyCode(
 
   const res = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      expiring: true,
+      expiring: "1",
     }),
   });
 
@@ -91,8 +97,11 @@ export async function refreshShopifyToken(
 
   const res = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
       grant_type: "refresh_token",
