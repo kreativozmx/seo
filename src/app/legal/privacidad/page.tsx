@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
       </p>
 
       <p className="mb-6">
-        Shopify Audit ("nosotros", "la aplicación") es una herramienta de seguimiento
+        Shopify Audit (&ldquo;nosotros&rdquo;, &ldquo;la aplicación&rdquo;) es una herramienta de seguimiento
         de SEO y visibilidad en buscadores para tiendas y sitios web. Esta
         política explica qué datos recopilamos, para qué los usamos y cómo los
         protegemos cuando conectas tu cuenta de Google u otros servicios a
@@ -53,7 +53,7 @@ export default function PrivacyPolicyPage() {
         <li>
           <strong>Tokens de acceso OAuth:</strong> cuando autorizas una
           conexión con Google, almacenamos un token de actualización
-          ("refresh token") cifrado en tránsito, únicamente para poder
+          (&ldquo;refresh token&rdquo;) cifrado en tránsito, únicamente para poder
           refrescar los datos anteriores sin pedirte iniciar sesión cada vez.
         </li>
         <li>
@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
       </h2>
       <p className="mb-4">
         Puedes desconectar Google Search Console, Google Analytics o YouTube
-        desde el apartado "Conexiones" dentro de Shopify Audit, o revocando el
+        desde el apartado &ldquo;Conexiones&rdquo; dentro de Shopify Audit, o revocando el
         acceso directamente desde la configuración de seguridad de tu cuenta
         de Google en{" "}
         <a

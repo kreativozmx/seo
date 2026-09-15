@@ -44,7 +44,7 @@ export default function TermsOfServicePage() {
         El acceso a datos de Google se realiza mediante OAuth; nunca te
         pedimos tu contraseña de Google directamente. Puedes desconectar
         cualquier integración en cualquier momento desde el apartado
-        "Conexiones". Eres responsable de mantener la confidencialidad del
+        &ldquo;Conexiones&rdquo;. Eres responsable de mantener la confidencialidad del
         acceso a tu cuenta de Shopify Audit.
       </p>
 
@@ -65,7 +65,7 @@ export default function TermsOfServicePage() {
       </h2>
       <p className="mb-4">
         Hacemos esfuerzos razonables para mantener Shopify Audit disponible y con
-        datos actualizados, pero el servicio se ofrece "tal cual", sin
+        datos actualizados, pero el servicio se ofrece &ldquo;tal cual&rdquo;, sin
         garantías de disponibilidad ininterrumpida. Las integraciones con
         Google, YouTube y otros proveedores dependen de la disponibilidad de
         sus propias APIs.
