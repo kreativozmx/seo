@@ -4937,25 +4937,40 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2">
-        {points.map((p) => (
-          <label key={p.domain} className="flex items-center gap-1.5 text-xs cursor-pointer">
-            <input
-              type="checkbox"
-              checked={visibleDomains.has(p.domain)}
-              onChange={() => toggleDomain(p.domain)}
-              className="w-3.5 h-3.5 accent-[#1A73E8] cursor-pointer"
-            />
-            <span
-              className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: colorFor(p.domain) }}
-            />
-            <span className={p.isOwn ? "text-[#1A73E8] font-medium" : "text-neutral-600"}>
-              {p.domain}
-              {p.isOwn ? " (tu)" : ""}
-            </span>
-          </label>
-        ))}
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {points.map((p) => {
+          const active = visibleDomains.has(p.domain);
+          return (
+            <button
+              key={p.domain}
+              type="button"
+              onClick={() => toggleDomain(p.domain)}
+              aria-pressed={active}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                active
+                  ? "border-neutral-200 bg-white hover:border-neutral-300"
+                  : "border-transparent bg-neutral-100 hover:bg-neutral-200"
+              }`}
+            >
+              <span
+                className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: active ? colorFor(p.domain) : "#d4d4d4" }}
+              />
+              <span
+                className={
+                  active
+                    ? p.isOwn
+                      ? "text-[#1A73E8] font-medium"
+                      : "text-neutral-600"
+                    : "text-neutral-400"
+                }
+              >
+                {p.domain}
+                {p.isOwn ? " (tu)" : ""}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <CompetitorScatterChart points={visiblePoints} xMetric={xMetric} colorFor={colorFor} />
