@@ -16,7 +16,7 @@ export default function TermsOfServicePage() {
         Términos de servicio
       </h1>
       <p className="text-neutral-400 text-xs mb-8">
-        Última actualización: 14 de septiembre de 2026
+        Última actualización: 15 de septiembre de 2026
       </p>
 
       <p className="mb-6">
@@ -41,15 +41,52 @@ export default function TermsOfServicePage() {
         2. Cuentas y conexiones
       </h2>
       <p className="mb-4">
-        El acceso a datos de Google se realiza mediante OAuth; nunca te
-        pedimos tu contraseña de Google directamente. Puedes desconectar
-        cualquier integración en cualquier momento desde el apartado
-        &ldquo;Conexiones&rdquo;. Eres responsable de mantener la confidencialidad del
-        acceso a tu cuenta de Shopify Audit.
+        El acceso a datos de Google y de Shopify se realiza mediante OAuth;
+        nunca te pedimos tu contraseña de Google ni de Shopify directamente.
+        Puedes desconectar cualquier integración en cualquier momento desde
+        el apartado &ldquo;Conexiones&rdquo;. Eres responsable de mantener la
+        confidencialidad del acceso a tu cuenta de Shopify Audit.
       </p>
 
       <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
-        3. Datos y estimaciones
+        3. Procesamiento de datos de tu tienda Shopify
+      </h2>
+      <p className="mb-4">
+        Si conectas tu tienda Shopify, actuamos como{" "}
+        <strong>encargados del tratamiento</strong> (processor) de los datos
+        que leemos de tu cuenta de Shopify Admin — tú sigues siendo el
+        responsable (controller) de los datos de tus clientes. Nuestro
+        procesamiento se limita a lo siguiente:
+      </p>
+      <ul className="list-disc pl-5 space-y-1.5 mb-4">
+        <li>
+          Solo leemos el <strong>total y la moneda</strong> de tus pedidos de
+          los últimos 28 días — nunca nombre, correo, teléfono, dirección ni
+          ningún otro dato personal de tus clientes.
+        </li>
+        <li>
+          Usamos ese dato únicamente para calcular y mostrarte a ti (el
+          dueño de la tienda) un resumen de ventas agregadas dentro del
+          dashboard.
+        </li>
+        <li>
+          No compartimos, vendemos ni usamos ese dato para ningún otro fin,
+          ni lo usamos para tomar decisiones automatizadas sobre tus
+          clientes.
+        </li>
+        <li>
+          No conservamos historial: cada actualización sobrescribe el total
+          anterior, y al desconectar Shopify el dato se borra de inmediato.
+          Ver el detalle en nuestra{" "}
+          <a href="/legal/privacidad" className="text-blue-600 hover:underline">
+            Política de privacidad
+          </a>
+          .
+        </li>
+      </ul>
+
+      <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
+        4. Datos y estimaciones
       </h2>
       <p className="mb-4">
         Algunas métricas mostradas (por ejemplo, tráfico o valor estimado de
@@ -61,18 +98,18 @@ export default function TermsOfServicePage() {
       </p>
 
       <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
-        4. Disponibilidad del servicio
+        5. Disponibilidad del servicio
       </h2>
       <p className="mb-4">
         Hacemos esfuerzos razonables para mantener Shopify Audit disponible y con
         datos actualizados, pero el servicio se ofrece &ldquo;tal cual&rdquo;, sin
         garantías de disponibilidad ininterrumpida. Las integraciones con
-        Google, YouTube y otros proveedores dependen de la disponibilidad de
+        Google, Shopify y otros proveedores dependen de la disponibilidad de
         sus propias APIs.
       </p>
 
       <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
-        5. Límites de responsabilidad
+        6. Límites de responsabilidad
       </h2>
       <p className="mb-4">
         Shopify Audit no se hace responsable de decisiones de negocio tomadas
@@ -82,7 +119,7 @@ export default function TermsOfServicePage() {
       </p>
 
       <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
-        6. Cambios a estos términos
+        7. Cambios a estos términos
       </h2>
       <p className="mb-4">
         Podemos actualizar estos términos ocasionalmente. Si el cambio es
@@ -91,7 +128,7 @@ export default function TermsOfServicePage() {
       </p>
 
       <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
-        7. Contacto
+        8. Contacto
       </h2>
       <p>
         Dudas sobre estos términos:{" "}

@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
         Política de privacidad
       </h1>
       <p className="text-neutral-400 text-xs mb-8">
-        Última actualización: 14 de septiembre de 2026
+        Última actualización: 15 de septiembre de 2026
       </p>
 
       <p className="mb-6">
@@ -49,6 +49,13 @@ export default function PrivacyPolicyPage() {
           <strong>Datos públicos de YouTube</strong> (si vinculas un canal):
           estadísticas y videos públicos del canal, usados solo para generar
           sugerencias de optimización.
+        </li>
+        <li>
+          <strong>Datos de pedidos de Shopify</strong> (si conectas tu tienda
+          vía OAuth): leemos únicamente el <strong>total y la moneda</strong>{" "}
+          de tus pedidos de los últimos 28 días, para calcular ventas
+          agregadas. No leemos ni almacenamos nombre, correo, teléfono,
+          dirección ni ningún otro dato personal de tus clientes.
         </li>
         <li>
           <strong>Tokens de acceso OAuth:</strong> cuando autorizas una
@@ -110,15 +117,22 @@ export default function PrivacyPolicyPage() {
         sus keywords, historial de posiciones y conexiones asociadas en
         cualquier momento.
       </p>
+      <p className="mb-4">
+        Los datos de pedidos de Shopify son un caso especial: no guardamos
+        historial de pedidos individuales. Cada vez que actualizas o se
+        refresca la conexión, el total y la moneda de los últimos 28 días{" "}
+        <strong>sobrescriben</strong> el dato anterior — nunca se acumulan.
+        Al desconectar Shopify, ese dato se borra de inmediato.
+      </p>
 
       <h2 className="text-base font-semibold text-neutral-900 mt-8 mb-2">
         5. Cómo revocar el acceso
       </h2>
       <p className="mb-4">
-        Puedes desconectar Google Search Console, Google Analytics o YouTube
-        desde el apartado &ldquo;Conexiones&rdquo; dentro de Shopify Audit, o revocando el
-        acceso directamente desde la configuración de seguridad de tu cuenta
-        de Google en{" "}
+        Puedes desconectar Google Search Console, Google Analytics, YouTube o
+        Shopify desde el apartado &ldquo;Conexiones&rdquo; dentro de Shopify Audit, o
+        revocando el acceso directamente desde la configuración de seguridad
+        de tu cuenta de Google en{" "}
         <a
           href="https://myaccount.google.com/permissions"
           target="_blank"
