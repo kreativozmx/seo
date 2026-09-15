@@ -5376,8 +5376,16 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
     }
   }
 
+  // Solo keywords realmente compartidas: donde tu tienes posicion Y al
+  // menos un competidor tambien — no todo lo que rastreas o que le
+  // detectamos a cada quien por separado.
   const sortedRows = Array.from(rows.entries())
     .map(([keyword, data]) => ({ keyword, ...data }))
+    .filter(
+      (row) =>
+        row.own.position != null &&
+        Object.values(row.positions).some((p) => p.position != null)
+    )
     .sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
       if (sortBy === "keyword") return a.keyword.localeCompare(b.keyword) * dir;
@@ -5403,11 +5411,17 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
     <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
       <p className="text-sm font-medium text-neutral-900 mb-0.5">Comparativa de keywords</p>
       <p className="text-neutral-400 text-[14px] mb-3">
-        Tus keywords rastreadas y las que le detectamos a cada competidor
-        (hasta 20 de muestra por competidor, no su catalogo completo), con
-        la posicion de cada quien lado a lado. Dale clic a una posicion
-        para abrir la URL que esta posicionada.
+        Solo keywords donde tu y al menos un competidor coinciden (hasta 20
+        de muestra por competidor, no su catalogo completo), con la
+        posicion de cada quien lado a lado. Dale clic a una posicion para
+        abrir la URL que esta posicionada.
       </p>
+      {sortedRows.length === 0 ? (
+        <p className="text-xs text-neutral-400">
+          No encontramos keywords compartidas entre tu dominio y estos
+          competidores todavia.
+        </p>
+      ) : (
       <div className="overflow-x-auto">
         <div className="max-h-[420px] overflow-y-auto">
           <table className="w-full text-xs">
@@ -5476,6 +5490,7 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }
