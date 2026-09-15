@@ -2951,6 +2951,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [ideas, setIdeas] = useState<ContentIdeaRow[]>(() =>
     project.contentIdeasJson ? JSON.parse(project.contentIdeasJson) : []
   );
@@ -2993,6 +2994,15 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
     }
   }
 
+  async function handleCopyAll() {
+    const text = ideas
+      .map((idea) => `Titulo: ${idea.title}\nKeywords: ${idea.keywords.join(", ")}`)
+      .join("\n\n");
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (!connected) {
     return (
       <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-5 py-4">
@@ -3021,13 +3031,23 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
               para ayudarte a posicionar.
             </p>
           </div>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="text-sm bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
-          >
-            {generating ? "Generando..." : ideas.length > 0 ? "Generar de nuevo" : "Generar ideas"}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {ideas.length > 0 && (
+              <button
+                onClick={handleCopyAll}
+                className="text-sm bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+              >
+                {copied ? "Copiado ✓" : "Copiar todo"}
+              </button>
+            )}
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="text-sm bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+            >
+              {generating ? "Generando..." : ideas.length > 0 ? "Generar de nuevo" : "Generar ideas"}
+            </button>
+          </div>
         </div>
         {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
         {project.contentIdeasUpdatedAt && (
