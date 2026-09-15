@@ -5049,6 +5049,18 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
 }
 
 function KeywordGapSection({ project }: { project: ProjectDTO }) {
+  const [sortBy, setSortBy] = useState<string>("volume");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function toggleSort(col: string) {
+    if (sortBy === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(col);
+      setSortDir(col === "keyword" ? "asc" : col === "volume" ? "desc" : "asc");
+    }
+  }
+
   const competitorsWithKeywords = project.competitors.filter((c) => c.rankedKeywordsJson);
   if (competitorsWithKeywords.length === 0) return null;
 
@@ -5094,7 +5106,24 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
 
   const sortedRows = Array.from(rows.entries())
     .map(([keyword, data]) => ({ keyword, ...data }))
-    .sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0));
+    .sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortBy === "keyword") return a.keyword.localeCompare(b.keyword) * dir;
+      if (sortBy === "volume") {
+        const va = a.volume;
+        const vb = b.volume;
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return (va - vb) * dir;
+      }
+      const va = sortBy === "own" ? a.ownPosition : a.positions[sortBy] ?? null;
+      const vb = sortBy === "own" ? b.ownPosition : b.positions[sortBy] ?? null;
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      return (va - vb) * dir;
+    });
 
   const competitorDomains = competitorsWithKeywords.map((c) => c.domain);
 
@@ -5111,14 +5140,44 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-neutral-50">
               <tr className="text-neutral-400 border-b border-neutral-200">
-                <th className="text-left px-2 py-1.5 font-normal bg-neutral-50">Keyword</th>
-                <th className="text-right px-2 py-1.5 font-normal bg-neutral-50">Volumen</th>
+                <th className="text-left px-2 py-1.5 font-normal bg-neutral-50">
+                  <SortHeader
+                    label="Keyword"
+                    active={sortBy === "keyword"}
+                    dir={sortDir}
+                    onClick={() => toggleSort("keyword")}
+                  />
+                </th>
+                <th className="text-right px-2 py-1.5 font-normal bg-neutral-50">
+                  <span className="inline-flex justify-end w-full">
+                    <SortHeader
+                      label="Volumen"
+                      active={sortBy === "volume"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("volume")}
+                    />
+                  </span>
+                </th>
                 <th className="text-right px-2 py-1.5 font-normal text-[#1A73E8] bg-neutral-50 whitespace-nowrap">
-                  Tu
+                  <span className="inline-flex justify-end w-full">
+                    <SortHeader
+                      label="Tu"
+                      active={sortBy === "own"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("own")}
+                    />
+                  </span>
                 </th>
                 {competitorDomains.map((d) => (
                   <th key={d} className="text-right px-2 py-1.5 font-normal bg-neutral-50 whitespace-nowrap">
-                    {d}
+                    <span className="inline-flex justify-end w-full">
+                      <SortHeader
+                        label={d}
+                        active={sortBy === d}
+                        dir={sortDir}
+                        onClick={() => toggleSort(d)}
+                      />
+                    </span>
                   </th>
                 ))}
               </tr>
