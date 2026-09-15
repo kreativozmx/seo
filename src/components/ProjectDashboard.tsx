@@ -21,6 +21,22 @@ const EXPERT_CONTACT_URL =
   process.env.NEXT_PUBLIC_EXPERT_CONTACT_URL ||
   "mailto:israel@kreativoz.com.mx?subject=Quiero%20ayuda%20con%20la%20velocidad%20de%20mi%20sitio";
 
+// Small "?" badge with a native browser tooltip (title attribute) —
+// used to explain jargon-y metrics (trafico organico, valor del trafico,
+// etc.) to merchants who aren't SEO-savvy, without pulling in a tooltip
+// library.
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span
+      title={text}
+      tabIndex={0}
+      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 text-neutral-500 text-[9px] font-semibold leading-none cursor-help shrink-0 align-middle"
+    >
+      ?
+    </span>
+  );
+}
+
 function SortHeader({
   label,
   active,
@@ -3970,8 +3986,9 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         <div>
           <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
           <p className="text-neutral-500 text-xs mt-0.5">
-            Tamaño del circulo = keywords organicas. Eje X = valor estimado
-            del trafico. Eje Y = trafico organico estimado.
+            Cada circulo es un sitio. Mientras mas arriba y mas a la
+            derecha este, mejor le esta yendo en Google. El tamaño del
+            circulo = cuantas palabras clave distintas lo posicionan.
           </p>
         </div>
         <button
@@ -3981,6 +3998,35 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         >
           {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
         </button>
+      </div>
+
+      <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[11px] text-neutral-500 leading-relaxed flex flex-col gap-1">
+        <p>
+          <strong className="text-neutral-700">Trafico organico estimado</strong>{" "}
+          = cuantas visitas al mes calculamos que recibe ese sitio desde
+          resultados gratuitos de Google (sin pagar anuncios), segun las
+          palabras clave en las que aparece y que tan arriba sale en cada
+          una.
+        </p>
+        <p>
+          <strong className="text-neutral-700">Valor del trafico</strong> =
+          lo que costaria comprar ese mismo trafico con anuncios de pago
+          (Google Ads) en vez de aparecer gratis en los resultados. Es una
+          forma de ponerle precio en dinero a la visibilidad que da el SEO
+          — entre mas alto, mas dinero en publicidad te esta ahorrando ese
+          trafico gratuito cada mes.
+        </p>
+        <p>
+          <strong className="text-neutral-700">La linea punteada</strong> es
+          el promedio del grupo que estas viendo (no un ideal fijo de la
+          industria). Si tu circulo queda{" "}
+          <strong className="text-neutral-700">arriba</strong> de la linea,
+          sacas mas trafico organico del que es tipico para ese valor de
+          trafico — vas mejor que tus competidores. Si queda{" "}
+          <strong className="text-neutral-700">abajo</strong>, hay
+          oportunidad de mejorar tu SEO para acercarte a lo que logran
+          ellos.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2">
@@ -4008,8 +4054,18 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
             <tr className="text-neutral-400 border-b border-neutral-200">
               <th className="text-left font-normal px-2 py-1.5">Dominio</th>
               <th className="text-right font-normal px-2 py-1.5">Keywords organicas</th>
-              <th className="text-right font-normal px-2 py-1.5">Trafico organico est.</th>
-              <th className="text-right font-normal px-2 py-1.5">Valor est.</th>
+              <th className="text-right font-normal px-2 py-1.5">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Trafico organico est.
+                  <InfoTooltip text="Visitas mensuales estimadas que recibe ese sitio desde resultados gratuitos de Google, sin pagar anuncios." />
+                </span>
+              </th>
+              <th className="text-right font-normal px-2 py-1.5">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Valor est.
+                  <InfoTooltip text="Lo que costaria comprar ese mismo trafico con anuncios de pago (Google Ads) en vez de salir gratis en resultados organicos." />
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
