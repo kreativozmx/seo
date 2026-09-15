@@ -2944,17 +2944,37 @@ interface ChangelogEntryDTO {
 interface ContentIdeaRow {
   title: string;
   keywords: string[];
+  done?: boolean;
 }
 
 function ContentStrategySection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ideas, setIdeas] = useState<ContentIdeaRow[]>(() =>
+    project.contentIdeasJson ? JSON.parse(project.contentIdeasJson) : []
+  );
+
+  useEffect(() => {
+    setIdeas(project.contentIdeasJson ? JSON.parse(project.contentIdeasJson) : []);
+  }, [project.contentIdeasJson]);
 
   const connected = Boolean(project.gscConnectedAt);
-  const ideas: ContentIdeaRow[] = project.contentIdeasJson
-    ? JSON.parse(project.contentIdeasJson)
-    : [];
+
+  async function handleToggle(index: number) {
+    const nextDone = !ideas[index]?.done;
+    setIdeas((prev) => prev.map((idea, i) => (i === index ? { ...idea, done: nextDone } : idea)));
+    try {
+      const res = await fetch(`/api/projects/${project.id}/content-strategy/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index, done: nextDone }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setIdeas((prev) => prev.map((idea, i) => (i === index ? { ...idea, done: !nextDone } : idea)));
+    }
+  }
 
   async function handleGenerate() {
     setGenerating(true);
@@ -3028,19 +3048,39 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
           Aun no hay ideas generadas. Dale clic a &ldquo;Generar ideas&rdquo; arriba.
         </p>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
           {ideas.map((idea, i) => (
-            <div
+            <label
               key={i}
-              className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5 flex flex-col gap-2"
+              className={`flex items-start gap-3 border rounded-xl px-4 py-3 cursor-pointer transition-colors ${
+                idea.done
+                  ? "bg-neutral-50 border-neutral-100"
+                  : "bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+              }`}
             >
-              <div>
-                <p className="text-[13px] text-neutral-400 uppercase tracking-wide">Titulo</p>
-                <p className="text-sm font-medium text-neutral-900">{idea.title}</p>
-              </div>
-              <div>
-                <p className="text-[13px] text-neutral-400 uppercase tracking-wide">Keywords</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
+              <input
+                type="checkbox"
+                checked={Boolean(idea.done)}
+                onChange={() => handleToggle(i)}
+                className="mt-1 w-4 h-4 accent-[#1A73E8] shrink-0 cursor-pointer"
+              />
+              <div className="min-w-0">
+                <p>
+                  <span className="text-[13px] text-neutral-400 uppercase tracking-wide mr-1.5">
+                    Titulo:
+                  </span>
+                  <span
+                    className={`text-sm font-medium ${
+                      idea.done ? "text-neutral-400 line-through decoration-neutral-300" : "text-neutral-900"
+                    }`}
+                  >
+                    {idea.title}
+                  </span>
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <span className="text-[13px] text-neutral-400 uppercase tracking-wide">
+                    Keywords:
+                  </span>
                   {idea.keywords.map((k) => (
                     <span
                       key={k}
@@ -3051,7 +3091,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
                   ))}
                 </div>
               </div>
-            </div>
+            </label>
           ))}
         </div>
       )}

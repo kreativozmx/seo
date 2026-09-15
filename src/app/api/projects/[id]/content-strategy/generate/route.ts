@@ -36,16 +36,17 @@ export async function POST(
     }
 
     const ideas = await generateContentIdeas({ domain: project.domain, queries });
+    const ideasWithDone = ideas.map((idea) => ({ ...idea, done: false }));
 
     await prisma.project.update({
       where: { id: project.id },
       data: {
-        contentIdeasJson: JSON.stringify(ideas),
+        contentIdeasJson: JSON.stringify(ideasWithDone),
         contentIdeasUpdatedAt: new Date(),
       },
     });
 
-    return NextResponse.json({ ideas });
+    return NextResponse.json({ ideas: ideasWithDone });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json({ error: message }, { status: 500 });
