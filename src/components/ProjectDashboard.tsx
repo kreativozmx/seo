@@ -30,7 +30,7 @@ function InfoTooltip({ text }: { text: string }) {
     <span
       title={text}
       tabIndex={0}
-      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 text-neutral-500 text-[9px] font-semibold leading-none cursor-help shrink-0 align-middle"
+      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 text-neutral-500 text-[10px] font-semibold leading-none cursor-help shrink-0 align-middle"
     >
       ?
     </span>
@@ -56,7 +56,7 @@ function SortHeader({
       }`}
     >
       {label}
-      <span className="text-[9px]">{active ? (dir === "asc" ? "▲" : "▼") : ""}</span>
+      <span className="text-[10px]">{active ? (dir === "asc" ? "▲" : "▼") : ""}</span>
     </button>
   );
 }
@@ -87,11 +87,11 @@ function ConnectBanner({
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1">
-      <p className="text-[11px] text-neutral-400 uppercase tracking-wide">
+      <p className="text-[13px] text-neutral-400 uppercase tracking-wide">
         {label}
       </p>
       <p className="text-xl font-semibold text-neutral-900 mt-0.5">{value}</p>
-      {hint && <p className="text-[11px] text-neutral-400 mt-0.5">{hint}</p>}
+      {hint && <p className="text-[13px] text-neutral-400 mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -214,7 +214,7 @@ function NavIcon({ id }: { id: NavId }) {
 
 function ComingSoonBadge() {
   return (
-    <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
+    <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
       Soon
     </span>
   );
@@ -229,7 +229,7 @@ function ComingSoonSection({
 }) {
   return (
     <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-xl px-4 py-8 flex flex-col items-center text-center gap-2">
-      <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
+      <span className="text-[12px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
         Soon
       </span>
       <p className="text-sm font-medium text-neutral-900 mt-1">{title}</p>
@@ -257,9 +257,9 @@ function SummaryTile({
         onClick ? "hover:shadow-elevation-2 transition-shadow cursor-pointer" : ""
       }`}
     >
-      <p className="text-[11px] text-neutral-400 uppercase tracking-wide">{label}</p>
+      <p className="text-[13px] text-neutral-400 uppercase tracking-wide">{label}</p>
       <p className="text-lg font-semibold text-neutral-900 mt-0.5">{value}</p>
-      {hint && <p className="text-[11px] text-neutral-400 mt-0.5">{hint}</p>}
+      {hint && <p className="text-[13px] text-neutral-400 mt-0.5">{hint}</p>}
     </Comp>
   );
 }
@@ -403,7 +403,7 @@ function BestWorstKeywordsCard({
                     href={ranking.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
+                    className="text-[12px] text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
                   >
                     {ranking.url.replace(/^https?:\/\//, "")}
                   </a>
@@ -435,6 +435,7 @@ export default function ProjectDashboard({
   gscError,
   gaConnected,
   gaError,
+  readOnly,
 }: {
   project: ProjectDTO;
   stats: ProjectStats;
@@ -442,6 +443,7 @@ export default function ProjectDashboard({
   gscError?: string;
   gaConnected?: boolean;
   gaError?: string;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<NavId>("panel");
@@ -601,15 +603,17 @@ export default function ProjectDashboard({
       <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 relative">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href="/"
-              title="Volver a proyectos"
-              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </Link>
+            {!readOnly && (
+              <Link
+                href="/"
+                title="Volver a proyectos"
+                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </Link>
+            )}
             <div className="min-w-0">
               <h1 className="text-base font-medium tracking-tight text-neutral-900 truncate">
                 {project.name}
@@ -617,12 +621,19 @@ export default function ProjectDashboard({
               <p className="text-neutral-500 text-xs truncate">{project.domain}</p>
             </div>
           </div>
+          {readOnly && (
+            <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
+              Vista de solo lectura
+            </span>
+          )}
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-6">
         <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:w-52 shrink-0">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter(
+            (item) => !readOnly || (item.id !== "conexiones" && item.id !== "configuracion")
+          ).map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
@@ -639,7 +650,7 @@ export default function ProjectDashboard({
           ))}
         </nav>
 
-        <div className="flex-1 min-w-0">
+        <fieldset disabled={readOnly} className="flex-1 min-w-0 border-0 m-0 p-0">
           {activeTab === "panel" && (
             <div className="flex flex-col gap-6">
               <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -727,6 +738,12 @@ export default function ProjectDashboard({
                   <p className="mt-1"><span className="text-neutral-400">Creado:</span> {new Date(project.createdAt).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
                 </div>
               </div>
+              <div>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Compartir con el cliente
+                </h2>
+                <ShareLinkSection project={project} />
+              </div>
             </section>
           )}
 
@@ -812,7 +829,7 @@ export default function ProjectDashboard({
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="text-[11px] text-neutral-400 border-b border-neutral-200">
+                            <tr className="text-[13px] text-neutral-400 border-b border-neutral-200">
                               <th className="pl-3 pr-2 py-2 text-left w-8">
                                 <input
                                   type="checkbox"
@@ -948,7 +965,7 @@ export default function ProjectDashboard({
               />
             </section>
           )}
-        </div>
+        </fieldset>
       </div>
     </div>
   );
@@ -1091,7 +1108,7 @@ function HeaderTip({
       <span
         className={`pointer-events-none absolute ${
           align === "right" ? "right-0" : "left-0"
-        } top-full mt-1.5 hidden group-hover:block w-max max-w-[220px] whitespace-normal bg-neutral-900 text-white text-[11px] leading-snug rounded-lg px-2.5 py-1.5 z-30 shadow-lg text-left font-normal normal-case`}
+        } top-full mt-1.5 hidden group-hover:block w-max max-w-[220px] whitespace-normal bg-neutral-900 text-white text-[13px] leading-snug rounded-lg px-2.5 py-1.5 z-30 shadow-lg text-left font-normal normal-case`}
       >
         {tip}
       </span>
@@ -1222,7 +1239,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
         </p>
         <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[11px] text-neutral-500">Palabra clave semilla</label>
+            <label className="text-[13px] text-neutral-500">Palabra clave semilla</label>
             <input
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
@@ -1332,7 +1349,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
                     </td>
                     <td className="px-3 py-2 text-right">
                       {already ? (
-                        <span className="text-[11px] text-neutral-400">Ya rastreada</span>
+                        <span className="text-[13px] text-neutral-400">Ya rastreada</span>
                       ) : (
                         <button
                           onClick={() => handleAdd(s.keyword)}
@@ -1391,7 +1408,7 @@ function AiKeywordRow({
           />
           <div className="min-w-0">
             <p className="text-sm text-neutral-900 truncate">{keyword.text}</p>
-            <p className="text-[11px] text-neutral-400">
+            <p className="text-[13px] text-neutral-400">
               {checksWithData > 0 ? `${mentionCount} mencion${mentionCount === 1 ? "" : "es"} de ${checksWithData} rastreos` : "Sin datos todavia"}
             </p>
           </div>
@@ -1399,7 +1416,7 @@ function AiKeywordRow({
         <div className="flex items-center gap-2 shrink-0">
           {checksWithData > 0 && (
             <span
-              className={`text-[11px] rounded-full px-2 py-0.5 ${
+              className={`text-[13px] rounded-full px-2 py-0.5 ${
                 latest?.aiMentioned
                   ? "bg-emerald-50 text-emerald-700"
                   : "bg-neutral-100 text-neutral-400"
@@ -1420,7 +1437,7 @@ function AiKeywordRow({
           {citedDomains.map((d) => (
             <span
               key={d}
-              className={`text-[10px] rounded-full px-2 py-0.5 ${
+              className={`text-[12px] rounded-full px-2 py-0.5 ${
                 d === ownDomain
                   ? "bg-emerald-50 text-emerald-700"
                   : competitorSet.has(d)
@@ -1541,7 +1558,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
       ) : (
         <div className="grid sm:grid-cols-2 gap-3 mt-3">
           <div>
-            <p className="text-[11px] text-purple-700 uppercase tracking-wide mb-1.5">Por agente</p>
+            <p className="text-[13px] text-purple-700 uppercase tracking-wide mb-1.5">Por agente</p>
             <div className="flex flex-col gap-1">
               {bySource.map((s) => (
                 <div key={s.label} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
@@ -1552,7 +1569,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
             </div>
           </div>
           <div>
-            <p className="text-[11px] text-purple-700 uppercase tracking-wide mb-1.5">Paginas de aterrizaje</p>
+            <p className="text-[13px] text-purple-700 uppercase tracking-wide mb-1.5">Paginas de aterrizaje</p>
             <div className="flex flex-col gap-1">
               {landingPages.map((p) => (
                 <a
@@ -1670,7 +1687,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
                   <span
                     key={q.query}
                     title={`${q.impressions.toLocaleString("es-MX")} impresiones · posicion ${q.position.toFixed(1)}`}
-                    className="text-[11px] bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5"
+                    className="text-[13px] bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5"
                   >
                     {q.query}
                   </span>
@@ -1797,7 +1814,7 @@ function AiVisibilitySection({ project }: { project: ProjectDTO }) {
       ) : (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3 px-3">
-            <div className="flex items-center gap-2.5 text-[11px] text-neutral-400">
+            <div className="flex items-center gap-2.5 text-[13px] text-neutral-400">
               <input
                 type="checkbox"
                 checked={selectableIds.length > 0 && checkedIds.size === selectableIds.length}
@@ -2174,7 +2191,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
       {loading && (
         <div className="flex flex-col gap-1.5">
           <ProgressBar percent={progress} />
-          <p className="text-[11px] text-neutral-400">
+          <p className="text-[13px] text-neutral-400">
             Analizando tu sitio con PageSpeed Insights, esto puede tardar
             unos segundos...
           </p>
@@ -2203,7 +2220,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                   {verdict.headline}
                 </p>
                 <p className="text-xs text-neutral-500">{verdict.detail}</p>
-                <p className="text-[11px] text-neutral-400 mt-0.5">
+                <p className="text-[13px] text-neutral-400 mt-0.5">
                   Calificacion de rendimiento: {project.psiPerformanceScore}/100
                 </p>
               </div>
@@ -2230,7 +2247,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
               )}
           </div>
 
-          <p className="text-[11px] text-neutral-400">
+          <p className="text-[13px] text-neutral-400">
             {project.psiFieldDataSource === "field"
               ? "Basado en datos reales de visitantes de tu sitio."
               : "Estimado con una prueba simulada (aun no hay suficientes visitas reales medidas)."}
@@ -2265,7 +2282,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                             {issue.title}
                           </p>
                           {issue.displayValue && (
-                            <span className="text-[11px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
+                            <span className="text-[13px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
                               {issue.displayValue}
                             </span>
                           )}
@@ -2359,7 +2376,7 @@ function YoutubeVideoRow({
             <img src={video.thumbnailUrl} alt="" className="w-16 h-10 rounded object-cover" />
           )}
           {isTop5 && (
-            <span className="absolute -top-1 -left-1 text-[10px] bg-[#1A73E8] text-white rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute -top-1 -left-1 text-[12px] bg-[#1A73E8] text-white rounded-full w-4 h-4 flex items-center justify-center">
               🔥
             </span>
           )}
@@ -2394,7 +2411,7 @@ function YoutubeVideoRow({
       {expanded && (
         <div className="px-3 pb-3 pt-1 flex flex-col gap-3">
           <div>
-            <p className="text-[10px] text-neutral-400 uppercase tracking-wide mb-1">Descripcion actual</p>
+            <p className="text-[12px] text-neutral-400 uppercase tracking-wide mb-1">Descripcion actual</p>
             <p className="text-xs text-neutral-600 whitespace-pre-line bg-white border border-neutral-100 rounded-lg px-3 py-2">
               {video.description || "Sin descripcion."}
             </p>
@@ -2409,7 +2426,7 @@ function YoutubeVideoRow({
               {improving ? "Generando..." : video.aiTitles?.length ? "Volver a generar con IA" : "Mejorar con IA"}
             </button>
             {video.aiSuggestedAt && !improving && (
-              <span className="text-[10px] text-neutral-400">
+              <span className="text-[12px] text-neutral-400">
                 Generado {new Date(video.aiSuggestedAt).toLocaleDateString("es-MX", { month: "short", day: "numeric" })}
               </span>
             )}
@@ -2422,7 +2439,7 @@ function YoutubeVideoRow({
             <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 flex flex-col gap-2.5">
               {video.aiTitles && video.aiTitles.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">
+                  <p className="text-[12px] text-blue-700 uppercase tracking-wide mb-1">
                     Titulos sugeridos (con intencion viral)
                   </p>
                   <div className="flex flex-col gap-1">
@@ -2436,7 +2453,7 @@ function YoutubeVideoRow({
               )}
               {video.aiDescription && (
                 <div>
-                  <p className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">
+                  <p className="text-[12px] text-blue-700 uppercase tracking-wide mb-1">
                     Descripcion sugerida
                   </p>
                   <p className="text-xs text-neutral-700 bg-white rounded px-2 py-1.5 whitespace-pre-line">
@@ -2591,7 +2608,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
         </p>
         <form onSubmit={handleConnect} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[11px] text-neutral-500">
+            <label className="text-[13px] text-neutral-500">
               Canal (@handle, ID o URL)
             </label>
             <input
@@ -2631,7 +2648,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
               <p className="text-sm font-medium text-neutral-900">
                 {project.youtubeChannelTitle}
               </p>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-[13px] text-neutral-400">
                 {project.youtubeCountry ? `${project.youtubeCountry} · ` : ""}
                 {channelAgeYears ? `${channelAgeYears} años en YouTube` : ""}
               </p>
@@ -2681,7 +2698,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
             Videos recientes — los 5 mas vistos llevan insignia 🔥
           </h2>
           <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3 px-3 py-2 text-[11px] text-neutral-400 border-b border-neutral-200">
+            <div className="flex items-center gap-3 px-3 py-2 text-[13px] text-neutral-400 border-b border-neutral-200">
               <span className="w-16 shrink-0" />
               <SortHeader label="Titulo" active={sortBy === "title"} dir={sortDir} onClick={() => toggleSort("title")} />
               <span className="flex-1" />
@@ -2879,7 +2896,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 {topTags.map((v) => (
                   <span
                     key={v.name}
-                    className="text-[11px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                    className="text-[13px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
                   >
                     {v.name} · {v.count}
                   </span>
@@ -2905,7 +2922,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
               >
                 <p className="text-sm text-neutral-800 truncate">{p.title}</p>
-                <span className="text-[11px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
+                <span className="text-[13px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
                   {p.issues.join(", ")}
                 </span>
               </a>
@@ -3042,7 +3059,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
       ) : (
         <>
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-4">
-            <p className="text-[11px] text-emerald-700 uppercase tracking-wide font-medium mb-2">
+            <p className="text-[13px] text-emerald-700 uppercase tracking-wide font-medium mb-2">
               Ventas (ecommerce de GA4)
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -3057,7 +3074,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               />
             </div>
             {(project.gaTransactions28d ?? 0) === 0 && (
-              <p className="text-[11px] text-emerald-700/70 mt-2">
+              <p className="text-[13px] text-emerald-700/70 mt-2">
                 Si estos numeros estan en cero, tu tienda probablemente no
                 tiene el seguimiento de ecommerce de GA4 activado (Shopify
                 lo manda automaticamente si conectaste GA4 desde el admin
@@ -3099,7 +3116,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                 </table>
               </div>
             )}
-            <p className="text-[10px] text-neutral-400 mt-2">
+            <p className="text-[12px] text-neutral-400 mt-2">
               GA4 no expone el detalle de pedidos individuales (numero de
               orden, productos por orden) via API sin conectar BigQuery —
               esta tabla es el nivel de detalle diario que si esta disponible.
@@ -3393,7 +3410,7 @@ function GaSection({ project }: { project: ProjectDTO }) {
       {!project.gaPropertyId ? (
         <form onSubmit={handleSaveProperty} className="flex items-end gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] text-neutral-500">Propiedad GA4</label>
+            <label className="text-[13px] text-neutral-500">Propiedad GA4</label>
             {loadingProperties ? (
               <p className="text-xs text-neutral-400 py-1.5">Cargando propiedades...</p>
             ) : properties.length > 0 ? (
@@ -3468,6 +3485,89 @@ function GaSection({ project }: { project: ProjectDTO }) {
   );
 }
 
+function ShareLinkSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl =
+    project.shareToken && typeof window !== "undefined"
+      ? `${window.location.origin}/share/${project.shareToken}`
+      : null;
+
+  async function handleEnable() {
+    setLoading(true);
+    try {
+      await fetch(`/api/projects/${project.id}/share/enable`, { method: "POST" });
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDisable() {
+    setLoading(true);
+    try {
+      await fetch(`/api/projects/${project.id}/share/disable`, { method: "POST" });
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+      <p className="text-sm text-neutral-600">
+        Genera un link publico de solo lectura para este proyecto. Quien lo
+        tenga puede ver el dashboard (sin editar, conectar ni borrar nada)
+        sin necesidad de usuario ni contraseña. Ideal para compartirselo
+        directo a tu cliente.
+      </p>
+
+      {!project.shareToken ? (
+        <button
+          onClick={handleEnable}
+          disabled={loading}
+          className="mt-3 text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-3.5 py-2 transition-colors"
+        >
+          {loading ? "Generando..." : "Generar link publico"}
+        </button>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              readOnly
+              value={shareUrl ?? ""}
+              onFocus={(e) => e.target.select()}
+              className="flex-1 min-w-[240px] bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-700"
+            />
+            <button
+              onClick={handleCopy}
+              className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 font-medium rounded-full px-3.5 py-2 transition-colors whitespace-nowrap"
+            >
+              {copied ? "Copiado ✓" : "Copiar link"}
+            </button>
+          </div>
+          <button
+            onClick={handleDisable}
+            disabled={loading}
+            className="self-start text-xs text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 rounded-lg px-2.5 py-1 transition-colors"
+          >
+            {loading ? "Desactivando..." : "Desactivar link (invalida el anterior)"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LocationSection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [locationCode, setLocationCode] = useState(project.locationCode);
@@ -3495,7 +3595,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
   return (
     <div className="flex items-end gap-2 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
       <div className="flex flex-col gap-1">
-        <label className="text-[11px] text-neutral-500">Pais</label>
+        <label className="text-[13px] text-neutral-500">Pais</label>
         <select
           value={locationCode}
           onChange={(e) => setLocationCode(e.target.value)}
@@ -3509,7 +3609,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
         </select>
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[11px] text-neutral-500">Idioma</label>
+        <label className="text-[13px] text-neutral-500">Idioma</label>
         <select
           value={languageCode}
           onChange={(e) => setLanguageCode(e.target.value)}
@@ -3531,7 +3631,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
           {saving ? "Guardando..." : "Guardar"}
         </button>
       )}
-      <p className="text-[11px] text-neutral-400 pb-2">
+      <p className="text-[13px] text-neutral-400 pb-2">
         Aplica a todas las keywords de este proyecto.
       </p>
     </div>
@@ -3663,7 +3763,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-neutral-900">{competitor.domain}</p>
           {competitor.ecommerceIsShopify && (
-            <span className="text-[10px] uppercase tracking-wide bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
+            <span className="text-[12px] uppercase tracking-wide bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
               Shopify
             </span>
           )}
@@ -3737,7 +3837,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
               {showKeywords ? "Ocultar" : "Ver"} keywords posicionadas ({rankedKeywords.length}) {showKeywords ? "▲" : "▼"}
             </button>
             {showKeywords && (
-              <div className="flex bg-neutral-100 rounded-full p-0.5 text-[11px]">
+              <div className="flex bg-neutral-100 rounded-full p-0.5 text-[13px]">
                 <button
                   onClick={() => setKwViewMode("keywords")}
                   className={`px-2.5 py-1 rounded-full transition-colors ${
@@ -3884,7 +3984,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
               {unique.map((t) => (
                 <span
                   key={t.name}
-                  className="flex items-center gap-1 text-[11px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                  className="flex items-center gap-1 text-[13px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
                 >
                   <span>{t.icon}</span>
                   {t.name}
@@ -4000,7 +4100,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         </button>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[11px] text-neutral-500 leading-relaxed flex flex-col gap-1">
+      <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[13px] text-neutral-500 leading-relaxed flex flex-col gap-1">
         <p>
           <strong className="text-neutral-700">Trafico organico estimado</strong>{" "}
           = cuantas visitas al mes calculamos que recibe ese sitio desde
@@ -4139,7 +4239,7 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
         </button>
       </form>
 
-      <p className="text-[11px] text-neutral-400">
+      <p className="text-[13px] text-neutral-400">
         El trafico es un estimado (como el de SEMrush/Ahrefs), no un dato
         real — nadie fuera del dueño del sitio puede ver trafico o ventas
         reales de otra tienda. Si el dominio es una tienda Shopify,
@@ -4190,7 +4290,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
       className="flex flex-col gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[11px] text-neutral-500">Keyword</label>
+        <label className="text-[13px] text-neutral-500">Keyword</label>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -4202,7 +4302,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-neutral-500">Motor</label>
+          <label className="text-[13px] text-neutral-500">Motor</label>
           <select
             value={engine}
             onChange={(e) => setEngine(e.target.value)}
@@ -4214,7 +4314,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-neutral-500">Dispositivo</label>
+          <label className="text-[13px] text-neutral-500">Dispositivo</label>
           <select
             value={device}
             onChange={(e) => setDevice(e.target.value)}
@@ -4233,7 +4333,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
           {saving ? "Agregando..." : "Agregar"}
         </button>
 
-        <p className="text-[11px] text-neutral-400 ml-auto self-center">
+        <p className="text-[13px] text-neutral-400 ml-auto self-center">
           ¿ChatGPT o Perplexity? Agrega esas keywords desde SEO IA.
         </p>
       </div>
@@ -4282,7 +4382,7 @@ function AppResultRow({
         >
           {app.title}
         </a>
-        <p className="text-[11px] text-neutral-400 truncate">
+        <p className="text-[13px] text-neutral-400 truncate">
           {app.developer ? `${app.developer} · ` : ""}
           {app.rating != null ? `★ ${app.rating.toFixed(1)}` : "Sin calificacion"}
           {app.reviewsCount != null ? ` (${app.reviewsCount.toLocaleString("es-MX")})` : ""}
@@ -4294,14 +4394,14 @@ function AppResultRow({
         </p>
       </div>
       {isMine ? (
-        <span className="text-[11px] bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 shrink-0">
+        <span className="text-[13px] bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 shrink-0">
           Tu app
         </span>
       ) : (
         <button
           onClick={onSelect}
           disabled={selecting}
-          className="text-[11px] bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 rounded-full px-2.5 py-1 shrink-0 transition-colors whitespace-nowrap"
+          className="text-[13px] bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 rounded-full px-2.5 py-1 shrink-0 transition-colors whitespace-nowrap"
         >
           {selecting ? "..." : "Es mi app"}
         </button>
@@ -4373,7 +4473,7 @@ function AppsSection({ project }: { project: ProjectDTO }) {
         </p>
         <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[11px] text-neutral-500">Nombre de la app o marca</label>
+            <label className="text-[13px] text-neutral-500">Nombre de la app o marca</label>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -4390,7 +4490,7 @@ function AppsSection({ project }: { project: ProjectDTO }) {
           </button>
         </form>
         {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-        <p className="text-[11px] text-neutral-400 mt-2">
+        <p className="text-[13px] text-neutral-400 mt-2">
           La busqueda de apps puede tardar hasta medio minuto — DataForSEO
           procesa esta consulta como una tarea, no es instantanea.
         </p>

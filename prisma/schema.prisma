@@ -18,6 +18,11 @@ model Project {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Public read-only share link (no login) — set when the owner enables
+  // sharing for this project; null means sharing is off. Anyone with the
+  // token can view (but not edit/connect/delete) this project's dashboard.
+  shareToken String? @unique
+
   // Google Search Console connection (OAuth refresh token + matched property)
   gscRefreshToken String?
   gscSiteUrl      String?

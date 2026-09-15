@@ -52,6 +52,7 @@ export interface ProjectDTO {
   languageCode: string;
   createdAt: string;
   updatedAt: string;
+  shareToken: string | null;
   gscSiteUrl: string | null;
   gscConnectedAt: string | null;
   gscClicks28d: number | null;

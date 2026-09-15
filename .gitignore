@@ -39,3 +39,6 @@ next-env.d.ts
 # database
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# Claude Code session state
+/.claude/scheduled_tasks.lock

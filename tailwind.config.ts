@@ -74,6 +74,18 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-roboto)", "Roboto", "Arial", "system-ui", "sans-serif"],
       },
+      // Bumped ~1-2px across the board vs Tailwind's defaults so the app
+      // stays legible when screen-sharing in calls (most of the UI runs on
+      // text-xs/text-sm). Overriding the scale here covers every existing
+      // text-xs/sm/base/etc usage without touching each className.
+      fontSize: {
+        xs: ["0.8125rem", { lineHeight: "1.2rem" }], // 13px (was 12px)
+        sm: ["0.9375rem", { lineHeight: "1.4rem" }], // 15px (was 14px)
+        base: ["1.0625rem", { lineHeight: "1.6rem" }], // 17px (was 16px)
+        lg: ["1.1875rem", { lineHeight: "1.75rem" }], // 19px (was 18px)
+        xl: ["1.3125rem", { lineHeight: "1.75rem" }], // 21px (was 20px)
+        "2xl": ["1.5625rem", { lineHeight: "2rem" }], // 25px (was 24px)
+      },
     },
   },
   plugins: [],

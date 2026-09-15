@@ -26,7 +26,7 @@ export function ConfirmButton({
         className={`inline-flex items-center gap-1.5 ${confirmingClassName ?? ""}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-[11px] text-neutral-500 whitespace-nowrap">{confirmText}</span>
+        <span className="text-[13px] text-neutral-500 whitespace-nowrap">{confirmText}</span>
         <button
           type="button"
           disabled={loading}
