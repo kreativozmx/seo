@@ -165,6 +165,8 @@ export interface ProjectDTO {
   techCheckedAt: string | null;
   domainOrganicKeywords: number | null;
   domainOrganicTrafficEstimate: number | null;
+  domainPaidKeywords: number | null;
+  domainPaidTrafficEstimate: number | null;
   domainTrafficValueEstimate: number | null;
   domainTrafficCheckedAt: string | null;
   appQuery: string | null;

@@ -26,6 +26,8 @@ export async function POST(
       data: {
         domainOrganicKeywords: traffic.organicKeywords,
         domainOrganicTrafficEstimate: traffic.organicTrafficEstimate,
+        domainPaidKeywords: traffic.paidKeywords,
+        domainPaidTrafficEstimate: traffic.paidTrafficEstimate,
         domainTrafficValueEstimate: traffic.trafficValueEstimate,
         domainTrafficCheckedAt: new Date(),
       },
@@ -34,6 +36,8 @@ export async function POST(
     return NextResponse.json({
       domainOrganicKeywords: updated.domainOrganicKeywords,
       domainOrganicTrafficEstimate: updated.domainOrganicTrafficEstimate,
+      domainPaidKeywords: updated.domainPaidKeywords,
+      domainPaidTrafficEstimate: updated.domainPaidTrafficEstimate,
       domainTrafficValueEstimate: updated.domainTrafficValueEstimate,
     });
   } catch (err) {

@@ -7,7 +7,11 @@ import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { ProgressBar } from "@/components/ProgressBar";
 import OrdersChart from "@/components/OrdersChart";
-import CompetitorScatterChart, { CompetitorPoint } from "@/components/CompetitorScatterChart";
+import CompetitorScatterChart, {
+  CompetitorPoint,
+  XMetricKey,
+  X_METRICS,
+} from "@/components/CompetitorScatterChart";
 import { useSimulatedProgress } from "@/lib/useSimulatedProgress";
 import { ProjectDTO, KeywordDTO } from "@/lib/types";
 import { normalizeDomain } from "@/lib/domain";
@@ -4236,6 +4240,17 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
   );
 }
 
+const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
+  trafficValue:
+    "lo que costaria comprar ese mismo trafico organico con anuncios de pago (Google Ads) en vez de aparecer gratis en los resultados. Entre mas alto, mas dinero en publicidad le esta ahorrando el SEO cada mes.",
+  top3Percent:
+    "de las palabras clave que le rastreamos a ese sitio, que porcentaje aparece en las primeras 3 posiciones de Google — el lugar donde se lleva la mayoria de los clics.",
+  paidTraffic:
+    "cuantas visitas al mes calculamos que ese sitio compra con anuncios de Google Ads, aparte de lo que consigue gratis por SEO.",
+  paidKeywords:
+    "en cuantas busquedas distintas calculamos que ese sitio esta pujando con anuncios de Google Ads.",
+};
+
 function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [refreshingOwn, setRefreshingOwn] = useState(false);
@@ -4270,12 +4285,49 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
     }
   }
 
+  const [xMetric, setXMetric] = useState<XMetricKey>("trafficValue");
+
+  // % of tracked keywords currently in the top 3 for the project's own
+  // domain, using our own real rank-tracking data (not the DataForSEO
+  // estimate) — one latest position per keyword.
+  function ownTop3Percent(): number {
+    const withPosition = project.keywords
+      .map((k) => {
+        let latest: KeywordDTO["rankings"][number] | null = null;
+        for (const r of k.rankings) {
+          if (r.domain !== project.domain || r.position == null) continue;
+          if (!latest || new Date(r.checkedAt) > new Date(latest.checkedAt)) latest = r;
+        }
+        return latest?.position ?? null;
+      })
+      .filter((p): p is number => p != null);
+    if (withPosition.length === 0) return 0;
+    const top3 = withPosition.filter((p) => p <= 3).length;
+    return (top3 / withPosition.length) * 100;
+  }
+
+  // Same idea for a competitor, but from the sampled ranked-keywords list
+  // DataForSEO gave us for that domain (up to 20 keywords) — an
+  // approximation, not full coverage.
+  function competitorTop3Percent(c: ProjectDTO["competitors"][number]): number {
+    const ranked: { position: number | null }[] = c.rankedKeywordsJson
+      ? JSON.parse(c.rankedKeywordsJson)
+      : [];
+    const withPosition = ranked.map((k) => k.position).filter((p): p is number => p != null);
+    if (withPosition.length === 0) return 0;
+    const top3 = withPosition.filter((p) => p <= 3).length;
+    return (top3 / withPosition.length) * 100;
+  }
+
   const points: CompetitorPoint[] = [];
   if (ownHasData) {
     points.push({
       domain: project.domain,
       organicTraffic: project.domainOrganicTrafficEstimate ?? 0,
       trafficValue: project.domainTrafficValueEstimate ?? 0,
+      top3Percent: ownTop3Percent(),
+      paidTraffic: project.domainPaidTrafficEstimate ?? 0,
+      paidKeywords: project.domainPaidKeywords ?? 0,
       organicKeywords: project.domainOrganicKeywords ?? 0,
       isOwn: true,
     });
@@ -4285,6 +4337,9 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
       domain: c.domain,
       organicTraffic: c.organicTrafficEstimate ?? 0,
       trafficValue: c.trafficValueEstimate ?? 0,
+      top3Percent: competitorTop3Percent(c),
+      paidTraffic: c.paidTrafficEstimate ?? 0,
+      paidKeywords: c.paidKeywords ?? 0,
       organicKeywords: c.organicKeywords ?? 0,
       isOwn: false,
     });
@@ -4348,24 +4403,36 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
           una.
         </p>
         <p>
-          <strong className="text-neutral-700">Valor del trafico</strong> =
-          lo que costaria comprar ese mismo trafico con anuncios de pago
-          (Google Ads) en vez de aparecer gratis en los resultados. Es una
-          forma de ponerle precio en dinero a la visibilidad que da el SEO
-          — entre mas alto, mas dinero en publicidad te esta ahorrando ese
-          trafico gratuito cada mes.
+          <strong className="text-neutral-700">{X_METRICS[xMetric].shortLabel}</strong>{" "}
+          = {X_METRIC_EXPLANATIONS[xMetric]}
         </p>
         <p>
           <strong className="text-neutral-700">La linea punteada</strong> es
           el promedio del grupo que estas viendo (no un ideal fijo de la
           industria). Si tu circulo queda{" "}
           <strong className="text-neutral-700">arriba</strong> de la linea,
-          sacas mas trafico organico del que es tipico para ese valor de
-          trafico — vas mejor que tus competidores. Si queda{" "}
+          sacas mas trafico organico del que es tipico para ese valor en el
+          eje horizontal — vas mejor que tus competidores. Si queda{" "}
           <strong className="text-neutral-700">abajo</strong>, hay
-          oportunidad de mejorar tu SEO para acercarte a lo que logran
-          ellos.
+          oportunidad de mejorar para acercarte a lo que logran ellos.
         </p>
+      </div>
+
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-[14px] text-neutral-400">Eje horizontal:</span>
+        <div className="flex bg-white border border-neutral-200 rounded-full p-0.5 text-[14px] flex-wrap">
+          {(Object.keys(X_METRICS) as XMetricKey[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => setXMetric(key)}
+              className={`px-3 py-1 rounded-full transition-colors whitespace-nowrap ${
+                xMetric === key ? "bg-[#D3E3FD] text-[#041E49] font-medium" : "text-neutral-500 hover:bg-neutral-100"
+              }`}
+            >
+              {X_METRICS[key].shortLabel}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2">
@@ -4385,7 +4452,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         ))}
       </div>
 
-      <CompetitorScatterChart points={visiblePoints} />
+      <CompetitorScatterChart points={visiblePoints} xMetric={xMetric} />
 
       <div className="overflow-x-auto mt-3">
         <table className="w-full text-xs">

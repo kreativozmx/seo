@@ -175,6 +175,8 @@ model Project {
   // sides of the Competencia comparison chart use comparable numbers.
   domainOrganicKeywords        Int?
   domainOrganicTrafficEstimate Int?
+  domainPaidKeywords           Int?
+  domainPaidTrafficEstimate    Int?
   domainTrafficValueEstimate   Float?
   domainTrafficCheckedAt       DateTime?
 

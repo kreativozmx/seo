@@ -16,18 +16,48 @@ export interface CompetitorPoint {
   domain: string;
   organicTraffic: number;
   trafficValue: number;
+  top3Percent: number;
+  paidTraffic: number;
+  paidKeywords: number;
   organicKeywords: number;
   isOwn: boolean;
 }
+
+export type XMetricKey = "trafficValue" | "top3Percent" | "paidTraffic" | "paidKeywords";
+
+export const X_METRICS: Record<
+  XMetricKey,
+  { label: string; shortLabel: string; format: (v: number) => string }
+> = {
+  trafficValue: {
+    label: "Valor del trafico organico est.",
+    shortLabel: "Valor del trafico",
+    format: (v) => `$${v.toLocaleString("es-MX")}`,
+  },
+  top3Percent: {
+    label: "% de keywords en Top 3",
+    shortLabel: "% en Top 3",
+    format: (v) => `${v.toFixed(0)}%`,
+  },
+  paidTraffic: {
+    label: "Trafico pago estimado",
+    shortLabel: "Trafico pago",
+    format: (v) => v.toLocaleString("es-MX"),
+  },
+  paidKeywords: {
+    label: "Palabras clave pagadas",
+    shortLabel: "Keywords pagadas",
+    format: (v) => v.toLocaleString("es-MX"),
+  },
+};
 
 const COLORS = ["#1A73E8", "#059669", "#d97706", "#7c3aed", "#db2777", "#0891b2", "#65a30d"];
 
 // Simple least-squares fit across the currently visible domains, so the
 // line represents "what's typical for this group" rather than a fixed
 // external benchmark. A point above the line gets more organic traffic
-// than its traffic-value would predict (efficient/well-optimized); a
-// point below it is paying (in ad-equivalent terms) for less traffic than
-// its peers get.
+// than the X metric would predict (efficient/well-optimized); a point
+// below it is behind its peers for that metric.
 function linearRegression(points: { x: number; y: number }[]) {
   const n = points.length;
   if (n < 2) return null;
@@ -42,7 +72,13 @@ function linearRegression(points: { x: number; y: number }[]) {
   return { slope, intercept };
 }
 
-export default function CompetitorScatterChart({ points }: { points: CompetitorPoint[] }) {
+export default function CompetitorScatterChart({
+  points,
+  xMetric,
+}: {
+  points: CompetitorPoint[];
+  xMetric: XMetricKey;
+}) {
   if (points.length === 0) {
     return (
       <p className="text-neutral-400 text-xs py-6 text-center">
@@ -51,10 +87,11 @@ export default function CompetitorScatterChart({ points }: { points: CompetitorP
     );
   }
 
-  const fit = linearRegression(
-    points.map((p) => ({ x: p.trafficValue, y: p.organicTraffic }))
-  );
-  const maxX = Math.max(...points.map((p) => p.trafficValue), 0) * 1.05;
+  const xConfig = X_METRICS[xMetric];
+  const xValue = (p: CompetitorPoint) => p[xMetric];
+
+  const fit = linearRegression(points.map((p) => ({ x: xValue(p), y: p.organicTraffic })));
+  const maxX = Math.max(...points.map(xValue), 0) * 1.05;
   const trendSegment: [{ x: number; y: number }, { x: number; y: number }] | null =
     fit && maxX > 0
       ? [
@@ -84,12 +121,12 @@ export default function CompetitorScatterChart({ points }: { points: CompetitorP
         )}
         <XAxis
           type="number"
-          dataKey="trafficValue"
-          name="Valor del trafico"
+          dataKey={xValue}
+          name={xConfig.shortLabel}
           stroke="#a3a3a3"
           fontSize={11}
-          tickFormatter={(v) => `$${v.toLocaleString("es-MX")}`}
-          label={{ value: "Valor del trafico organico est.", position: "insideBottom", offset: -5, fontSize: 11, fill: "#a3a3a3" }}
+          tickFormatter={xConfig.format}
+          label={{ value: xConfig.label, position: "insideBottom", offset: -5, fontSize: 11, fill: "#a3a3a3" }}
         />
         <YAxis
           type="number"
@@ -106,7 +143,7 @@ export default function CompetitorScatterChart({ points }: { points: CompetitorP
           contentStyle={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12 }}
           formatter={(value, name) => {
             const n = Number(value);
-            if (name === "Valor del trafico") return [`$${n.toLocaleString("es-MX")}`, name];
+            if (name === xConfig.shortLabel) return [xConfig.format(n), name];
             return [n.toLocaleString("es-MX"), name];
           }}
           labelFormatter={() => ""}
