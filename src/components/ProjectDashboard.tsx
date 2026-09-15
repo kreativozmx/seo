@@ -1126,6 +1126,34 @@ interface DetectedTechRow {
   url: string;
 }
 
+// Real brand favicon (via Google's public favicon service — no API key,
+// works for essentially any domain) instead of an emoji approximation.
+// Falls back to the emoji if the image fails to load.
+function TechLogo({ url, icon, size = 20 }: { url: string; icon: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  let domain: string | null = null;
+  try {
+    domain = new URL(url).hostname;
+  } catch {
+    domain = null;
+  }
+
+  if (failed || !domain) {
+    return <span style={{ fontSize: size * 0.6 }}>{icon}</span>;
+  }
+
+  return (
+    <img
+      src={`https://www.google.com/s2/favicons?sz=${size * 2}&domain=${domain}`}
+      alt=""
+      width={size}
+      height={size}
+      className="rounded-sm"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function TechDetectSection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -1215,8 +1243,8 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 group"
                   >
-                    <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-neutral-200 text-xs shrink-0">
-                      {item.icon}
+                    <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-neutral-200 text-xs shrink-0 overflow-hidden">
+                      <TechLogo url={item.url} icon={item.icon} size={16} />
                     </span>
                     <span className="text-sm text-neutral-700 group-hover:text-[#1A73E8] group-hover:underline transition-colors">
                       {item.name}
@@ -4604,7 +4632,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
 
       {competitor.techDetectedJson &&
         (() => {
-          const tech: { name: string; icon: string }[] = JSON.parse(
+          const tech: { name: string; icon: string; url: string }[] = JSON.parse(
             competitor.techDetectedJson
           );
           const unique = Array.from(new Map(tech.map((t) => [t.name, t])).values());
@@ -4616,7 +4644,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
                   key={t.name}
                   className="flex items-center gap-1 text-[14px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
                 >
-                  <span>{t.icon}</span>
+                  <TechLogo url={t.url} icon={t.icon} size={14} />
                   {t.name}
                 </span>
               ))}
