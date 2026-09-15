@@ -58,6 +58,9 @@ export default async function ProjectPage({
       gscError={searchParams.gscError}
       gaConnected={searchParams.gaConnected === "1"}
       gaError={searchParams.gaError}
+      shopifyConnected={searchParams.shopifyConnected === "1"}
+      shopifyError={searchParams.shopifyError}
+      shopifyNeedsShopDomain={searchParams.shopifyNeedsShopDomain === "1"}
     />
   );
 }
