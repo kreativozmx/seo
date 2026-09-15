@@ -688,6 +688,8 @@ export default function ProjectDashboard({
                 </svg>
               </Link>
             )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="" width={28} height={28} className="shrink-0" />
             <div className="min-w-0">
               <h1 className="text-base font-medium tracking-tight text-neutral-900 truncate">
                 {project.name}

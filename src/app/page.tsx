@@ -80,13 +80,17 @@ export default async function Home() {
   return (
     <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-10 sm:py-16">
       <header className="mb-8 flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
-            Shopify Audit
-          </h1>
-          <p className="text-neutral-500 text-sm mt-1">
-            Resumen de posiciones y visibilidad de todos tus proyectos.
-          </p>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="" width={32} height={32} className="shrink-0" />
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+              Shopify Audit
+            </h1>
+            <p className="text-neutral-500 text-sm mt-1">
+              Resumen de posiciones y visibilidad de todos tus proyectos.
+            </p>
+          </div>
         </div>
         <a
           href="/api/logout"
