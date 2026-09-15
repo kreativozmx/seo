@@ -92,7 +92,7 @@ export async function detectMyshopifyDomain(domain: string): Promise<string | nu
 
   try {
     const res = await fetch(`https://${domain}/`, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; ShopiseoBot/1.0)" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ShopifyAuditBot/1.0)" },
     });
     if (!res.ok) return null;
     const html = await res.text();

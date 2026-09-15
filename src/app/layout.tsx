@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 // M3's default typeface. Loaded via next/font/google so it's self-hosted
@@ -12,7 +13,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Shopiseo",
+  title: "Shopify Audit",
   description: "Seguimiento de posiciones en Google, Bing e IA",
 };
 
@@ -24,9 +25,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${roboto.variable} font-sans antialiased bg-surface text-on-surface min-h-screen`}
+        className={`${roboto.variable} font-sans antialiased bg-surface text-on-surface min-h-screen flex flex-col`}
       >
-        {children}
+        <div className="flex-1">{children}</div>
+        <Footer />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-# Shopiseo
+# Shopify Audit
 
 Herramienta de seguimiento de posiciones en buscadores (Google, Bing) e IA
 (ChatGPT, Perplexity, Google AI Overview) por proyecto/cliente, con

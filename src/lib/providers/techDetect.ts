@@ -103,7 +103,7 @@ export interface TechAudit {
 
 export async function detectTechnologies(domain: string): Promise<TechAudit> {
   const res = await fetch(`https://${domain}/`, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; ShopiseoBot/1.0)" },
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; ShopifyAuditBot/1.0)" },
     redirect: "follow",
   });
 

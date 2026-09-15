@@ -83,7 +83,7 @@ export default async function Home() {
       <header className="mb-8 flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
-            Shopiseo
+            Shopify Audit
           </h1>
           <p className="text-neutral-500 text-sm mt-1">
             Resumen de posiciones y visibilidad de todos tus proyectos.
