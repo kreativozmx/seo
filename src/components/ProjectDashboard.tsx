@@ -274,12 +274,12 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 text-left rounded-md whitespace-nowrap transition-colors border-l-2 ${
-        indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-sm"
+      className={`flex items-center gap-3 text-left rounded-md whitespace-nowrap transition-colors ${
+        indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-[13px]"
       } ${
         active
-          ? "bg-primary/10 text-primary font-medium border-primary"
-          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border-transparent"
+          ? "bg-neutral-900 text-white font-medium"
+          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
       }`}
     >
       <NavIcon id={item.id} />
@@ -511,16 +511,20 @@ interface ProjectListEntry {
   domain: string;
 }
 
-// Dropdown at the top of the sidebar so a merchant can jump straight to
-// another project without going back to the project list first.
+// Lets a merchant jump straight to another project without going back to
+// the project list first. "sidebar" renders the full logo+name block used
+// at the top of the nav rail; "breadcrumb" renders an Ahrefs-style inline
+// "Proyecto ▾" trigger for the top breadcrumb bar.
 function ProjectSwitcher({
   currentId,
   currentName,
   currentDomain,
+  variant = "sidebar",
 }: {
   currentId: string;
   currentName: string;
   currentDomain: string;
+  variant?: "sidebar" | "breadcrumb";
 }) {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectListEntry[] | null>(null);
@@ -554,35 +558,57 @@ function ProjectSwitcher({
 
   return (
     <div className="relative">
-      <button
-        onClick={handleToggle}
-        className="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-neutral-100 transition-colors text-left"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
-        <div className="min-w-0 flex-1">
-          <p className="text-neutral-900 text-[13px] font-medium truncate">{currentName}</p>
-          <p className="text-neutral-400 text-[11px] truncate">{currentDomain}</p>
-        </div>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="shrink-0 text-neutral-400"
+      {variant === "sidebar" ? (
+        <button
+          onClick={handleToggle}
+          className="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-neutral-100 transition-colors text-left"
         >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
+          <div className="min-w-0 flex-1">
+            <p className="text-neutral-900 text-[13px] font-medium truncate">{currentName}</p>
+            <p className="text-neutral-400 text-[11px] truncate">{currentDomain}</p>
+          </div>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="shrink-0 text-neutral-400"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+      ) : (
+        <button
+          onClick={handleToggle}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-neutral-100 transition-colors text-left min-w-0"
+        >
+          <span className="text-sm font-medium text-neutral-900 truncate max-w-[220px]">{currentName}</span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="shrink-0 text-neutral-400"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+      )}
 
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 mt-1 z-40 bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute left-0 mt-1 z-40 w-72 bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden">
             <div className="p-2 border-b border-neutral-100">
               <input
                 autoFocus
@@ -811,139 +837,129 @@ export default function ProjectDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] md:flex">
-      <aside className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-screen md:sticky md:top-0 px-3 py-3 md:py-4">
-        <div className="hidden md:block pb-2 mb-1 border-b border-neutral-100">
-          {readOnly ? (
-            <div className="flex items-center gap-2 px-2 py-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
-              <div className="min-w-0">
-                <p className="text-neutral-900 text-[13px] font-medium truncate">{project.name}</p>
-                <p className="text-neutral-400 text-[11px] truncate">{project.domain}</p>
-              </div>
-            </div>
-          ) : (
-            <ProjectSwitcher currentId={project.id} currentName={project.name} currentDomain={project.domain} />
-          )}
+    <div className="min-h-screen bg-[#F4F5F7] flex flex-col">
+      {/* Global bar — mirrors Ahrefs' dark top-level nav strip. */}
+      <div className="h-12 shrink-0 bg-[#14171C] flex items-center justify-between px-3 sm:px-4 sticky top-0 z-30">
+        <div className="flex items-center gap-2 min-w-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" width={22} height={22} className="shrink-0 rounded" />
+          <span className="text-white text-sm font-medium tracking-tight truncate hidden sm:inline">
+            Shopify Audit
+          </span>
         </div>
-        <nav className="flex md:flex-col gap-2 md:gap-1 shrink-0">
-          {NAV_GROUPS.filter(
-            (group) =>
-              !readOnly ||
-              (group.id !== "conexiones" && group.id !== "configuracion")
-          ).map((group, gi) => (
-            <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-1">
-              <div className="flex items-center gap-0.5">
-                <div className="flex-1 min-w-0">
-                  {group.id === null ? (
+        {readOnly ? (
+          <span className="text-[11px] uppercase tracking-wide bg-white/10 text-slate-300 rounded-full px-2.5 py-1 shrink-0">
+            Vista de solo lectura
+          </span>
+        ) : (
+          <a
+            href="/api/logout"
+            className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
+          >
+            Cerrar sesión
+          </a>
+        )}
+      </div>
+
+      <div className="flex flex-1 min-h-0 md:flex">
+        <aside className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-[calc(100vh-3rem)] md:sticky md:top-12 px-3 py-3 md:py-4">
+          <nav className="flex md:flex-col gap-2 md:gap-0.5 shrink-0">
+            {NAV_GROUPS.filter(
+              (group) =>
+                !readOnly ||
+                (group.id !== "conexiones" && group.id !== "configuracion")
+            ).map((group, gi) => (
+              <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-1 md:mb-1">
+                <div className="flex items-center gap-0.5">
+                  <div className="flex-1 min-w-0">
+                    {group.id === null ? (
+                      <button
+                        onClick={() => toggleGroup(gi)}
+                        className="w-full flex items-center px-3 py-1.5 text-[11px] font-semibold text-neutral-400 hover:text-neutral-600 rounded-md transition-colors uppercase tracking-wider"
+                      >
+                        {group.label}
+                      </button>
+                    ) : (
+                      <NavButton
+                        item={NAV_ITEMS.find((i) => i.id === group.id)!}
+                        active={activeTab === group.id}
+                        onClick={() => setActiveTab(group.id as NavId)}
+                      />
+                    )}
+                  </div>
+                  {group.children && (
                     <button
                       onClick={() => toggleGroup(gi)}
-                      className="w-full flex items-center gap-3 px-3 py-1.5 text-[13px] font-medium text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 rounded-md transition-colors uppercase tracking-wide"
+                      title={collapsedGroups.has(gi) ? "Expandir" : "Contraer"}
+                      className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
                     >
                       <svg
-                        width="14"
-                        height="14"
+                        width="13"
+                        height="13"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="shrink-0"
+                        className={`transition-transform ${collapsedGroups.has(gi) ? "" : "rotate-90"}`}
                       >
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="m9 12 2 2 4-4" />
+                        <path d="m9 6 6 6-6 6" />
                       </svg>
-                      {group.label}
                     </button>
-                  ) : (
-                    <NavButton
-                      item={NAV_ITEMS.find((i) => i.id === group.id)!}
-                      active={activeTab === group.id}
-                      onClick={() => setActiveTab(group.id as NavId)}
-                    />
                   )}
                 </div>
-                {group.children && (
-                  <button
-                    onClick={() => toggleGroup(gi)}
-                    title={collapsedGroups.has(gi) ? "Expandir" : "Contraer"}
-                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+                {!collapsedGroups.has(gi) &&
+                  group.children?.map((childId) => (
+                    <NavButton
+                      key={childId}
+                      item={NAV_ITEMS.find((i) => i.id === childId)!}
+                      active={activeTab === childId}
+                      indent
+                      onClick={() => setActiveTab(childId)}
+                    />
+                  ))}
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="flex-1 min-w-0 flex flex-col">
+          <header className="sticky top-12 z-20 bg-white border-b border-neutral-200 relative">
+            <div className="px-4 sm:px-6 lg:px-10 py-2.5 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-1.5 min-w-0 text-sm">
+                {!readOnly && (
+                  <Link
+                    href="/"
+                    className="text-neutral-500 hover:text-neutral-800 transition-colors shrink-0"
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`transition-transform ${collapsedGroups.has(gi) ? "" : "rotate-90"}`}
-                    >
-                      <path d="m9 6 6 6-6 6" />
-                    </svg>
-                  </button>
+                    Todos los proyectos
+                  </Link>
                 )}
-              </div>
-              {!collapsedGroups.has(gi) &&
-                group.children?.map((childId) => (
-                  <NavButton
-                    key={childId}
-                    item={NAV_ITEMS.find((i) => i.id === childId)!}
-                    active={activeTab === childId}
-                    indent
-                    onClick={() => setActiveTab(childId)}
-                  />
-                ))}
-            </div>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="flex-1 min-w-0 flex flex-col">
-        <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 relative">
-          <div className="px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              {!readOnly && (
-                <Link
-                  href="/"
-                  title="Volver a proyectos"
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m15 18-6-6 6-6" />
+                {!readOnly && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-neutral-300">
+                    <path d="m9 6 6 6-6 6" />
                   </svg>
-                </Link>
-              )}
-              <div className="min-w-0 md:hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="" width={28} height={28} className="shrink-0 inline-block align-middle mr-2" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-base font-medium tracking-tight text-neutral-900 truncate">
-                  {project.name}
-                </h1>
-                <p className="text-neutral-500 text-xs truncate">{project.domain}</p>
+                )}
+                {readOnly ? (
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-neutral-900 truncate">{project.name}</p>
+                  </div>
+                ) : (
+                  <ProjectSwitcher
+                    currentId={project.id}
+                    currentName={project.name}
+                    currentDomain={project.domain}
+                    variant="breadcrumb"
+                  />
+                )}
+                <span className="text-neutral-300 hidden sm:inline">·</span>
+                <span className="text-neutral-400 text-xs truncate hidden sm:inline">{project.domain}</span>
               </div>
             </div>
-            {readOnly ? (
-              <span className="text-[12px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
-                Vista de solo lectura
-              </span>
-            ) : (
-              <a
-                href="/api/logout"
-                className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
-              >
-                Cerrar sesión
-              </a>
-            )}
-          </div>
-        </header>
+          </header>
 
-        <fieldset disabled={readOnly} className="flex-1 min-w-0 border-0 m-0 p-0 px-4 sm:px-6 lg:px-10 py-6 max-w-8xl mx-auto w-full">
+          <fieldset disabled={readOnly} className="flex-1 min-w-0 border-0 m-0 p-0 px-4 sm:px-6 lg:px-10 py-6 max-w-8xl mx-auto w-full">
           {activeTab === "panel" && (
             <div className="flex flex-col gap-6">
               <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1290,6 +1306,7 @@ export default function ProjectDashboard({
             </section>
           )}
         </fieldset>
+        </div>
       </div>
     </div>
   );
