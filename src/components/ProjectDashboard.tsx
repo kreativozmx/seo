@@ -455,6 +455,9 @@ export default function ProjectDashboard({
   gscError,
   gaConnected,
   gaError,
+  shopifyConnected,
+  shopifyError,
+  shopifyNeedsShopDomain,
   readOnly,
 }: {
   project: ProjectDTO;
@@ -463,6 +466,9 @@ export default function ProjectDashboard({
   gscError?: string;
   gaConnected?: boolean;
   gaError?: string;
+  shopifyConnected?: boolean;
+  shopifyError?: string;
+  shopifyNeedsShopDomain?: boolean;
   readOnly?: boolean;
 }) {
   const router = useRouter();
@@ -734,9 +740,18 @@ export default function ProjectDashboard({
               <div>
                 <ConnectBanner connected={gscConnected} error={gscError} label="Search Console" />
                 <ConnectBanner connected={gaConnected} error={gaError} label="Google Analytics" />
+                <ConnectBanner connected={shopifyConnected} error={shopifyError} label="Shopify" />
+                {shopifyNeedsShopDomain && (
+                  <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-2">
+                    No pudimos detectar el subdominio myshopify.com de esta
+                    tienda automaticamente. Usa el campo de abajo para
+                    escribirlo a mano (ej. tu-tienda.myshopify.com).
+                  </p>
+                )}
               </div>
               <GscSection project={project} />
               <GaSection project={project} />
+              <ShopifyConnectSection project={project} />
             </section>
           )}
 
@@ -3734,6 +3749,130 @@ function GaSection({ project }: { project: ProjectDTO }) {
               {(project.gaConversions28d ?? 0).toLocaleString("es-MX")}
             </strong>{" "}
             conversiones (28d)
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShopifyConnectSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [shopDomain, setShopDomain] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const connected = Boolean(project.shopifyConnectedAt);
+  const hasStats = project.shopifySalesUpdatedAt != null;
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/shopify/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await fetch(`/api/projects/${project.id}/shopify/disconnect`, { method: "POST" });
+      router.refresh();
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  if (!connected) {
+    const installUrl = shopDomain.trim()
+      ? `/api/projects/${project.id}/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`
+      : `/api/projects/${project.id}/shopify/install`;
+    return (
+      <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-neutral-900">Shopify Admin</p>
+            <p className="text-neutral-500 text-xs mt-0.5">
+              Conecta la tienda para ver pedidos y ventas reales (ultimos 28
+              dias) — solo lectura, no modificamos nada en la tienda.
+            </p>
+          </div>
+          <a
+            href={installUrl}
+            className="text-sm bg-white border border-emerald-200 hover:border-emerald-300 text-emerald-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+          >
+            Conectar Shopify
+          </a>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            value={shopDomain}
+            onChange={(e) => setShopDomain(e.target.value)}
+            placeholder="tu-tienda.myshopify.com (opcional)"
+            className="flex-1 min-w-[200px] bg-white border border-emerald-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-emerald-400 transition-colors"
+          />
+        </div>
+        <p className="text-[14px] text-neutral-400">
+          Normalmente detectamos el subdominio myshopify.com solos. Solo
+          escribelo arriba si el boton te pide confirmarlo.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-sm text-neutral-700">
+          Shopify conectado{" "}
+          <span className="text-emerald-700 font-medium">{project.shopifyShopDomain}</span>
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-xs bg-white border border-emerald-200 hover:border-emerald-300 disabled:opacity-50 text-emerald-700 font-medium rounded-full px-3 py-1.5"
+          >
+            {refreshing ? "Actualizando..." : "Actualizar ventas"}
+          </button>
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
+          >
+            Desconectar
+          </button>
+        </div>
+      </div>
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {hasStats && (
+        <div className="flex flex-wrap gap-4 text-xs text-neutral-600 border-t border-emerald-100 pt-2">
+          <span>
+            <strong className="text-neutral-900">
+              {(project.shopifyOrders28d ?? 0).toLocaleString("es-MX")}
+            </strong>{" "}
+            pedidos (28d)
+          </span>
+          <span>
+            <strong className="text-neutral-900">
+              {(project.shopifySales28d ?? 0).toLocaleString("es-MX", {
+                style: "currency",
+                currency: project.shopifyCurrency ?? "USD",
+              })}
+            </strong>{" "}
+            en ventas (28d)
           </span>
         </div>
       )}
