@@ -103,23 +103,38 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
 
 const NAV_ITEMS = [
   { id: "panel", label: "Panel" },
+  { id: "auditoria", label: "Auditoria" },
+  { id: "velocidad", label: "Velocidad" },
   { id: "analiticas", label: "Analiticas" },
   { id: "rankings", label: "Rankings" },
-  { id: "planificacion", label: "Planificacion" },
   { id: "seo-ia", label: "SEO IA" },
-  { id: "competencia", label: "Competencia" },
-  { id: "velocidad", label: "Velocidad" },
   { id: "youtube", label: "SEO Youtube" },
-  { id: "ecommerce", label: "Ecommerce" },
-  { id: "auditoria", label: "Auditoria" },
-  { id: "changelog", label: "Changelog Shopify" },
+  { id: "planificacion", label: "Keywords" },
+  { id: "changelog", label: "Actualizaciones Shopify" },
+  { id: "competencia", label: "Competencia" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
   { id: "conexiones", label: "Conexiones" },
-  { id: "configuracion", label: "Configuracion" },
+  { id: "configuracion", label: "Ajustes" },
 ] as const;
 
 type NavId = (typeof NAV_ITEMS)[number]["id"];
+
+// Sidebar layout only — groups related tabs together. `id: null` means the
+// header itself has no content/tab of its own (just a label above its
+// children), everything else renders as a normal clickable NavId.
+const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
+  { id: "panel" },
+  { id: "auditoria", children: ["velocidad"] },
+  { id: "analiticas" },
+  { id: "rankings", children: ["seo-ia", "youtube"] },
+  { id: null, label: "Planificacion", children: ["planificacion", "changelog"] },
+  { id: "competencia" },
+  { id: "apps" },
+  { id: "marketplaces" },
+  { id: "conexiones" },
+  { id: "configuracion" },
+];
 
 // Minimal line icons (GSC-style: 20px, single stroke) for the nav rail.
 const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
@@ -140,8 +155,8 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
   rankings: <path d="M4 19V10m6 9V4m6 15v-7m6 7V8" />,
   planificacion: (
     <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m9 12 2 2 4-4" />
+      <path d="M12 2 3 11v2l9 9 9-9V2Z" />
+      <circle cx="8" cy="7" r="1.4" />
     </>
   ),
   "seo-ia": (
@@ -164,12 +179,6 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
     <>
       <rect x="3" y="5" width="18" height="14" rx="3" />
       <path d="m10 9 5 3-5 3Z" />
-    </>
-  ),
-  ecommerce: (
-    <>
-      <path d="M6 8h12l-1 12H7L6 8Z" />
-      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
     </>
   ),
   auditoria: (
@@ -229,6 +238,33 @@ function NavIcon({ id }: { id: NavId }) {
     >
       {NAV_ICON_PATHS[id]}
     </svg>
+  );
+}
+
+function NavButton({
+  item,
+  active,
+  indent,
+  onClick,
+}: {
+  item: { id: NavId; label: string; comingSoon?: boolean };
+  active: boolean;
+  indent?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 text-left rounded-full whitespace-nowrap transition-colors ${
+        indent ? "pl-9 pr-4 py-2 text-[14px]" : "px-4 py-3 text-sm"
+      } ${
+        active ? "bg-[#D3E3FD] text-[#041E49] font-medium" : "text-neutral-700 hover:bg-neutral-100"
+      }`}
+    >
+      <NavIcon id={item.id} />
+      {item.label}
+      {item.comingSoon && <ComingSoonBadge />}
+    </button>
   );
 }
 
@@ -323,10 +359,10 @@ function PanelSummaryGrid({
         onClick={() => onNavigate("velocidad")}
       />
       <SummaryTile
-        label="Ecommerce"
+        label="Catalogo"
         value={platformLabel}
         hint={project.ecommerceProductCount != null ? `${project.ecommerceProductCount} productos` : undefined}
-        onClick={() => onNavigate("ecommerce")}
+        onClick={() => onNavigate("auditoria")}
       />
       {project.youtubeChannelId && (
         <SummaryTile
@@ -656,23 +692,48 @@ export default function ProjectDashboard({
       </header>
 
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-6 flex flex-col md:flex-row gap-6 lg:gap-8">
-        <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:w-56 shrink-0">
-          {NAV_ITEMS.filter(
-            (item) => !readOnly || (item.id !== "conexiones" && item.id !== "configuracion")
-          ).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 text-left text-sm px-4 py-3 rounded-full whitespace-nowrap transition-colors ${
-                activeTab === item.id
-                  ? "bg-[#D3E3FD] text-[#041E49] font-medium"
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              <NavIcon id={item.id} />
-              {item.label}
-              {"comingSoon" in item && item.comingSoon && <ComingSoonBadge />}
-            </button>
+        <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0">
+          {NAV_GROUPS.filter(
+            (group) =>
+              !readOnly ||
+              (group.id !== "conexiones" && group.id !== "configuracion")
+          ).map((group, gi) => (
+            <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-1">
+              {group.id === null ? (
+                <div className="flex items-center gap-3 px-4 pt-2 pb-0.5 text-[13px] font-medium text-neutral-400 uppercase tracking-wide">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                  {group.label}
+                </div>
+              ) : (
+                <NavButton
+                  item={NAV_ITEMS.find((i) => i.id === group.id)!}
+                  active={activeTab === group.id}
+                  onClick={() => setActiveTab(group.id as NavId)}
+                />
+              )}
+              {group.children?.map((childId) => (
+                <NavButton
+                  key={childId}
+                  item={NAV_ITEMS.find((i) => i.id === childId)!}
+                  active={activeTab === childId}
+                  indent
+                  onClick={() => setActiveTab(childId)}
+                />
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -977,14 +1038,14 @@ export default function ProjectDashboard({
             </section>
           )}
 
-          {activeTab === "ecommerce" && (
-            <section>
-              <EcommerceSection project={project} />
-            </section>
-          )}
-
           {activeTab === "auditoria" && (
-            <section>
+            <section className="flex flex-col gap-6">
+              <div>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Catalogo (Shopify)
+                </h2>
+                <EcommerceSection project={project} />
+              </div>
               <AuditSection project={project} />
             </section>
           )}
