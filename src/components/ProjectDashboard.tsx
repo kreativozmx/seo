@@ -509,6 +509,16 @@ export default function ProjectDashboard({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<NavId>("panel");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(new Set());
+
+  function toggleGroup(gi: number) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(gi)) next.delete(gi);
+      else next.add(gi);
+      return next;
+    });
+  }
   const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>(
     project.keywords[0]?.id ?? null
   );
@@ -699,40 +709,69 @@ export default function ProjectDashboard({
               (group.id !== "conexiones" && group.id !== "configuracion")
           ).map((group, gi) => (
             <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-1">
-              {group.id === null ? (
-                <div className="flex items-center gap-3 px-4 pt-2 pb-0.5 text-[13px] font-medium text-neutral-400 uppercase tracking-wide">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="shrink-0"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  {group.label}
+              <div className="flex items-center gap-0.5">
+                <div className="flex-1 min-w-0">
+                  {group.id === null ? (
+                    <button
+                      onClick={() => toggleGroup(gi)}
+                      className="w-full flex items-center gap-3 px-4 pt-2 pb-0.5 text-[13px] font-medium text-neutral-400 uppercase tracking-wide hover:text-neutral-600 transition-colors"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="shrink-0"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="m9 12 2 2 4-4" />
+                      </svg>
+                      {group.label}
+                    </button>
+                  ) : (
+                    <NavButton
+                      item={NAV_ITEMS.find((i) => i.id === group.id)!}
+                      active={activeTab === group.id}
+                      onClick={() => setActiveTab(group.id as NavId)}
+                    />
+                  )}
                 </div>
-              ) : (
-                <NavButton
-                  item={NAV_ITEMS.find((i) => i.id === group.id)!}
-                  active={activeTab === group.id}
-                  onClick={() => setActiveTab(group.id as NavId)}
-                />
-              )}
-              {group.children?.map((childId) => (
-                <NavButton
-                  key={childId}
-                  item={NAV_ITEMS.find((i) => i.id === childId)!}
-                  active={activeTab === childId}
-                  indent
-                  onClick={() => setActiveTab(childId)}
-                />
-              ))}
+                {group.children && (
+                  <button
+                    onClick={() => toggleGroup(gi)}
+                    title={collapsedGroups.has(gi) ? "Expandir" : "Contraer"}
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`transition-transform ${collapsedGroups.has(gi) ? "" : "rotate-90"}`}
+                    >
+                      <path d="m9 6 6 6-6 6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {!collapsedGroups.has(gi) &&
+                group.children?.map((childId) => (
+                  <NavButton
+                    key={childId}
+                    item={NAV_ITEMS.find((i) => i.id === childId)!}
+                    active={activeTab === childId}
+                    indent
+                    onClick={() => setActiveTab(childId)}
+                  />
+                ))}
             </div>
           ))}
         </nav>
