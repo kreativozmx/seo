@@ -7,6 +7,7 @@ import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { ProgressBar } from "@/components/ProgressBar";
 import OrdersChart from "@/components/OrdersChart";
+import SalesBreakdownChart from "@/components/SalesBreakdownChart";
 import CompetitorScatterChart, {
   CompetitorPoint,
   XMetricKey,
@@ -3360,10 +3361,21 @@ interface GaProperty {
   accountName: string;
 }
 
+type SalesBreakdownKey = "channel" | "source" | "medium" | "landingPage" | "device";
+
+const SALES_BREAKDOWN_LABELS: Record<SalesBreakdownKey, { tab: string; column: string }> = {
+  channel: { tab: "Canal", column: "Canal" },
+  source: { tab: "Fuente", column: "Fuente" },
+  medium: { tab: "Medio", column: "Medio" },
+  landingPage: { tab: "Pagina (~keyword organica)", column: "Pagina de destino" },
+  device: { tab: "Dispositivo", column: "Dispositivo" },
+};
+
 function AnalyticsSection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [salesBreakdown, setSalesBreakdown] = useState<SalesBreakdownKey>("channel");
 
   const connected = Boolean(project.gaConnectedAt);
   const hasData = project.gaAnalyticsUpdatedAt != null;
@@ -3432,8 +3444,15 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
   const topMediums: { name: string; sessions: number }[] = project.gaTopMediumsJson
     ? JSON.parse(project.gaTopMediumsJson)
     : [];
-  const salesByChannel: { channel: string; revenue: number; transactions: number; sessions: number }[] =
-    project.gaSalesByChannelJson ? JSON.parse(project.gaSalesByChannelJson) : [];
+  type SalesBreakdownRow = { label: string; revenue: number; transactions: number; sessions: number };
+  const parseSales = (json: string | null): SalesBreakdownRow[] => (json ? JSON.parse(json) : []);
+  const salesBreakdowns: Record<SalesBreakdownKey, SalesBreakdownRow[]> = {
+    channel: parseSales(project.gaSalesByChannelJson),
+    source: parseSales(project.gaSalesBySourceJson),
+    medium: parseSales(project.gaSalesByMediumJson),
+    landingPage: parseSales(project.gaSalesByLandingPageJson),
+    device: parseSales(project.gaSalesByDeviceJson),
+  };
   const ordersByDate: { date: string; transactions: number; revenue: number }[] =
     project.gaOrdersByDateJson ? JSON.parse(project.gaOrdersByDateJson) : [];
   const topProducts: { name: string; unitsSold: number; revenue: number }[] =
@@ -3637,44 +3656,81 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
             </div>
           )}
 
-          {salesByChannel.length > 0 && (
+          {Object.values(salesBreakdowns).some((rows) => rows.length > 0) && (
             <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
-              <p className="text-sm font-medium text-neutral-900 mb-0.5">Ventas por canal</p>
-              <p className="text-neutral-400 text-[14px] mb-3">
-                De donde vienen tus ventas reales, segun el canal detectado
-                por GA4 (UTM de campañas, busqueda organica/pagada, directo,
-                redes, email, etc.).
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="text-neutral-400 border-b border-neutral-200">
-                      <th className="text-left font-normal px-2 py-1.5">Canal</th>
-                      <th className="text-right font-normal px-2 py-1.5">Ventas</th>
-                      <th className="text-right font-normal px-2 py-1.5">Pedidos</th>
-                      <th className="text-right font-normal px-2 py-1.5">Sesiones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesByChannel.map((c) => (
-                      <tr key={c.channel} className="border-t border-neutral-100">
-                        <td className="px-2 py-1.5 text-neutral-700">{c.channel}</td>
-                        <td className="px-2 py-1.5 text-right text-neutral-900 font-medium">
-                          {c.revenue.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
-                        </td>
-                        <td className="px-2 py-1.5 text-right text-neutral-500">{c.transactions.toLocaleString("es-MX")}</td>
-                        <td className="px-2 py-1.5 text-right text-neutral-400">{c.sessions.toLocaleString("es-MX")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-0.5">
+                <p className="text-sm font-medium text-neutral-900">Ventas</p>
               </div>
-              {salesByChannel.every((c) => c.revenue === 0) && (
-                <p className="text-[14px] text-neutral-400 mt-2">
-                  Todos los canales muestran $0 — probablemente el
-                  ecommerce tracking de GA4 no esta configurado en la
-                  tienda. Las sesiones si son reales.
-                </p>
+              <p className="text-neutral-400 text-[14px] mb-3">
+                De donde vienen tus ventas reales, segun lo que detecta GA4.
+                {salesBreakdown === "landingPage" && (
+                  <>
+                    {" "}
+                    Google no entrega la palabra clave organica real (viene
+                    oculta como &ldquo;(not provided)&rdquo; desde 2013) — esto
+                    muestra que paginas generaron esas ventas; cruza esas
+                    URLs con Rankings o SEO IA para ver que keywords reales
+                    les llegan.
+                  </>
+                )}
+              </p>
+
+              <div className="flex bg-white border border-neutral-200 rounded-full p-0.5 text-[14px] flex-wrap w-fit mb-4">
+                {(Object.keys(SALES_BREAKDOWN_LABELS) as SalesBreakdownKey[]).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setSalesBreakdown(key)}
+                    className={`px-3 py-1 rounded-full transition-colors whitespace-nowrap ${
+                      salesBreakdown === key ? "bg-[#D3E3FD] text-[#041E49] font-medium" : "text-neutral-500 hover:bg-neutral-100"
+                    }`}
+                  >
+                    {SALES_BREAKDOWN_LABELS[key].tab}
+                  </button>
+                ))}
+              </div>
+
+              {salesBreakdowns[salesBreakdown].length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin datos.</p>
+              ) : (
+                <>
+                  <SalesBreakdownChart data={salesBreakdowns[salesBreakdown]} />
+
+                  <div className="overflow-x-auto mt-4">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-neutral-400 border-b border-neutral-200">
+                          <th className="text-left font-normal px-2 py-1.5">
+                            {SALES_BREAKDOWN_LABELS[salesBreakdown].column}
+                          </th>
+                          <th className="text-right font-normal px-2 py-1.5">Ventas</th>
+                          <th className="text-right font-normal px-2 py-1.5">Pedidos</th>
+                          <th className="text-right font-normal px-2 py-1.5">Sesiones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesBreakdowns[salesBreakdown].map((row, i) => (
+                          <tr key={`${row.label}-${i}`} className="border-t border-neutral-100">
+                            <td className="px-2 py-1.5 text-neutral-700 max-w-xs truncate" title={row.label}>
+                              {row.label}
+                            </td>
+                            <td className="px-2 py-1.5 text-right text-neutral-900 font-medium whitespace-nowrap">
+                              {row.revenue.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
+                            </td>
+                            <td className="px-2 py-1.5 text-right text-neutral-500">{row.transactions.toLocaleString("es-MX")}</td>
+                            <td className="px-2 py-1.5 text-right text-neutral-400">{row.sessions.toLocaleString("es-MX")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {salesBreakdowns[salesBreakdown].every((r) => r.revenue === 0) && (
+                    <p className="text-[14px] text-neutral-400 mt-2">
+                      Todo muestra $0 en ventas — probablemente el ecommerce
+                      tracking de GA4 no esta configurado en la tienda. Las
+                      sesiones si son reales.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           )}

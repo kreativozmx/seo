@@ -100,6 +100,10 @@ export interface ProjectDTO {
   gaTopSourcesJson: string | null;
   gaTopMediumsJson: string | null;
   gaSalesByChannelJson: string | null;
+  gaSalesBySourceJson: string | null;
+  gaSalesByMediumJson: string | null;
+  gaSalesByLandingPageJson: string | null;
+  gaSalesByDeviceJson: string | null;
   gaOrdersByDateJson: string | null;
   gaTopProductsJson: string | null;
   gaAnalyticsUpdatedAt: string | null;

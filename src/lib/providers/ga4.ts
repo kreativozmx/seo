@@ -281,9 +281,20 @@ export interface Ga4Analytics {
   topCampaigns: { source: string; sessions: number }[];
   topSources: { name: string; sessions: number }[];
   topMediums: { name: string; sessions: number }[];
-  salesByChannel: { channel: string; revenue: number; transactions: number; sessions: number }[];
+  salesByChannel: SalesBreakdownRow[];
+  salesBySource: SalesBreakdownRow[];
+  salesByMedium: SalesBreakdownRow[];
+  salesByLandingPage: SalesBreakdownRow[];
+  salesByDevice: SalesBreakdownRow[];
   ordersByDate: { date: string; transactions: number; revenue: number }[];
   topProducts: { name: string; unitsSold: number; revenue: number }[];
+}
+
+export interface SalesBreakdownRow {
+  label: string;
+  revenue: number;
+  transactions: number;
+  sessions: number;
 }
 
 // Merchant-facing analytics beyond channel/session counts — the numbers a
@@ -310,6 +321,10 @@ export async function fetchGa4Analytics(
     sourcesRes,
     mediumsRes,
     channelSalesRes,
+    sourceSalesRes,
+    mediumSalesRes,
+    landingPageSalesRes,
+    deviceSalesRes,
     ordersRes,
     productsRes,
   ] = await Promise.all([
@@ -402,6 +417,54 @@ export async function fetchGa4Analytics(
           limit: "10",
         },
       }),
+      // Ventas por fuente (google, facebook, newsletter, direct...).
+      analyticsData.properties.runReport({
+        property,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: "sessionSource" }],
+          metrics: [{ name: "totalRevenue" }, { name: "transactions" }, { name: "sessions" }],
+          orderBys: [{ metric: { metricName: "totalRevenue" }, desc: true }],
+          limit: "10",
+        },
+      }),
+      // Ventas por medio (organic, cpc, referral, email, none...).
+      analyticsData.properties.runReport({
+        property,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: "sessionMedium" }],
+          metrics: [{ name: "totalRevenue" }, { name: "transactions" }, { name: "sessions" }],
+          orderBys: [{ metric: { metricName: "totalRevenue" }, desc: true }],
+          limit: "10",
+        },
+      }),
+      // Ventas por pagina de destino — la aproximacion mas cercana a "por
+      // keyword organica" que expone la API estandar de GA4: Google no
+      // entrega el termino de busqueda organico real (viene marcado como
+      // "(not provided)" desde 2013), asi que esto muestra que paginas
+      // generaron esas ventas organicas; para ver las keywords reales que
+      // llegan a esas paginas hay que cruzarlo con Search Console.
+      analyticsData.properties.runReport({
+        property,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: "landingPagePlusQueryString" }],
+          metrics: [{ name: "totalRevenue" }, { name: "transactions" }, { name: "sessions" }],
+          orderBys: [{ metric: { metricName: "totalRevenue" }, desc: true }],
+          limit: "10",
+        },
+      }),
+      // Ventas por dispositivo.
+      analyticsData.properties.runReport({
+        property,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: "deviceCategory" }],
+          metrics: [{ name: "totalRevenue" }, { name: "transactions" }, { name: "sessions" }],
+          orderBys: [{ metric: { metricName: "totalRevenue" }, desc: true }],
+        },
+      }),
       // Daily order trend — how many purchases and how much revenue per day.
       analyticsData.properties.runReport({
         property,
@@ -470,11 +533,25 @@ export async function fetchGa4Analytics(
     sessions: Number(row.metricValues?.[0]?.value ?? 0),
   }));
 
-  const salesByChannel = (channelSalesRes.data.rows ?? []).map((row) => ({
-    channel: row.dimensionValues?.[0]?.value ?? "(not set)",
-    revenue: Number(row.metricValues?.[0]?.value ?? 0),
-    transactions: Number(row.metricValues?.[1]?.value ?? 0),
-    sessions: Number(row.metricValues?.[2]?.value ?? 0),
+  function toSalesBreakdown(
+    rows: { dimensionValues?: { value?: string | null }[] | null; metricValues?: { value?: string | null }[] | null }[] | null | undefined,
+    fallbackLabel = "(not set)"
+  ): SalesBreakdownRow[] {
+    return (rows ?? []).map((row) => ({
+      label: row.dimensionValues?.[0]?.value || fallbackLabel,
+      revenue: Number(row.metricValues?.[0]?.value ?? 0),
+      transactions: Number(row.metricValues?.[1]?.value ?? 0),
+      sessions: Number(row.metricValues?.[2]?.value ?? 0),
+    }));
+  }
+
+  const salesByChannel = toSalesBreakdown(channelSalesRes.data.rows);
+  const salesBySource = toSalesBreakdown(sourceSalesRes.data.rows);
+  const salesByMedium = toSalesBreakdown(mediumSalesRes.data.rows);
+  const salesByLandingPage = toSalesBreakdown(landingPageSalesRes.data.rows);
+  const salesByDevice = toSalesBreakdown(deviceSalesRes.data.rows).map((r) => ({
+    ...r,
+    label: r.label.charAt(0).toUpperCase() + r.label.slice(1),
   }));
 
   const ordersByDate = (ordersRes.data.rows ?? []).map((row) => {
@@ -508,6 +585,10 @@ export async function fetchGa4Analytics(
     topSources,
     topMediums,
     salesByChannel,
+    salesBySource,
+    salesByMedium,
+    salesByLandingPage,
+    salesByDevice,
     ordersByDate,
     topProducts,
   };

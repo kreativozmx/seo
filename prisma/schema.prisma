@@ -80,7 +80,11 @@ model Project {
   gaTopCampaignsJson    String? // cached array of {source, sessions} — source/medium + UTM campaign
   gaTopSourcesJson      String? // cached array of {name, sessions} — source alone
   gaTopMediumsJson      String? // cached array of {name, sessions} — medium alone
-  gaSalesByChannelJson  String? // cached array of {channel, revenue, transactions, sessions} — GA4's UTM-derived channel grouping
+  gaSalesByChannelJson     String? // cached array of {label, revenue, transactions, sessions} — GA4's UTM-derived channel grouping
+  gaSalesBySourceJson      String? // same shape, by sessionSource
+  gaSalesByMediumJson      String? // same shape, by sessionMedium
+  gaSalesByLandingPageJson String? // same shape, by landing page — closest proxy to "organic keyword" GA4 exposes
+  gaSalesByDeviceJson      String? // same shape, by device category
   gaOrdersByDateJson    String? // cached array of {date, transactions, revenue}
   gaTopProductsJson     String? // cached array of {name, unitsSold, revenue}
   gaAiTrafficSessions28d  Int?
