@@ -4593,10 +4593,6 @@ const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
     "lo que costaria comprar ese mismo trafico organico con anuncios de pago (Google Ads) en vez de aparecer gratis en los resultados. Entre mas alto, mas dinero en publicidad le esta ahorrando el SEO cada mes.",
   top3Percent:
     "de las palabras clave que le rastreamos a ese sitio, que porcentaje aparece en las primeras 3 posiciones de Google — el lugar donde se lleva la mayoria de los clics.",
-  paidTraffic:
-    "cuantas visitas al mes calculamos que ese sitio compra con anuncios de Google Ads, aparte de lo que consigue gratis por SEO.",
-  paidKeywords:
-    "en cuantas busquedas distintas calculamos que ese sitio esta pujando con anuncios de Google Ads.",
 };
 
 function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
@@ -4674,8 +4670,6 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
       organicTraffic: project.domainOrganicTrafficEstimate ?? 0,
       trafficValue: project.domainTrafficValueEstimate ?? 0,
       top3Percent: ownTop3Percent(),
-      paidTraffic: project.domainPaidTrafficEstimate ?? 0,
-      paidKeywords: project.domainPaidKeywords ?? 0,
       organicKeywords: project.domainOrganicKeywords ?? 0,
       isOwn: true,
     });
@@ -4686,8 +4680,6 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
       organicTraffic: c.organicTrafficEstimate ?? 0,
       trafficValue: c.trafficValueEstimate ?? 0,
       top3Percent: competitorTop3Percent(c),
-      paidTraffic: c.paidTrafficEstimate ?? 0,
-      paidKeywords: c.paidKeywords ?? 0,
       organicKeywords: c.organicKeywords ?? 0,
       isOwn: false,
     });

@@ -17,13 +17,11 @@ export interface CompetitorPoint {
   organicTraffic: number;
   trafficValue: number;
   top3Percent: number;
-  paidTraffic: number;
-  paidKeywords: number;
   organicKeywords: number;
   isOwn: boolean;
 }
 
-export type XMetricKey = "trafficValue" | "top3Percent" | "paidTraffic" | "paidKeywords";
+export type XMetricKey = "trafficValue" | "top3Percent";
 
 export const X_METRICS: Record<
   XMetricKey,
@@ -38,16 +36,6 @@ export const X_METRICS: Record<
     label: "% de keywords en Top 3",
     shortLabel: "% en Top 3",
     format: (v) => `${v.toFixed(0)}%`,
-  },
-  paidTraffic: {
-    label: "Trafico pago estimado",
-    shortLabel: "Trafico pago",
-    format: (v) => v.toLocaleString("es-MX"),
-  },
-  paidKeywords: {
-    label: "Palabras clave pagadas",
-    shortLabel: "Keywords pagadas",
-    format: (v) => v.toLocaleString("es-MX"),
   },
 };
 
