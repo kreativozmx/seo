@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchShopifySales } from "@/lib/providers/shopifyAdmin";
+import { getValidShopifyAccessToken } from "@/lib/shopifyToken";
 
 export async function POST(
   _req: NextRequest,
@@ -15,11 +16,8 @@ export async function POST(
   }
 
   try {
-    const sales = await fetchShopifySales(
-      project.shopifyShopDomain,
-      project.shopifyAccessToken,
-      28
-    );
+    const accessToken = await getValidShopifyAccessToken(project);
+    const sales = await fetchShopifySales(project.shopifyShopDomain, accessToken, 28);
 
     await prisma.project.update({
       where: { id: project.id },

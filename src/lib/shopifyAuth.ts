@@ -32,7 +32,20 @@ export function buildShopifyAuthUrl(shopDomain: string, state: string) {
   return `https://${shopDomain}/admin/oauth/authorize?${params.toString()}`;
 }
 
-export async function exchangeShopifyCode(shopDomain: string, code: string) {
+export interface ShopifyTokenResult {
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: Date | null;
+}
+
+// Shopify stopped accepting non-expiring offline tokens for newer apps'
+// Admin API requests — `expiring: true` here requests the new-style token
+// (1h access token + 90-day refresh token) instead of the old permanent one.
+// https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/offline-access-tokens
+export async function exchangeShopifyCode(
+  shopDomain: string,
+  code: string
+): Promise<ShopifyTokenResult> {
   const clientId = process.env.SHOPIFY_API_KEY;
   const clientSecret = process.env.SHOPIFY_API_SECRET;
   if (!clientId || !clientSecret) {
@@ -46,6 +59,7 @@ export async function exchangeShopifyCode(shopDomain: string, code: string) {
       client_id: clientId,
       client_secret: clientSecret,
       code,
+      expiring: true,
     }),
   });
 
@@ -55,7 +69,48 @@ export async function exchangeShopifyCode(shopDomain: string, code: string) {
   }
 
   const json = await res.json();
-  return json.access_token as string;
+  return {
+    accessToken: json.access_token as string,
+    refreshToken: (json.refresh_token as string) ?? null,
+    expiresAt: json.expires_in ? new Date(Date.now() + Number(json.expires_in) * 1000) : null,
+  };
+}
+
+// Exchanges a refresh token for a fresh access token (and a new refresh
+// token — Shopify rotates it every time). Same endpoint, different
+// grant_type.
+export async function refreshShopifyToken(
+  shopDomain: string,
+  refreshToken: string
+): Promise<ShopifyTokenResult> {
+  const clientId = process.env.SHOPIFY_API_KEY;
+  const clientSecret = process.env.SHOPIFY_API_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error("SHOPIFY_API_KEY / SHOPIFY_API_SECRET no estan configuradas");
+  }
+
+  const res = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Shopify token refresh failed (${res.status}): ${text}`);
+  }
+
+  const json = await res.json();
+  return {
+    accessToken: json.access_token as string,
+    refreshToken: (json.refresh_token as string) ?? refreshToken,
+    expiresAt: json.expires_in ? new Date(Date.now() + Number(json.expires_in) * 1000) : null,
+  };
 }
 
 // Verifies the HMAC Shopify signs OAuth callback query params with, per

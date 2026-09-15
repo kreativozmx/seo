@@ -10,6 +10,8 @@ export async function POST(
     data: {
       shopifyShopDomain: null,
       shopifyAccessToken: null,
+      shopifyRefreshToken: null,
+      shopifyTokenExpiresAt: null,
       shopifyConnectedAt: null,
       shopifyOrders28d: null,
       shopifySales28d: null,

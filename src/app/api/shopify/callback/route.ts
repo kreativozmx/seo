@@ -28,14 +28,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const accessToken = await exchangeShopifyCode(shop, code);
-    const sales = await fetchShopifySales(shop, accessToken, 28);
+    const token = await exchangeShopifyCode(shop, code);
+    const sales = await fetchShopifySales(shop, token.accessToken, 28);
 
     await prisma.project.update({
       where: { id: projectId },
       data: {
         shopifyShopDomain: shop,
-        shopifyAccessToken: accessToken,
+        shopifyAccessToken: token.accessToken,
+        shopifyRefreshToken: token.refreshToken,
+        shopifyTokenExpiresAt: token.expiresAt,
         shopifyConnectedAt: new Date(),
         shopifyOrders28d: sales.orders,
         shopifySales28d: sales.totalSales,

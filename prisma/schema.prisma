@@ -99,6 +99,8 @@ model Project {
   // API exposes it for anyone else's store, including competitors.
   shopifyShopDomain    String? // resolved xxx.myshopify.com
   shopifyAccessToken   String?
+  shopifyRefreshToken  String? // present for expiring offline tokens; used to silently renew shopifyAccessToken
+  shopifyTokenExpiresAt DateTime? // null = old-style non-expiring token
   shopifyConnectedAt   DateTime?
   shopifyOrders28d     Int?
   shopifySales28d      Float?
