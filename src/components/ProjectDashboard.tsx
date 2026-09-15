@@ -30,7 +30,7 @@ function InfoTooltip({ text }: { text: string }) {
     <span
       title={text}
       tabIndex={0}
-      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 text-neutral-500 text-[10px] font-semibold leading-none cursor-help shrink-0 align-middle"
+      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 text-neutral-500 text-[12px] font-semibold leading-none cursor-help shrink-0 align-middle"
     >
       ?
     </span>
@@ -56,7 +56,7 @@ function SortHeader({
       }`}
     >
       {label}
-      <span className="text-[10px]">{active ? (dir === "asc" ? "▲" : "▼") : ""}</span>
+      <span className="text-[12px]">{active ? (dir === "asc" ? "▲" : "▼") : ""}</span>
     </button>
   );
 }
@@ -86,12 +86,12 @@ function ConnectBanner({
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1">
-      <p className="text-[13px] text-neutral-400 uppercase tracking-wide">
+    <div className="bg-surface-low rounded-xl px-5 py-4 shadow-elevation-1">
+      <p className="text-[14px] text-neutral-400 uppercase tracking-wide">
         {label}
       </p>
-      <p className="text-xl font-semibold text-neutral-900 mt-0.5">{value}</p>
-      {hint && <p className="text-[13px] text-neutral-400 mt-0.5">{hint}</p>}
+      <p className="text-xl font-semibold text-neutral-900 mt-1">{value}</p>
+      {hint && <p className="text-[14px] text-neutral-400 mt-1">{hint}</p>}
     </div>
   );
 }
@@ -221,7 +221,7 @@ function NavIcon({ id }: { id: NavId }) {
 
 function ComingSoonBadge() {
   return (
-    <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
+    <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
       Soon
     </span>
   );
@@ -236,7 +236,7 @@ function ComingSoonSection({
 }) {
   return (
     <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-xl px-4 py-8 flex flex-col items-center text-center gap-2">
-      <span className="text-[12px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
+      <span className="text-[13px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
         Soon
       </span>
       <p className="text-sm font-medium text-neutral-900 mt-1">{title}</p>
@@ -260,13 +260,13 @@ function SummaryTile({
   return (
     <Comp
       onClick={onClick}
-      className={`bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1 text-left w-full ${
+      className={`bg-surface-low rounded-xl px-5 py-3.5 shadow-elevation-1 text-left w-full ${
         onClick ? "hover:shadow-elevation-2 transition-shadow cursor-pointer" : ""
       }`}
     >
-      <p className="text-[13px] text-neutral-400 uppercase tracking-wide">{label}</p>
+      <p className="text-[14px] text-neutral-400 uppercase tracking-wide">{label}</p>
       <p className="text-lg font-semibold text-neutral-900 mt-0.5">{value}</p>
-      {hint && <p className="text-[13px] text-neutral-400 mt-0.5">{hint}</p>}
+      {hint && <p className="text-[14px] text-neutral-400 mt-0.5">{hint}</p>}
     </Comp>
   );
 }
@@ -391,7 +391,7 @@ function BestWorstKeywordsCard({
   const top = sorted.slice(0, limit);
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
       <p className="text-sm font-medium text-neutral-900 mb-2">{title}</p>
       {top.length === 0 ? (
         <p className="text-xs text-neutral-400">
@@ -410,7 +410,7 @@ function BestWorstKeywordsCard({
                     href={ranking.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[12px] text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
+                    className="text-[13px] text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
                   >
                     {ranking.url.replace(/^https?:\/\//, "")}
                   </a>
@@ -608,7 +608,7 @@ export default function ProjectDashboard({
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 relative">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between flex-wrap gap-3">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {!readOnly && (
               <Link
@@ -629,22 +629,22 @@ export default function ProjectDashboard({
             </div>
           </div>
           {readOnly && (
-            <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
+            <span className="text-[12px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
               Vista de solo lectura
             </span>
           )}
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-6">
-        <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:w-52 shrink-0">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-6 flex flex-col md:flex-row gap-6 lg:gap-8">
+        <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:w-56 shrink-0">
           {NAV_ITEMS.filter(
             (item) => !readOnly || (item.id !== "conexiones" && item.id !== "configuracion")
           ).map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 text-left text-sm px-4 py-2.5 rounded-full whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-3 text-left text-sm px-4 py-3 rounded-full whitespace-nowrap transition-colors ${
                 activeTab === item.id
                   ? "bg-[#D3E3FD] text-[#041E49] font-medium"
                   : "text-neutral-700 hover:bg-neutral-100"
@@ -739,7 +739,7 @@ export default function ProjectDashboard({
                 <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
                   Proyecto
                 </h2>
-                <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5 text-sm text-neutral-600">
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-4 text-sm text-neutral-600">
                   <p><span className="text-neutral-400">Nombre:</span> {project.name}</p>
                   <p className="mt-1"><span className="text-neutral-400">Dominio:</span> {project.domain}</p>
                   <p className="mt-1"><span className="text-neutral-400">Creado:</span> {new Date(project.createdAt).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
@@ -836,7 +836,7 @@ export default function ProjectDashboard({
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="text-[13px] text-neutral-400 border-b border-neutral-200">
+                            <tr className="text-[14px] text-neutral-400 border-b border-neutral-200">
                               <th className="pl-3 pr-2 py-2 text-left w-8">
                                 <input
                                   type="checkbox"
@@ -1038,7 +1038,7 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
   }, [hasResult]);
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-neutral-500 text-xs">
           Detecta la plataforma, herramientas de analitica, apps de reseñas,
@@ -1121,7 +1121,7 @@ function HeaderTip({
       <span
         className={`pointer-events-none absolute ${
           align === "right" ? "right-0" : "left-0"
-        } top-full mt-1.5 hidden group-hover:block w-max max-w-[220px] whitespace-normal bg-neutral-900 text-white text-[13px] leading-snug rounded-lg px-2.5 py-1.5 z-30 shadow-lg text-left font-normal normal-case`}
+        } top-full mt-1.5 hidden group-hover:block w-max max-w-[220px] whitespace-normal bg-neutral-900 text-white text-[14px] leading-snug rounded-lg px-2.5 py-1.5 z-30 shadow-lg text-left font-normal normal-case`}
       >
         {tip}
       </span>
@@ -1243,7 +1243,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">Planificacion de keywords</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
           Escribe una palabra clave y te damos ideas relacionadas con
@@ -1252,7 +1252,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
         </p>
         <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[13px] text-neutral-500">Palabra clave semilla</label>
+            <label className="text-[14px] text-neutral-500">Palabra clave semilla</label>
             <input
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
@@ -1362,7 +1362,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
                     </td>
                     <td className="px-3 py-2 text-right">
                       {already ? (
-                        <span className="text-[13px] text-neutral-400">Ya rastreada</span>
+                        <span className="text-[14px] text-neutral-400">Ya rastreada</span>
                       ) : (
                         <button
                           onClick={() => handleAdd(s.keyword)}
@@ -1421,7 +1421,7 @@ function AiKeywordRow({
           />
           <div className="min-w-0">
             <p className="text-sm text-neutral-900 truncate">{keyword.text}</p>
-            <p className="text-[13px] text-neutral-400">
+            <p className="text-[14px] text-neutral-400">
               {checksWithData > 0 ? `${mentionCount} mencion${mentionCount === 1 ? "" : "es"} de ${checksWithData} rastreos` : "Sin datos todavia"}
             </p>
           </div>
@@ -1429,7 +1429,7 @@ function AiKeywordRow({
         <div className="flex items-center gap-2 shrink-0">
           {checksWithData > 0 && (
             <span
-              className={`text-[13px] rounded-full px-2 py-0.5 ${
+              className={`text-[14px] rounded-full px-2 py-0.5 ${
                 latest?.aiMentioned
                   ? "bg-emerald-50 text-emerald-700"
                   : "bg-neutral-100 text-neutral-400"
@@ -1450,7 +1450,7 @@ function AiKeywordRow({
           {citedDomains.map((d) => (
             <span
               key={d}
-              className={`text-[12px] rounded-full px-2 py-0.5 ${
+              className={`text-[13px] rounded-full px-2 py-0.5 ${
                 d === ownDomain
                   ? "bg-emerald-50 text-emerald-700"
                   : competitorSet.has(d)
@@ -1505,7 +1505,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
         Conecta Google Analytics en Conexiones para ver, de forma
         automatica, cuantas visitas te mandan ChatGPT, Perplexity,
         Gemini, Claude, Copilot y otros agentes de IA (por dominio de
@@ -1523,7 +1523,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
   const totalSessions = project.gaAiTrafficSessions28d ?? 0;
 
   return (
-    <div className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-4">
+    <div className="bg-purple-50 border border-purple-100 rounded-xl px-5 py-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <p className="text-sm font-medium text-neutral-900">
@@ -1571,7 +1571,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
       ) : (
         <div className="grid sm:grid-cols-2 gap-3 mt-3">
           <div>
-            <p className="text-[13px] text-purple-700 uppercase tracking-wide mb-1.5">Por agente</p>
+            <p className="text-[14px] text-purple-700 uppercase tracking-wide mb-1.5">Por agente</p>
             <div className="flex flex-col gap-1">
               {bySource.map((s) => (
                 <div key={s.label} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
@@ -1582,7 +1582,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
             </div>
           </div>
           <div>
-            <p className="text-[13px] text-purple-700 uppercase tracking-wide mb-1.5">Paginas de aterrizaje</p>
+            <p className="text-[14px] text-purple-700 uppercase tracking-wide mb-1.5">Paginas de aterrizaje</p>
             <div className="flex flex-col gap-1">
               {landingPages.map((p) => (
                 <a
@@ -1640,7 +1640,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
 
   if (!gscConnected) {
     return (
-      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
         Conecta Search Console en Conexiones para ver que consultas reales
         de Google se asocian a las paginas que la IA esta mandando visitar
         — no podemos saber la pregunta exacta que le hicieron a la IA,
@@ -1653,7 +1653,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
     project.aiQueryCrossRefJson ? JSON.parse(project.aiQueryCrossRefJson) : [];
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <p className="text-sm font-medium text-neutral-900">Posibles preguntas detras del trafico de IA</p>
@@ -1700,7 +1700,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
                   <span
                     key={q.query}
                     title={`${q.impressions.toLocaleString("es-MX")} impresiones · posicion ${q.position.toFixed(1)}`}
-                    className="text-[13px] bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5"
+                    className="text-[14px] bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5"
                   >
                     {q.query}
                   </span>
@@ -1794,7 +1794,7 @@ function AiVisibilitySection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">Visibilidad en IA</p>
         <p className="text-neutral-500 text-xs mt-0.5">
           Numero de veces que tu dominio aparece mencionado en el AI
@@ -1827,7 +1827,7 @@ function AiVisibilitySection({ project }: { project: ProjectDTO }) {
       ) : (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3 px-3">
-            <div className="flex items-center gap-2.5 text-[13px] text-neutral-400">
+            <div className="flex items-center gap-2.5 text-[14px] text-neutral-400">
               <input
                 type="checkbox"
                 checked={selectableIds.length > 0 && checkedIds.size === selectableIds.length}
@@ -1933,7 +1933,7 @@ function GscSection({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5">
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-5 py-4">
         <div>
           <p className="text-sm font-medium text-neutral-900">
             Google Search Console
@@ -1955,7 +1955,7 @@ function GscSection({ project }: { project: ProjectDTO }) {
   const hasStats = project.gscClicks28d != null;
 
   return (
-    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 flex flex-col gap-3">
+    <div className="bg-blue-50 border border-blue-100 rounded-xl px-5 py-4 flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-sm text-neutral-700">
           Conectado a{" "}
@@ -2178,7 +2178,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4 flex flex-col gap-4">
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5 flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <p className="text-sm font-medium text-neutral-900">
@@ -2204,7 +2204,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
       {loading && (
         <div className="flex flex-col gap-1.5">
           <ProgressBar percent={progress} />
-          <p className="text-[13px] text-neutral-400">
+          <p className="text-[14px] text-neutral-400">
             Analizando tu sitio con PageSpeed Insights, esto puede tardar
             unos segundos...
           </p>
@@ -2233,7 +2233,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                   {verdict.headline}
                 </p>
                 <p className="text-xs text-neutral-500">{verdict.detail}</p>
-                <p className="text-[13px] text-neutral-400 mt-0.5">
+                <p className="text-[14px] text-neutral-400 mt-0.5">
                   Calificacion de rendimiento: {project.psiPerformanceScore}/100
                 </p>
               </div>
@@ -2260,7 +2260,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
               )}
           </div>
 
-          <p className="text-[13px] text-neutral-400">
+          <p className="text-[14px] text-neutral-400">
             {project.psiFieldDataSource === "field"
               ? "Basado en datos reales de visitantes de tu sitio."
               : "Estimado con una prueba simulada (aun no hay suficientes visitas reales medidas)."}
@@ -2295,7 +2295,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                             {issue.title}
                           </p>
                           {issue.displayValue && (
-                            <span className="text-[13px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
+                            <span className="text-[14px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
                               {issue.displayValue}
                             </span>
                           )}
@@ -2389,7 +2389,7 @@ function YoutubeVideoRow({
             <img src={video.thumbnailUrl} alt="" className="w-16 h-10 rounded object-cover" />
           )}
           {isTop5 && (
-            <span className="absolute -top-1 -left-1 text-[12px] bg-[#1A73E8] text-white rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute -top-1 -left-1 text-[13px] bg-[#1A73E8] text-white rounded-full w-4 h-4 flex items-center justify-center">
               🔥
             </span>
           )}
@@ -2424,7 +2424,7 @@ function YoutubeVideoRow({
       {expanded && (
         <div className="px-3 pb-3 pt-1 flex flex-col gap-3">
           <div>
-            <p className="text-[12px] text-neutral-400 uppercase tracking-wide mb-1">Descripcion actual</p>
+            <p className="text-[13px] text-neutral-400 uppercase tracking-wide mb-1">Descripcion actual</p>
             <p className="text-xs text-neutral-600 whitespace-pre-line bg-white border border-neutral-100 rounded-lg px-3 py-2">
               {video.description || "Sin descripcion."}
             </p>
@@ -2439,7 +2439,7 @@ function YoutubeVideoRow({
               {improving ? "Generando..." : video.aiTitles?.length ? "Volver a generar con IA" : "Mejorar con IA"}
             </button>
             {video.aiSuggestedAt && !improving && (
-              <span className="text-[12px] text-neutral-400">
+              <span className="text-[13px] text-neutral-400">
                 Generado {new Date(video.aiSuggestedAt).toLocaleDateString("es-MX", { month: "short", day: "numeric" })}
               </span>
             )}
@@ -2452,7 +2452,7 @@ function YoutubeVideoRow({
             <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 flex flex-col gap-2.5">
               {video.aiTitles && video.aiTitles.length > 0 && (
                 <div>
-                  <p className="text-[12px] text-blue-700 uppercase tracking-wide mb-1">
+                  <p className="text-[13px] text-blue-700 uppercase tracking-wide mb-1">
                     Titulos sugeridos (con intencion viral)
                   </p>
                   <div className="flex flex-col gap-1">
@@ -2466,7 +2466,7 @@ function YoutubeVideoRow({
               )}
               {video.aiDescription && (
                 <div>
-                  <p className="text-[12px] text-blue-700 uppercase tracking-wide mb-1">
+                  <p className="text-[13px] text-blue-700 uppercase tracking-wide mb-1">
                     Descripcion sugerida
                   </p>
                   <p className="text-xs text-neutral-700 bg-white rounded px-2 py-1.5 whitespace-pre-line">
@@ -2613,7 +2613,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">SEO de YouTube</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
           Conecta tu canal para ver suscriptores, vistas, engagement y tus
@@ -2621,7 +2621,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
         </p>
         <form onSubmit={handleConnect} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[13px] text-neutral-500">
+            <label className="text-[14px] text-neutral-500">
               Canal (@handle, ID o URL)
             </label>
             <input
@@ -2646,7 +2646,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             {project.youtubeThumbnailUrl && (
@@ -2661,7 +2661,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
               <p className="text-sm font-medium text-neutral-900">
                 {project.youtubeChannelTitle}
               </p>
-              <p className="text-[13px] text-neutral-400">
+              <p className="text-[14px] text-neutral-400">
                 {project.youtubeCountry ? `${project.youtubeCountry} · ` : ""}
                 {channelAgeYears ? `${channelAgeYears} años en YouTube` : ""}
               </p>
@@ -2711,7 +2711,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
             Videos recientes — los 5 mas vistos llevan insignia 🔥
           </h2>
           <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3 px-3 py-2 text-[13px] text-neutral-400 border-b border-neutral-200">
+            <div className="flex items-center gap-3 px-3 py-2 text-[14px] text-neutral-400 border-b border-neutral-200">
               <span className="w-16 shrink-0" />
               <SortHeader label="Titulo" active={sortBy === "title"} dir={sortDir} onClick={() => toggleSort("title")} />
               <span className="flex-1" />
@@ -2816,13 +2816,13 @@ function ChangelogSection() {
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5"
+              className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-4"
             >
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[11px] uppercase tracking-wide bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-500">
+                <span className="text-[12px] uppercase tracking-wide bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-500">
                   {entry.category}
                 </span>
-                <span className="text-[11px] text-neutral-400">
+                <span className="text-[12px] text-neutral-400">
                   {new Date(entry.publishedAt).toLocaleDateString("es-MX", {
                     year: "numeric",
                     month: "long",
@@ -2899,7 +2899,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm font-medium text-neutral-900">
@@ -2984,7 +2984,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
       {hasResult && (topVendors.length > 0 || topTypes.length > 0 || topTags.length > 0) && (
         <div className="grid sm:grid-cols-3 gap-3">
           {topVendors.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Marcas / vendedores</p>
               <div className="flex flex-col gap-1">
                 {topVendors.map((v) => (
@@ -2997,7 +2997,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
             </div>
           )}
           {topTypes.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Categorias / tipos</p>
               <div className="flex flex-col gap-1">
                 {topTypes.map((v) => (
@@ -3010,13 +3010,13 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
             </div>
           )}
           {topTags.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Tags mas usados</p>
               <div className="flex flex-wrap gap-1.5">
                 {topTags.map((v) => (
                   <span
                     key={v.name}
-                    className="text-[13px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                    className="text-[14px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
                   >
                     {v.name} · {v.count}
                   </span>
@@ -3042,7 +3042,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
               >
                 <p className="text-sm text-neutral-800 truncate">{p.title}</p>
-                <span className="text-[13px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
+                <span className="text-[14px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
                   {p.issues.join(", ")}
                 </span>
               </a>
@@ -3093,7 +3093,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5">
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-5 py-4">
         <div>
           <p className="text-sm font-medium text-neutral-900">Analiticas</p>
           <p className="text-neutral-500 text-xs mt-0.5">
@@ -3178,8 +3178,8 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
         </p>
       ) : (
         <>
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-4">
-            <p className="text-[13px] text-emerald-700 uppercase tracking-wide font-medium mb-2">
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-5">
+            <p className="text-[14px] text-emerald-700 uppercase tracking-wide font-medium mb-2">
               Ventas (ecommerce de GA4)
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -3194,7 +3194,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               />
             </div>
             {(project.gaTransactions28d ?? 0) === 0 && (
-              <p className="text-[13px] text-emerald-700/70 mt-2">
+              <p className="text-[14px] text-emerald-700/70 mt-2">
                 Si estos numeros estan en cero, tu tienda probablemente no
                 tiene el seguimiento de ecommerce de GA4 activado (Shopify
                 lo manda automaticamente si conectaste GA4 desde el admin
@@ -3203,7 +3203,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
             )}
           </div>
 
-          <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
             <p className="text-sm font-medium text-neutral-900 mb-2">Pedidos por dia</p>
             <OrdersChart data={ordersByDate} />
             {ordersByDate.length > 0 && (
@@ -3236,7 +3236,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                 </table>
               </div>
             )}
-            <p className="text-[12px] text-neutral-400 mt-2">
+            <p className="text-[13px] text-neutral-400 mt-2">
               GA4 no expone el detalle de pedidos individuales (numero de
               orden, productos por orden) via API sin conectar BigQuery —
               esta tabla es el nivel de detalle diario que si esta disponible.
@@ -3266,7 +3266,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Paginas mas visitadas</p>
               {topPages.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3288,7 +3288,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
 
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Paises con mas visitas</p>
               {topCountries.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3306,7 +3306,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           </div>
 
           {deviceTotal > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
               <div className="flex h-3 rounded-full overflow-hidden">
                 <div className="bg-[#1A73E8]" style={{ width: `${(device.mobile / deviceTotal) * 100}%` }} />
@@ -3322,7 +3322,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           )}
 
           {channelsTotal > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
               <div className="flex h-3 rounded-full overflow-hidden">
                 <div className="bg-emerald-500" style={{ width: `${(channels.organic / channelsTotal) * 100}%` }} />
@@ -3342,7 +3342,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           )}
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Fuentes de trafico</p>
               {topSources.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3358,7 +3358,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
 
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Medio</p>
               {topMediums.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3376,7 +3376,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Campañas (UTM)</p>
               {topCampaigns.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3392,7 +3392,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
 
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Productos mas vendidos</p>
               {topProducts.length === 0 ? (
                 <p className="text-xs text-neutral-400">
@@ -3495,7 +3495,7 @@ function GaSection({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5">
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-5 py-4">
         <div>
           <p className="text-sm font-medium text-neutral-900">
             Google Analytics (GA4)
@@ -3515,7 +3515,7 @@ function GaSection({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 flex flex-col gap-3">
+    <div className="bg-blue-50 border border-blue-100 rounded-xl px-5 py-4 flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-sm text-neutral-700">Google Analytics conectado</p>
         <button
@@ -3530,7 +3530,7 @@ function GaSection({ project }: { project: ProjectDTO }) {
       {!project.gaPropertyId ? (
         <form onSubmit={handleSaveProperty} className="flex items-end gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-[13px] text-neutral-500">Propiedad GA4</label>
+            <label className="text-[14px] text-neutral-500">Propiedad GA4</label>
             {loadingProperties ? (
               <p className="text-xs text-neutral-400 py-1.5">Cargando propiedades...</p>
             ) : properties.length > 0 ? (
@@ -3715,7 +3715,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
   return (
     <div className="flex items-end gap-2 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
       <div className="flex flex-col gap-1">
-        <label className="text-[13px] text-neutral-500">Pais</label>
+        <label className="text-[14px] text-neutral-500">Pais</label>
         <select
           value={locationCode}
           onChange={(e) => setLocationCode(e.target.value)}
@@ -3729,7 +3729,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
         </select>
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[13px] text-neutral-500">Idioma</label>
+        <label className="text-[14px] text-neutral-500">Idioma</label>
         <select
           value={languageCode}
           onChange={(e) => setLanguageCode(e.target.value)}
@@ -3751,7 +3751,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
           {saving ? "Guardando..." : "Guardar"}
         </button>
       )}
-      <p className="text-[13px] text-neutral-400 pb-2">
+      <p className="text-[14px] text-neutral-400 pb-2">
         Aplica a todas las keywords de este proyecto.
       </p>
     </div>
@@ -3878,12 +3878,12 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
   }
 
   return (
-    <div className="bg-surface-low rounded-xl px-4 py-3 shadow-elevation-1">
+    <div className="bg-surface-low rounded-xl px-5 py-3.5 shadow-elevation-1">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-neutral-900">{competitor.domain}</p>
           {competitor.ecommerceIsShopify && (
-            <span className="text-[12px] uppercase tracking-wide bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
+            <span className="text-[13px] uppercase tracking-wide bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
               Shopify
             </span>
           )}
@@ -3957,7 +3957,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
               {showKeywords ? "Ocultar" : "Ver"} keywords posicionadas ({rankedKeywords.length}) {showKeywords ? "▲" : "▼"}
             </button>
             {showKeywords && (
-              <div className="flex bg-neutral-100 rounded-full p-0.5 text-[13px]">
+              <div className="flex bg-neutral-100 rounded-full p-0.5 text-[14px]">
                 <button
                   onClick={() => setKwViewMode("keywords")}
                   className={`px-2.5 py-1 rounded-full transition-colors ${
@@ -4104,7 +4104,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
               {unique.map((t) => (
                 <span
                   key={t.name}
-                  className="flex items-center gap-1 text-[13px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                  className="flex items-center gap-1 text-[14px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
                 >
                   <span>{t.icon}</span>
                   {t.name}
@@ -4175,7 +4175,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
 
   if (!ownHasData && competitorsWithData.length === 0) {
     return (
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
@@ -4201,7 +4201,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <div>
           <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
@@ -4220,7 +4220,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         </button>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[13px] text-neutral-500 leading-relaxed flex flex-col gap-1">
+      <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[14px] text-neutral-500 leading-relaxed flex flex-col gap-1">
         <p>
           <strong className="text-neutral-700">Trafico organico estimado</strong>{" "}
           = cuantas visitas al mes calculamos que recibe ese sitio desde
@@ -4359,7 +4359,7 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
         </button>
       </form>
 
-      <p className="text-[13px] text-neutral-400">
+      <p className="text-[14px] text-neutral-400">
         El trafico es un estimado (como el de SEMrush/Ahrefs), no un dato
         real — nadie fuera del dueño del sitio puede ver trafico o ventas
         reales de otra tienda. Si el dominio es una tienda Shopify,
@@ -4410,7 +4410,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
       className="flex flex-col gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[13px] text-neutral-500">Keyword</label>
+        <label className="text-[14px] text-neutral-500">Keyword</label>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -4422,7 +4422,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-[13px] text-neutral-500">Motor</label>
+          <label className="text-[14px] text-neutral-500">Motor</label>
           <select
             value={engine}
             onChange={(e) => setEngine(e.target.value)}
@@ -4434,7 +4434,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[13px] text-neutral-500">Dispositivo</label>
+          <label className="text-[14px] text-neutral-500">Dispositivo</label>
           <select
             value={device}
             onChange={(e) => setDevice(e.target.value)}
@@ -4453,7 +4453,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
           {saving ? "Agregando..." : "Agregar"}
         </button>
 
-        <p className="text-[13px] text-neutral-400 ml-auto self-center">
+        <p className="text-[14px] text-neutral-400 ml-auto self-center">
           ¿ChatGPT o Perplexity? Agrega esas keywords desde SEO IA.
         </p>
       </div>
@@ -4502,7 +4502,7 @@ function AppResultRow({
         >
           {app.title}
         </a>
-        <p className="text-[13px] text-neutral-400 truncate">
+        <p className="text-[14px] text-neutral-400 truncate">
           {app.developer ? `${app.developer} · ` : ""}
           {app.rating != null ? `★ ${app.rating.toFixed(1)}` : "Sin calificacion"}
           {app.reviewsCount != null ? ` (${app.reviewsCount.toLocaleString("es-MX")})` : ""}
@@ -4514,14 +4514,14 @@ function AppResultRow({
         </p>
       </div>
       {isMine ? (
-        <span className="text-[13px] bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 shrink-0">
+        <span className="text-[14px] bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 shrink-0">
           Tu app
         </span>
       ) : (
         <button
           onClick={onSelect}
           disabled={selecting}
-          className="text-[13px] bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 rounded-full px-2.5 py-1 shrink-0 transition-colors whitespace-nowrap"
+          className="text-[14px] bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 rounded-full px-2.5 py-1 shrink-0 transition-colors whitespace-nowrap"
         >
           {selecting ? "..." : "Es mi app"}
         </button>
@@ -4585,7 +4585,7 @@ function AppsSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">Apps iOS y Android</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
           Busca tu app (o la de tus competidores) en Google Play y la App
@@ -4593,7 +4593,7 @@ function AppsSection({ project }: { project: ProjectDTO }) {
         </p>
         <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[13px] text-neutral-500">Nombre de la app o marca</label>
+            <label className="text-[14px] text-neutral-500">Nombre de la app o marca</label>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -4610,7 +4610,7 @@ function AppsSection({ project }: { project: ProjectDTO }) {
           </button>
         </form>
         {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-        <p className="text-[13px] text-neutral-400 mt-2">
+        <p className="text-[14px] text-neutral-400 mt-2">
           La busqueda de apps puede tardar hasta medio minuto — DataForSEO
           procesa esta consulta como una tarea, no es instantanea.
         </p>

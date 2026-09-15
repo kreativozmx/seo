@@ -17,11 +17,11 @@ function StatCard({
 }) {
   return (
     <div className="bg-surface-low rounded-xl px-4 py-3.5 shadow-elevation-1">
-      <p className="text-[13px] text-neutral-400 uppercase tracking-wide">
+      <p className="text-[14px] text-neutral-400 uppercase tracking-wide">
         {label}
       </p>
       <p className="text-2xl font-semibold text-neutral-900 mt-1">{value}</p>
-      {hint && <p className="text-[13px] text-neutral-400 mt-0.5">{hint}</p>}
+      {hint && <p className="text-[14px] text-neutral-400 mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -79,7 +79,7 @@ export default async function Home() {
       : "—";
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-16">
+    <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-10 sm:py-16">
       <header className="mb-8 flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
@@ -133,7 +133,7 @@ export default async function Home() {
                 </p>
               </div>
               <span
-                className={`shrink-0 text-[13px] rounded-full px-2 py-0.5 ${
+                className={`shrink-0 text-[14px] rounded-full px-2 py-0.5 ${
                   project.gscSiteUrl
                     ? "bg-blue-50 text-blue-600"
                     : "bg-neutral-100 text-neutral-400"

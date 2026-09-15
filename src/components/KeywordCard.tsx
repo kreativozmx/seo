@@ -197,13 +197,13 @@ export function KeywordListItem({
         <td className="px-2 py-2 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
             <p className="text-sm text-neutral-900 truncate">{keyword.text}</p>
-            <span className="text-[12px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded px-1.5 py-0.5 shrink-0">
+            <span className="text-[13px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded px-1.5 py-0.5 shrink-0">
               {ENGINE_LABELS[keyword.engine] || keyword.engine}
             </span>
             {keyword.source === "planning" && (
               <span
                 title="Agregada desde Planificacion"
-                className="text-[12px] uppercase tracking-wide bg-blue-50 text-[#1A73E8] rounded px-1.5 py-0.5 shrink-0"
+                className="text-[13px] uppercase tracking-wide bg-blue-50 text-[#1A73E8] rounded px-1.5 py-0.5 shrink-0"
               >
                 Planificacion
               </span>
@@ -211,7 +211,7 @@ export function KeywordListItem({
             {keyword.source === "gsc" && (
               <span
                 title="Importada desde Google Search Console"
-                className="text-[12px] uppercase tracking-wide bg-blue-50 text-blue-600 rounded px-1.5 py-0.5 shrink-0"
+                className="text-[13px] uppercase tracking-wide bg-blue-50 text-blue-600 rounded px-1.5 py-0.5 shrink-0"
               >
                 GSC
               </span>
@@ -243,7 +243,7 @@ export function KeywordListItem({
           )}
         </td>
         <td className="px-2 py-2 text-right hidden sm:table-cell">
-          <span className="text-[13px] text-neutral-400 whitespace-nowrap">
+          <span className="text-[14px] text-neutral-400 whitespace-nowrap">
             {ownLatest
               ? new Date(ownLatest.checkedAt).toLocaleDateString("es-MX", { month: "short", day: "numeric" })
               : "—"}
@@ -281,7 +281,7 @@ export function KeywordListItem({
           <td colSpan={8} className="px-3 pb-2.5 pt-1 bg-neutral-50/50">
             <div className="bg-neutral-50 border border-neutral-100 rounded-lg px-3 py-2.5 flex flex-col gap-2">
               <div>
-                <p className="text-[12px] text-neutral-400 uppercase tracking-wide">Tu URL posicionada</p>
+                <p className="text-[13px] text-neutral-400 uppercase tracking-wide">Tu URL posicionada</p>
                 {ownLatest?.url ? (
                   <a
                     href={ownLatest.url}
@@ -298,11 +298,11 @@ export function KeywordListItem({
                 )}
               </div>
               <div>
-                <p className="text-[12px] text-neutral-400 uppercase tracking-wide">
+                <p className="text-[13px] text-neutral-400 uppercase tracking-wide">
                   Top 5 mejor posicionados que tu{betterCount > 0 ? ` (de ${betterCount})` : ""}
                 </p>
                 {!usingSnapshot && !snapshotEntry && (
-                  <p className="text-[12px] text-neutral-400 mt-0.5">
+                  <p className="text-[13px] text-neutral-400 mt-0.5">
                     {competitorDomains.length > 0
                       ? "Aun sin un rastreo automatico reciente — mostrando solo tus competidores rastreados. Rastrea esta keyword para ver el top 10 real de Google."
                       : "Rastrea esta keyword (motor Google/Bing) para ver quien te supera en los resultados reales."}
@@ -322,7 +322,7 @@ export function KeywordListItem({
                           <span className="font-semibold text-neutral-700 shrink-0">#{c.position}</span>
                           <span className="text-neutral-600 shrink-0">{c.domain}</span>
                           {c.isCompetitor && (
-                            <span className="text-[10px] uppercase tracking-wide bg-blue-50 text-[#1A73E8] rounded px-1 py-0.5 shrink-0">
+                            <span className="text-[12px] uppercase tracking-wide bg-blue-50 text-[#1A73E8] rounded px-1 py-0.5 shrink-0">
                               Competidor
                             </span>
                           )}
@@ -401,10 +401,10 @@ export function KeywordDetailCard({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-medium text-neutral-900">{keyword.text}</p>
-            <span className="text-[13px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded px-1.5 py-0.5">
+            <span className="text-[14px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded px-1.5 py-0.5">
               {ENGINE_LABELS[keyword.engine] || keyword.engine}
             </span>
-            <span className="text-[13px] text-neutral-400">
+            <span className="text-[14px] text-neutral-400">
               {keyword.device === "mobile" ? "móvil" : "escritorio"}
             </span>
           </div>
@@ -451,7 +451,7 @@ export function KeywordDetailCard({
               key={domain}
               className="bg-neutral-50 border border-neutral-100 rounded-lg px-3 py-2"
             >
-              <p className="text-[13px] text-neutral-500 truncate">
+              <p className="text-[14px] text-neutral-500 truncate">
                 {domain === ownDomain ? "Tu sitio" : domain}
               </p>
               <PositionBadge
@@ -464,7 +464,7 @@ export function KeywordDetailCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   title={r.url}
-                  className="block text-[13px] text-neutral-400 hover:text-[#1A73E8] truncate mt-0.5"
+                  className="block text-[14px] text-neutral-400 hover:text-[#1A73E8] truncate mt-0.5"
                 >
                   {r.url}
                 </a>
@@ -479,7 +479,7 @@ export function KeywordDetailCard({
           <button
             key={opt.value}
             onClick={() => setChartPeriod(opt.value)}
-            className={`text-[13px] rounded-full px-2.5 py-1 transition-colors ${
+            className={`text-[14px] rounded-full px-2.5 py-1 transition-colors ${
               chartPeriod === opt.value
                 ? "bg-[#1A73E8] text-white font-medium"
                 : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
@@ -537,7 +537,7 @@ function RankingHistoryTable({
 
   return (
     <div className="mt-4">
-      <p className="text-[13px] text-neutral-400 uppercase tracking-wide mb-2">
+      <p className="text-[14px] text-neutral-400 uppercase tracking-wide mb-2">
         Historial por dia
       </p>
       <div className="max-h-72 overflow-y-auto border border-neutral-100 rounded-lg">
@@ -646,7 +646,7 @@ export function ManualEntryForm({
       className="mt-3 flex flex-wrap items-end gap-2 bg-neutral-50 border border-neutral-200 rounded-lg p-3"
     >
       <div className="flex flex-col gap-1">
-        <label className="text-[13px] text-neutral-500">Dominio</label>
+        <label className="text-[14px] text-neutral-500">Dominio</label>
         <select
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
@@ -671,7 +671,7 @@ export function ManualEntryForm({
         </label>
       ) : (
         <div className="flex flex-col gap-1">
-          <label className="text-[13px] text-neutral-500">Posicion</label>
+          <label className="text-[14px] text-neutral-500">Posicion</label>
           <input
             type="number"
             min={1}
@@ -683,7 +683,7 @@ export function ManualEntryForm({
       )}
 
       <div className="flex flex-col gap-1">
-        <label className="text-[13px] text-neutral-500">Fuente</label>
+        <label className="text-[14px] text-neutral-500">Fuente</label>
         <select
           value={source}
           onChange={(e) => setSource(e.target.value)}
