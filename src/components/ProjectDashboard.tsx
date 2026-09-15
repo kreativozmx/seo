@@ -114,6 +114,7 @@ const NAV_ITEMS = [
   { id: "competencia", label: "Competencia" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
+  { id: "notificaciones", label: "Notificaciones", comingSoon: true },
   { id: "conexiones", label: "Conexiones" },
   { id: "configuracion", label: "Ajustes" },
 ] as const;
@@ -132,6 +133,7 @@ const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
   { id: "competencia" },
   { id: "apps" },
   { id: "marketplaces" },
+  { id: "notificaciones" },
   { id: "conexiones" },
   { id: "configuracion" },
 ];
@@ -205,6 +207,12 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
       <path d="M3 9 4.5 4h15L21 9" />
       <path d="M4 9h16v11H4Z" />
       <path d="M9 20v-6h6v6" />
+    </>
+  ),
+  notificaciones: (
+    <>
+      <path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
+      <path d="M9.5 18a2.5 2.5 0 0 0 5 0" />
     </>
   ),
   conexiones: (
@@ -1109,6 +1117,15 @@ export default function ProjectDashboard({
               <ComingSoonSection
                 title="Marketplaces"
                 description="Analiza tus productos en Mercado Libre y Amazon: precios, calificaciones, posicion en busquedas del marketplace y mas. Muy pronto."
+              />
+            </section>
+          )}
+
+          {activeTab === "notificaciones" && (
+            <section>
+              <ComingSoonSection
+                title="Notificaciones"
+                description="Recibe un WhatsApp con un resumen de tus cambios de posiciones — por ejemplo, las 10 keywords que mas subieron esta semana. Muy pronto."
               />
             </section>
           )}
