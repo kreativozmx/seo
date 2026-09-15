@@ -55,6 +55,7 @@ export interface ShopifyAudit {
   topProductTypes: NameCount[];
   topTags: NameCount[];
   newestProductAt: string | null;
+  topSelling: { title: string; handle: string }[];
 }
 
 // Some stores sit behind bot/WAF protection (Cloudflare, Shopify's own
@@ -165,9 +166,29 @@ function topCounts(values: string[], limit = 8): NameCount[] {
     .slice(0, limit);
 }
 
+// Shopify's storefront honors ?sort_by=best-selling on the auto-generated
+// "all" collection, which is the closest a public (no-admin-access) catalog
+// gets to exposing sales rank — no counts, just relative order.
+async function fetchTopSelling(
+  domain: string,
+  limit = 5
+): Promise<{ title: string; handle: string }[]> {
+  try {
+    const { ok, json } = await fetchJson(
+      `https://${domain}/collections/all/products.json?sort_by=best-selling&limit=${limit}`
+    );
+    if (!ok) return [];
+    const products: ShopifyProduct[] = (json as { products?: ShopifyProduct[] })?.products ?? [];
+    return products.map((p) => ({ title: p.title, handle: p.handle }));
+  } catch {
+    return [];
+  }
+}
+
 export async function auditShopifyStore(domain: string): Promise<ShopifyAudit> {
   const { products, hasMore: productCountIsMin } = await fetchAllProducts(domain);
   const { count: collectionCount, hasMore: collectionCountIsMin } = await fetchCollectionCount(domain);
+  const topSelling = await fetchTopSelling(domain);
 
   let missingDescCount = 0;
   let missingImageCount = 0;
@@ -249,5 +270,6 @@ export async function auditShopifyStore(domain: string): Promise<ShopifyAudit> {
     topProductTypes: topCounts(productTypes),
     topTags: topCounts(tags, 12),
     newestProductAt,
+    topSelling,
   };
 }

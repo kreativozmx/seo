@@ -34,6 +34,15 @@ export interface CompetitorDTO {
   ecommerceProductCount: number | null;
   ecommerceCollectionCount: number | null;
   ecommerceCheckedAt: string | null;
+  ecommercePriceMin: number | null;
+  ecommercePriceMax: number | null;
+  ecommerceAvgPrice: number | null;
+  ecommerceTotalVariants: number | null;
+  ecommerceTopVendorsJson: string | null;
+  ecommerceTopTypesJson: string | null;
+  ecommerceTopTagsJson: string | null;
+  ecommerceTopSellingJson: string | null;
+  ecommerceNewestProductAt: string | null;
   organicKeywords: number | null;
   organicTrafficEstimate: number | null;
   paidKeywords: number | null;
@@ -149,6 +158,7 @@ export interface ProjectDTO {
   ecommerceTopVendorsJson: string | null;
   ecommerceTopTypesJson: string | null;
   ecommerceTopTagsJson: string | null;
+  ecommerceTopSellingJson: string | null;
   ecommerceNewestProductAt: string | null;
   ecommerceCheckedAt: string | null;
   techDetectedJson: string | null;

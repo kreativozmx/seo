@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { detectShopifyBasic } from "@/lib/providers/shopify";
+import { auditShopifyStore } from "@/lib/providers/shopify";
 import { detectTechnologies } from "@/lib/providers/techDetect";
 import {
   fetchDomainTrafficOverview,
@@ -23,12 +23,23 @@ export async function POST(
   const errors: string[] = [];
 
   try {
-    const info = await detectShopifyBasic(competitor.domain);
-    data.ecommerceIsShopify = info.isShopify;
-    data.ecommerceProductCount = info.productCount;
-    data.ecommerceCollectionCount = info.collectionCount;
+    const audit = await auditShopifyStore(competitor.domain);
+    data.ecommerceIsShopify = audit.isShopify;
+    data.ecommerceProductCount = audit.productCount;
+    data.ecommerceCollectionCount = audit.collectionCount;
+    data.ecommercePriceMin = audit.priceMin;
+    data.ecommercePriceMax = audit.priceMax;
+    data.ecommerceAvgPrice = audit.avgPrice;
+    data.ecommerceTotalVariants = audit.totalVariants;
+    data.ecommerceTopVendorsJson = JSON.stringify(audit.topVendors);
+    data.ecommerceTopTypesJson = JSON.stringify(audit.topProductTypes);
+    data.ecommerceTopTagsJson = JSON.stringify(audit.topTags);
+    data.ecommerceTopSellingJson = JSON.stringify(audit.topSelling);
+    data.ecommerceNewestProductAt = audit.newestProductAt ? new Date(audit.newestProductAt) : null;
     data.ecommerceCheckedAt = new Date();
   } catch (err) {
+    data.ecommerceIsShopify = false;
+    data.ecommerceCheckedAt = new Date();
     errors.push(err instanceof Error ? err.message : "Error al leer catalogo");
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeDomain } from "@/lib/domain";
-import { detectShopifyBasic } from "@/lib/providers/shopify";
+import { auditShopifyStore } from "@/lib/providers/shopify";
 import { detectTechnologies } from "@/lib/providers/techDetect";
 import {
   fetchDomainTrafficOverview,
@@ -42,13 +42,23 @@ export async function POST(
   const data: Record<string, unknown> = {};
 
   try {
-    const info = await detectShopifyBasic(cleanDomain);
-    data.ecommerceIsShopify = info.isShopify;
-    data.ecommerceProductCount = info.productCount;
-    data.ecommerceCollectionCount = info.collectionCount;
+    const audit = await auditShopifyStore(cleanDomain);
+    data.ecommerceIsShopify = audit.isShopify;
+    data.ecommerceProductCount = audit.productCount;
+    data.ecommerceCollectionCount = audit.collectionCount;
+    data.ecommercePriceMin = audit.priceMin;
+    data.ecommercePriceMax = audit.priceMax;
+    data.ecommerceAvgPrice = audit.avgPrice;
+    data.ecommerceTotalVariants = audit.totalVariants;
+    data.ecommerceTopVendorsJson = JSON.stringify(audit.topVendors);
+    data.ecommerceTopTypesJson = JSON.stringify(audit.topProductTypes);
+    data.ecommerceTopTagsJson = JSON.stringify(audit.topTags);
+    data.ecommerceTopSellingJson = JSON.stringify(audit.topSelling);
+    data.ecommerceNewestProductAt = audit.newestProductAt ? new Date(audit.newestProductAt) : null;
     data.ecommerceCheckedAt = new Date();
   } catch {
-    // ignore
+    data.ecommerceIsShopify = false;
+    data.ecommerceCheckedAt = new Date();
   }
 
   try {

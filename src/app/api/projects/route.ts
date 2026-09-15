@@ -9,7 +9,17 @@ export async function GET() {
       _count: { select: { keywords: true, competitors: true } },
     },
   });
-  return NextResponse.json(projects);
+  // Never send OAuth refresh tokens or the share link secret to the client.
+  const sanitized = projects.map((p) => {
+    const copy: Partial<typeof p> = { ...p };
+    delete copy.gscRefreshToken;
+    delete copy.gaRefreshToken;
+    delete copy.gbpRefreshToken;
+    delete copy.shopifyAccessToken;
+    delete copy.shareToken;
+    return copy;
+  });
+  return NextResponse.json(sanitized);
 }
 
 export async function POST(req: NextRequest) {

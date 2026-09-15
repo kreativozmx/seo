@@ -161,6 +161,7 @@ model Project {
   ecommerceTopVendorsJson    String? // cached array of {name, count}
   ecommerceTopTypesJson      String? // cached array of {name, count}
   ecommerceTopTagsJson       String? // cached array of {name, count}
+  ecommerceTopSellingJson    String? // cached array of {title, handle} — Shopify only
   ecommerceNewestProductAt   DateTime?
   ecommerceCheckedAt         DateTime?
 
@@ -212,6 +213,19 @@ model Competitor {
   ecommerceProductCount    Int?
   ecommerceCollectionCount Int?
   ecommerceCheckedAt       DateTime?
+
+  // Full catalog breakdown (same audit as the project's own Ecommerce tab)
+  // — vendors, product types, tags, pricing, and a best-selling approximation
+  // via the storefront's own ?sort_by=best-selling.
+  ecommercePriceMin        Float?
+  ecommercePriceMax        Float?
+  ecommerceAvgPrice        Float?
+  ecommerceTotalVariants   Int?
+  ecommerceTopVendorsJson  String? // cached array of {name, count}
+  ecommerceTopTypesJson    String? // cached array of {name, count}
+  ecommerceTopTagsJson     String? // cached array of {name, count}
+  ecommerceTopSellingJson  String? // cached array of {title, handle}
+  ecommerceNewestProductAt DateTime?
 
   // Estimated organic/paid search visibility (DataForSEO Labs) — an
   // estimate, like SEMrush/Ahrefs show, not real analytics. Nobody outside

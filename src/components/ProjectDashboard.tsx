@@ -2737,12 +2737,6 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
   );
 }
 
-interface FlaggedProduct {
-  title: string;
-  handle: string;
-  issues: string[];
-}
-
 interface ChangelogEntryDTO {
   id: string;
   sourceUrl: string;
@@ -2857,8 +2851,8 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
 
   const hasResult = project.ecommerceCheckedAt != null;
-  const flagged: FlaggedProduct[] = project.ecommerceFlaggedJson
-    ? JSON.parse(project.ecommerceFlaggedJson)
+  const topSelling: { title: string; handle: string }[] = project.ecommerceTopSellingJson
+    ? JSON.parse(project.ecommerceTopSellingJson)
     : [];
 
   async function handleRun() {
@@ -2971,12 +2965,6 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 })}
               />
             )}
-            <StatCard label="Sin descripcion" value={String(project.ecommerceMissingDescCount ?? 0)} />
-            <StatCard label="Sin imagenes" value={String(project.ecommerceMissingImageCount ?? 0)} />
-            <StatCard label="Sin texto alt" value={String(project.ecommerceMissingAltCount ?? 0)} />
-            {project.ecommerceThinTitleCount != null && (
-              <StatCard label="Titulos cortos" value={String(project.ecommerceThinTitleCount)} />
-            )}
           </div>
         )}
       </div>
@@ -3027,34 +3015,30 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
         </div>
       )}
 
-      {hasResult && flagged.length > 0 && (
+      {hasResult && topSelling.length > 0 && (
         <div>
           <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-            Productos con oportunidades de mejora ({flagged.length})
+            Productos mas vendidos (aprox.)
           </h2>
           <div className="flex flex-col gap-1 bg-neutral-50 border border-neutral-200 rounded-xl p-1.5">
-            {flagged.map((p) => (
+            {topSelling.map((p, i) => (
               <a
                 key={p.handle}
                 href={`https://${project.domain}/products/${p.handle}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
               >
+                <span className="text-neutral-400 text-xs shrink-0 w-4">{i + 1}.</span>
                 <p className="text-sm text-neutral-800 truncate">{p.title}</p>
-                <span className="text-[14px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">
-                  {p.issues.join(", ")}
-                </span>
               </a>
             ))}
           </div>
+          <p className="text-[14px] text-neutral-400 mt-1.5">
+            Orden aproximado segun la coleccion &ldquo;best-selling&rdquo; publica de la
+            tienda — Shopify no expone el numero real de ventas por producto.
+          </p>
         </div>
-      )}
-
-      {hasResult && flagged.length === 0 && (
-        <p className="text-xs text-neutral-400">
-          No encontramos productos con estos problemas comunes de SEO.
-        </p>
       )}
     </div>
   );
@@ -3758,6 +3742,139 @@ function LocationSection({ project }: { project: ProjectDTO }) {
   );
 }
 
+function formatMoney(n: number) {
+  return `$${n.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`;
+}
+
+function CompetitorShopifyDetails({
+  competitor,
+}: {
+  competitor: ProjectDTO["competitors"][number];
+}) {
+  const vendors: { name: string; count: number }[] = competitor.ecommerceTopVendorsJson
+    ? JSON.parse(competitor.ecommerceTopVendorsJson)
+    : [];
+  const types: { name: string; count: number }[] = competitor.ecommerceTopTypesJson
+    ? JSON.parse(competitor.ecommerceTopTypesJson)
+    : [];
+  const tags: { name: string; count: number }[] = competitor.ecommerceTopTagsJson
+    ? JSON.parse(competitor.ecommerceTopTagsJson)
+    : [];
+  const topSelling: { title: string; handle: string }[] = competitor.ecommerceTopSellingJson
+    ? JSON.parse(competitor.ecommerceTopSellingJson)
+    : [];
+
+  const hasAnything =
+    vendors.length > 0 ||
+    types.length > 0 ||
+    tags.length > 0 ||
+    topSelling.length > 0 ||
+    competitor.ecommerceAvgPrice != null ||
+    competitor.ecommerceNewestProductAt != null;
+
+  if (!hasAnything) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-neutral-100 flex flex-col gap-3 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {competitor.ecommercePriceMin != null && competitor.ecommercePriceMax != null && (
+          <div>
+            <p className="text-neutral-400">Rango de precios</p>
+            <p className="text-neutral-800 font-medium">
+              {formatMoney(competitor.ecommercePriceMin)} – {formatMoney(competitor.ecommercePriceMax)}
+            </p>
+          </div>
+        )}
+        {competitor.ecommerceAvgPrice != null && (
+          <div>
+            <p className="text-neutral-400">Precio promedio</p>
+            <p className="text-neutral-800 font-medium">{formatMoney(competitor.ecommerceAvgPrice)}</p>
+          </div>
+        )}
+        {competitor.ecommerceTotalVariants != null && (
+          <div>
+            <p className="text-neutral-400">Variantes</p>
+            <p className="text-neutral-800 font-medium">{competitor.ecommerceTotalVariants}</p>
+          </div>
+        )}
+        {competitor.ecommerceNewestProductAt != null && (
+          <div>
+            <p className="text-neutral-400">Ultimo producto agregado</p>
+            <p className="text-neutral-800 font-medium">
+              {new Date(competitor.ecommerceNewestProductAt).toLocaleDateString("es-MX", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {topSelling.length > 0 && (
+        <div>
+          <p className="text-neutral-400 mb-1">Productos mas vendidos (aprox.)</p>
+          <ul className="flex flex-col gap-0.5">
+            {topSelling.map((p) => (
+              <li key={p.handle} className="text-neutral-700 truncate">
+                {p.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {vendors.length > 0 && (
+        <div>
+          <p className="text-neutral-400 mb-1">Marcas mas comunes</p>
+          <div className="flex flex-wrap gap-1.5">
+            {vendors.map((v) => (
+              <span
+                key={v.name}
+                className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+              >
+                {v.name} <span className="text-neutral-400">({v.count})</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {types.length > 0 && (
+        <div>
+          <p className="text-neutral-400 mb-1">Categorias / tipos</p>
+          <div className="flex flex-wrap gap-1.5">
+            {types.map((t) => (
+              <span
+                key={t.name}
+                className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+              >
+                {t.name} <span className="text-neutral-400">({t.count})</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tags.length > 0 && (
+        <div>
+          <p className="text-neutral-400 mb-1">Tags mas usados</p>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <span
+                key={t.name}
+                className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+              >
+                {t.name} <span className="text-neutral-400">({t.count})</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][number] }) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -3946,6 +4063,8 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
           )}
         </div>
       )}
+
+      {competitor.ecommerceIsShopify && hasData && <CompetitorShopifyDetails competitor={competitor} />}
 
       {rankedKeywords.length > 0 && (
         <div className="mt-3 pt-3 border-t border-neutral-100">
