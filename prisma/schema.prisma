@@ -190,6 +190,7 @@ model Project {
   domainPaidKeywords           Int?
   domainPaidTrafficEstimate    Int?
   domainTrafficValueEstimate   Float?
+  domainRankedKeywordsJson     String? // cached array of {keyword, position, searchVolume, url} — same shape/source as Competitor.rankedKeywordsJson, for our own domain
   domainTrafficCheckedAt       DateTime?
 
   // Auditoria tab: 50-point Shopify store checklist. Items we can detect

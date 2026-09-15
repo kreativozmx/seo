@@ -136,7 +136,12 @@ export default function CompetitorScatterChart({
           tickFormatter={(v) => v.toLocaleString("es-MX")}
           label={{ value: "Trafico organico est.", angle: -90, position: "insideLeft", fontSize: 11, fill: "#a3a3a3" }}
         />
-        <ZAxis type="number" dataKey="organicKeywords" range={[80, 900]} name="Keywords organicas" />
+        <ZAxis
+          type="number"
+          dataKey={(p: CompetitorPoint) => Math.sqrt(Math.max(p.organicTraffic, 0) * Math.max(p.trafficValue, 0))}
+          range={[80, 900]}
+          name="Tamaño (trafico x valor)"
+        />
         <Tooltip
           cursor={{ strokeDasharray: "3 3" }}
           contentStyle={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12 }}

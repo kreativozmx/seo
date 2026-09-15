@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { fetchDomainTrafficOverview } from "@/lib/providers/dataforseoLabs";
+import { fetchDomainTrafficOverview, fetchRankedKeywords } from "@/lib/providers/dataforseoLabs";
 
 // Same estimate source used for competitors, but for the project's own
 // domain — so the Competencia comparison chart/table can plot "you" next
@@ -15,11 +15,10 @@ export async function POST(
   }
 
   try {
-    const traffic = await fetchDomainTrafficOverview(
-      project.domain,
-      project.locationCode,
-      project.languageCode
-    );
+    const [traffic, rankedKeywords] = await Promise.all([
+      fetchDomainTrafficOverview(project.domain, project.locationCode, project.languageCode),
+      fetchRankedKeywords(project.domain, project.locationCode, project.languageCode, 20),
+    ]);
 
     const updated = await prisma.project.update({
       where: { id: project.id },
@@ -29,6 +28,7 @@ export async function POST(
         domainPaidKeywords: traffic.paidKeywords,
         domainPaidTrafficEstimate: traffic.paidTrafficEstimate,
         domainTrafficValueEstimate: traffic.trafficValueEstimate,
+        domainRankedKeywordsJson: JSON.stringify(rankedKeywords),
         domainTrafficCheckedAt: new Date(),
       },
     });

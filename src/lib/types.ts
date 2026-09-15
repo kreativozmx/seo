@@ -175,6 +175,7 @@ export interface ProjectDTO {
   domainPaidKeywords: number | null;
   domainPaidTrafficEstimate: number | null;
   domainTrafficValueEstimate: number | null;
+  domainRankedKeywordsJson: string | null;
   domainTrafficCheckedAt: string | null;
   auditManualChecksJson: string | null;
   appQuery: string | null;

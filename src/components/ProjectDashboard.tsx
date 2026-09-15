@@ -4958,7 +4958,9 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
           <p className="text-neutral-500 text-xs mt-0.5">
             Cada circulo es un sitio. Mientras mas arriba y mas a la
             derecha este, mejor le esta yendo en Google. El tamaño del
-            circulo = cuantas palabras clave distintas lo posicionan.
+            circulo combina su trafico organico y el valor de ese
+            trafico — entre mas grande, mas peso tiene ese sitio en
+            ambas metricas a la vez.
           </p>
         </div>
         <button
@@ -5287,6 +5289,25 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
   );
 }
 
+interface GapPositionCell {
+  position: number | null;
+  url: string | null;
+}
+
+function GapPositionLink({ cell, own }: { cell: GapPositionCell; own?: boolean }) {
+  if (cell.position == null) return <span className="text-neutral-300">—</span>;
+  const label = `#${cell.position}`;
+  const className = own
+    ? "font-medium text-[#1A73E8] hover:underline"
+    : "text-neutral-600 hover:text-[#1A73E8] hover:underline";
+  if (!cell.url) return <span className={own ? "font-medium text-[#1A73E8]" : "text-neutral-600"}>{label}</span>;
+  return (
+    <a href={cell.url} target="_blank" rel="noopener noreferrer" className={className}>
+      {label}
+    </a>
+  );
+}
+
 function KeywordGapSection({ project }: { project: ProjectDTO }) {
   const [sortBy, setSortBy] = useState<string>("volume");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -5303,42 +5324,54 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
   const competitorsWithKeywords = project.competitors.filter((c) => c.rankedKeywordsJson);
   if (competitorsWithKeywords.length === 0) return null;
 
-  function ownPositionFor(keywordText: string): number | null {
-    const kw = project.keywords.find(
-      (k) => k.text.toLowerCase() === keywordText.toLowerCase()
-    );
-    if (!kw) return null;
-    let latest: KeywordDTO["rankings"][number] | null = null;
-    for (const r of kw.rankings) {
-      if (r.domain !== project.domain || r.position == null) continue;
-      if (!latest || new Date(r.checkedAt) > new Date(latest.checkedAt)) latest = r;
+  // Prefer our own real rank-tracking data (live, precise) when the
+  // keyword happens to be one we actively track; otherwise fall back to
+  // DataForSEO's ranked-keywords estimate for our own domain (same source
+  // used for competitors, refreshed via "Analizar mi dominio" in
+  // Competencia) so the "Tu" column isn't empty just because we never
+  // manually added that exact keyword.
+  const ownRanked: { keyword: string; position: number | null; url: string | null }[] =
+    project.domainRankedKeywordsJson ? JSON.parse(project.domainRankedKeywordsJson) : [];
+  const ownRankedMap = new Map(ownRanked.map((r) => [r.keyword.toLowerCase(), r]));
+
+  function ownPositionFor(keywordText: string): GapPositionCell {
+    const key = keywordText.toLowerCase();
+    const kw = project.keywords.find((k) => k.text.toLowerCase() === key);
+    if (kw) {
+      let latest: KeywordDTO["rankings"][number] | null = null;
+      for (const r of kw.rankings) {
+        if (r.domain !== project.domain || r.position == null) continue;
+        if (!latest || new Date(r.checkedAt) > new Date(latest.checkedAt)) latest = r;
+      }
+      if (latest?.position != null) return { position: latest.position, url: latest.url };
     }
-    return latest?.position ?? null;
+    const est = ownRankedMap.get(key);
+    return est ? { position: est.position, url: est.url } : { position: null, url: null };
   }
 
-  type GapRow = { volume: number | null; ownPosition: number | null; positions: Record<string, number | null> };
+  type GapRow = { volume: number | null; own: GapPositionCell; positions: Record<string, GapPositionCell> };
   const rows = new Map<string, GapRow>();
 
   for (const kw of project.keywords) {
     const key = kw.text.toLowerCase();
     if (!rows.has(key)) {
-      rows.set(key, { volume: null, ownPosition: ownPositionFor(kw.text), positions: {} });
+      rows.set(key, { volume: null, own: ownPositionFor(kw.text), positions: {} });
     }
   }
 
   for (const c of competitorsWithKeywords) {
-    const ranked: { keyword: string; position: number | null; searchVolume: number | null }[] =
+    const ranked: { keyword: string; position: number | null; searchVolume: number | null; url: string | null }[] =
       JSON.parse(c.rankedKeywordsJson!);
     for (const r of ranked) {
       if (!r.keyword) continue;
       const key = r.keyword.toLowerCase();
       const existing = rows.get(key) ?? {
         volume: null,
-        ownPosition: ownPositionFor(r.keyword),
+        own: ownPositionFor(r.keyword),
         positions: {},
       };
       if (existing.volume == null) existing.volume = r.searchVolume;
-      existing.positions[c.domain] = r.position;
+      existing.positions[c.domain] = { position: r.position, url: r.url ?? null };
       rows.set(key, existing);
     }
   }
@@ -5356,8 +5389,8 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
         if (vb == null) return -1;
         return (va - vb) * dir;
       }
-      const va = sortBy === "own" ? a.ownPosition : a.positions[sortBy] ?? null;
-      const vb = sortBy === "own" ? b.ownPosition : b.positions[sortBy] ?? null;
+      const va = sortBy === "own" ? a.own.position : a.positions[sortBy]?.position ?? null;
+      const vb = sortBy === "own" ? b.own.position : b.positions[sortBy]?.position ?? null;
       if (va == null && vb == null) return 0;
       if (va == null) return 1;
       if (vb == null) return -1;
@@ -5372,7 +5405,8 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
       <p className="text-neutral-400 text-[14px] mb-3">
         Tus keywords rastreadas y las que le detectamos a cada competidor
         (hasta 20 de muestra por competidor, no su catalogo completo), con
-        la posicion de cada quien lado a lado.
+        la posicion de cada quien lado a lado. Dale clic a una posicion
+        para abrir la URL que esta posicionada.
       </p>
       <div className="overflow-x-auto">
         <div className="max-h-[420px] overflow-y-auto">
@@ -5428,12 +5462,12 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
                   <td className="px-2 py-1.5 text-right text-neutral-400 whitespace-nowrap">
                     {row.volume != null ? `${row.volume.toLocaleString("es-MX")}/mes` : "—"}
                   </td>
-                  <td className="px-2 py-1.5 text-right font-medium text-[#1A73E8]">
-                    {row.ownPosition != null ? `#${row.ownPosition}` : "—"}
+                  <td className="px-2 py-1.5 text-right">
+                    <GapPositionLink cell={row.own} own />
                   </td>
                   {competitorDomains.map((d) => (
-                    <td key={d} className="px-2 py-1.5 text-right text-neutral-600">
-                      {row.positions[d] != null ? `#${row.positions[d]}` : "—"}
+                    <td key={d} className="px-2 py-1.5 text-right">
+                      <GapPositionLink cell={row.positions[d] ?? { position: null, url: null }} />
                     </td>
                   ))}
                 </tr>
