@@ -93,7 +93,7 @@ function ConnectBanner({
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-surface-low rounded-xl px-5 py-4 shadow-elevation-1">
+    <div className="bg-white border border-neutral-200 rounded-lg px-5 py-4">
       <p className="text-[14px] text-neutral-400 uppercase tracking-wide">
         {label}
       </p>
@@ -274,10 +274,12 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 text-left rounded-full whitespace-nowrap transition-colors ${
-        indent ? "pl-9 pr-4 py-2 text-[14px]" : "px-4 py-3 text-sm"
+      className={`flex items-center gap-3 text-left rounded-md whitespace-nowrap transition-colors border-l-2 ${
+        indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-sm"
       } ${
-        active ? "bg-[#D3E3FD] text-[#041E49] font-medium" : "text-neutral-700 hover:bg-neutral-100"
+        active
+          ? "bg-white/10 text-white font-medium border-[#4C9AFF]"
+          : "text-slate-300 hover:bg-white/5 hover:text-white border-transparent"
       }`}
     >
       <NavIcon id={item.id} />
@@ -289,7 +291,7 @@ function NavButton({
 
 function ComingSoonBadge() {
   return (
-    <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
+    <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide bg-amber-400/20 text-amber-300 rounded-full px-1.5 py-0.5 align-middle">
       Soon
     </span>
   );
@@ -328,8 +330,8 @@ function SummaryTile({
   return (
     <Comp
       onClick={onClick}
-      className={`bg-surface-low rounded-xl px-5 py-3.5 shadow-elevation-1 text-left w-full ${
-        onClick ? "hover:shadow-elevation-2 transition-shadow cursor-pointer" : ""
+      className={`bg-white border border-neutral-200 rounded-lg px-5 py-3.5 text-left w-full ${
+        onClick ? "hover:border-neutral-300 hover:shadow-sm transition-all cursor-pointer" : ""
       }`}
     >
       <p className="text-[14px] text-neutral-400 uppercase tracking-wide">{label}</p>
@@ -459,7 +461,7 @@ function BestWorstKeywordsCard({
   const top = sorted.slice(0, limit);
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+    <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
       <p className="text-sm font-medium text-neutral-900 mb-2">{title}</p>
       {top.length === 0 ? (
         <p className="text-xs text-neutral-400">
@@ -684,47 +686,17 @@ export default function ProjectDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 relative">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            {!readOnly && (
-              <Link
-                href="/"
-                title="Volver a proyectos"
-                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </Link>
-            )}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" width={28} height={28} className="shrink-0" />
-            <div className="min-w-0">
-              <h1 className="text-base font-medium tracking-tight text-neutral-900 truncate">
-                {project.name}
-              </h1>
-              <p className="text-neutral-500 text-xs truncate">{project.domain}</p>
-            </div>
+    <div className="min-h-screen bg-[#F4F5F7] md:flex">
+      <aside className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0 bg-[#0E1B33] md:min-h-screen md:sticky md:top-0 px-3 py-3 md:py-4">
+        <div className="hidden md:flex items-center gap-2 px-2 pb-3 mb-1 border-b border-white/10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
+          <div className="min-w-0">
+            <p className="text-white text-[13px] font-medium truncate">{project.name}</p>
+            <p className="text-slate-400 text-[11px] truncate">{project.domain}</p>
           </div>
-          {readOnly ? (
-            <span className="text-[12px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
-              Vista de solo lectura
-            </span>
-          ) : (
-            <a
-              href="/api/logout"
-              className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
-            >
-              Cerrar sesión
-            </a>
-          )}
         </div>
-      </header>
-
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-6 flex flex-col md:flex-row gap-6 lg:gap-8">
-        <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0">
+        <nav className="flex md:flex-col gap-2 md:gap-1 shrink-0">
           {NAV_GROUPS.filter(
             (group) =>
               !readOnly ||
@@ -736,11 +708,11 @@ export default function ProjectDashboard({
                   {group.id === null ? (
                     <button
                       onClick={() => toggleGroup(gi)}
-                      className="w-full flex items-center gap-3 px-4 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
+                      className="w-full flex items-center gap-3 px-3 py-1.5 text-[13px] font-medium text-slate-400 hover:bg-white/5 hover:text-white rounded-md transition-colors uppercase tracking-wide"
                     >
                       <svg
-                        width="16"
-                        height="16"
+                        width="14"
+                        height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -766,7 +738,7 @@ export default function ProjectDashboard({
                   <button
                     onClick={() => toggleGroup(gi)}
                     title={collapsedGroups.has(gi) ? "Expandir" : "Contraer"}
-                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors"
                   >
                     <svg
                       width="14"
@@ -797,8 +769,50 @@ export default function ProjectDashboard({
             </div>
           ))}
         </nav>
+      </aside>
 
-        <fieldset disabled={readOnly} className="flex-1 min-w-0 border-0 m-0 p-0">
+      <div className="flex-1 min-w-0 flex flex-col">
+        <header className="sticky top-0 z-20 bg-white border-b border-neutral-200 relative">
+          <div className="px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              {!readOnly && (
+                <Link
+                  href="/"
+                  title="Volver a proyectos"
+                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </Link>
+              )}
+              <div className="min-w-0 md:hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="" width={28} height={28} className="shrink-0 inline-block align-middle mr-2" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base font-medium tracking-tight text-neutral-900 truncate">
+                  {project.name}
+                </h1>
+                <p className="text-neutral-500 text-xs truncate">{project.domain}</p>
+              </div>
+            </div>
+            {readOnly ? (
+              <span className="text-[12px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
+                Vista de solo lectura
+              </span>
+            ) : (
+              <a
+                href="/api/logout"
+                className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
+              >
+                Cerrar sesión
+              </a>
+            )}
+          </div>
+        </header>
+
+        <fieldset disabled={readOnly} className="flex-1 min-w-0 border-0 m-0 p-0 px-4 sm:px-6 lg:px-10 py-6 max-w-8xl mx-auto w-full">
           {activeTab === "panel" && (
             <div className="flex flex-col gap-6">
               <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -884,7 +898,7 @@ export default function ProjectDashboard({
                 <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
                   Proyecto
                 </h2>
-                <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-4 text-sm text-neutral-600">
+                <div className="bg-white border border-neutral-200 rounded-xl px-5 py-4 text-sm text-neutral-600">
                   <p><span className="text-neutral-400">Nombre:</span> {project.name}</p>
                   <p className="mt-1"><span className="text-neutral-400">Dominio:</span> {project.domain}</p>
                   <p className="mt-1"><span className="text-neutral-400">Creado:</span> {new Date(project.createdAt).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
@@ -977,7 +991,7 @@ export default function ProjectDashboard({
                         <ProgressBar percent={bulkCheckProgress.percent} />
                       </div>
                     )}
-                    <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
+                    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
@@ -1232,7 +1246,7 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
   }, [hasResult]);
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+    <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-neutral-500 text-xs">
           Detecta la plataforma, herramientas de analitica, apps de reseñas,
@@ -1437,7 +1451,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">Planificacion de keywords</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
           Escribe una palabra clave y te damos ideas relacionadas con
@@ -1481,7 +1495,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
               </button>
             </div>
           )}
-          <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-neutral-100">
               <tr>
@@ -1699,7 +1713,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
+      <p className="text-xs text-neutral-400 bg-white border border-neutral-200 rounded-xl px-5 py-3.5">
         Conecta Google Analytics en Conexiones para ver, de forma
         automatica, cuantas visitas te mandan ChatGPT, Perplexity,
         Gemini, Claude, Copilot y otros agentes de IA (por dominio de
@@ -1834,7 +1848,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
 
   if (!gscConnected) {
     return (
-      <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
+      <p className="text-xs text-neutral-400 bg-white border border-neutral-200 rounded-xl px-5 py-3.5">
         Conecta Search Console en Conexiones para ver que consultas reales
         de Google se asocian a las paginas que la IA esta mandando visitar
         — no podemos saber la pregunta exacta que le hicieron a la IA,
@@ -1847,7 +1861,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
     project.aiQueryCrossRefJson ? JSON.parse(project.aiQueryCrossRefJson) : [];
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+    <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <p className="text-sm font-medium text-neutral-900">Posibles preguntas detras del trafico de IA</p>
@@ -1988,7 +2002,7 @@ function AiVisibilitySection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">Visibilidad en IA</p>
         <p className="text-neutral-500 text-xs mt-0.5">
           Numero de veces que tu dominio aparece mencionado en el AI
@@ -2046,7 +2060,7 @@ function AiVisibilitySection({ project }: { project: ProjectDTO }) {
               />
             )}
           </div>
-          <div className="flex flex-col gap-1.5 bg-neutral-50 border border-neutral-200 rounded-xl p-1.5">
+          <div className="flex flex-col gap-1.5 bg-white border border-neutral-200 rounded-xl p-1.5">
             {visibleRows.map(({ keyword, latest, mentionCount, checksWithData }) => (
               <AiKeywordRow
                 key={keyword.id}
@@ -2372,7 +2386,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5 flex flex-col gap-4">
+    <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5 flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <p className="text-sm font-medium text-neutral-900">
@@ -2807,7 +2821,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
 
   if (!connected) {
     return (
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">SEO de YouTube</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
           Conecta tu canal para ver suscriptores, vistas, engagement y tus
@@ -2840,7 +2854,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             {project.youtubeThumbnailUrl && (
@@ -2904,7 +2918,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
           <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
             Videos recientes — los 5 mas vistos llevan insignia 🔥
           </h2>
-          <div className="bg-neutral-50 border border-neutral-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <div className="flex items-center gap-3 px-3 py-2 text-[14px] text-neutral-400 border-b border-neutral-200">
               <span className="w-16 shrink-0" />
               <SortHeader label="Titulo" active={sortBy === "title"} dir={sortDir} onClick={() => toggleSort("title")} />
@@ -3019,7 +3033,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm font-medium text-neutral-900">
@@ -3182,7 +3196,7 @@ function ChangelogSection() {
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-4"
+              className="bg-white border border-neutral-200 rounded-xl px-5 py-4"
             >
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="text-[12px] uppercase tracking-wide bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-500">
@@ -3293,7 +3307,7 @@ function AuditSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm font-medium text-neutral-900">
@@ -3328,7 +3342,7 @@ function AuditSection({ project }: { project: ProjectDTO }) {
             <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
               {category} ({catCompleted}/{rows.length})
             </h2>
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-1.5 flex flex-col gap-0.5">
+            <div className="bg-white border border-neutral-200 rounded-xl p-1.5 flex flex-col gap-0.5">
               {rows.map(({ item, auto, checked }) => (
                 <AuditChecklistRow
                   key={item.id}
@@ -3398,7 +3412,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm font-medium text-neutral-900">
@@ -3477,7 +3491,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
       {hasResult && (topVendors.length > 0 || topTypes.length > 0 || topTags.length > 0) && (
         <div className="grid sm:grid-cols-3 gap-3">
           {topVendors.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-3.5">
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Marcas / vendedores</p>
               <div className="flex flex-col gap-1">
                 {topVendors.map((v) => (
@@ -3490,7 +3504,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
             </div>
           )}
           {topTypes.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-3.5">
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Categorias / tipos</p>
               <div className="flex flex-col gap-1">
                 {topTypes.map((v) => (
@@ -3503,7 +3517,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
             </div>
           )}
           {topTags.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-3.5">
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Tags mas usados</p>
               <div className="flex flex-wrap gap-1.5">
                 {topTags.map((v) => (
@@ -3525,7 +3539,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
           <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
             Productos mas vendidos (aprox.)
           </h2>
-          <div className="flex flex-col gap-1 bg-neutral-50 border border-neutral-200 rounded-xl p-1.5">
+          <div className="flex flex-col gap-1 bg-white border border-neutral-200 rounded-xl p-1.5">
             {topSelling.map((p, i) => (
               <a
                 key={p.handle}
@@ -3712,7 +3726,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
             )}
           </div>
 
-          <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+          <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
             <p className="text-sm font-medium text-neutral-900 mb-2">Pedidos por dia</p>
             <OrdersChart data={ordersByDate} />
             {ordersByDate.length > 0 && (
@@ -3775,7 +3789,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Paginas mas visitadas</p>
               {topPages.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3797,7 +3811,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
 
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Paises con mas visitas</p>
               {topCountries.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3815,7 +3829,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           </div>
 
           {deviceTotal > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
               <div className="flex h-3 rounded-full overflow-hidden">
                 <div className="bg-[#1A73E8]" style={{ width: `${(device.mobile / deviceTotal) * 100}%` }} />
@@ -3831,7 +3845,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           )}
 
           {channelsTotal > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
               <div className="flex h-3 rounded-full overflow-hidden">
                 <div className="bg-emerald-500" style={{ width: `${(channels.organic / channelsTotal) * 100}%` }} />
@@ -3851,7 +3865,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           )}
 
           {Object.values(salesBreakdowns).some((rows) => rows.length > 0) && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <div className="flex items-center justify-between flex-wrap gap-3 mb-0.5">
                 <p className="text-sm font-medium text-neutral-900">Ventas</p>
               </div>
@@ -3930,7 +3944,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           )}
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Fuentes de trafico</p>
               {topSources.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3946,7 +3960,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
 
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Medio</p>
               {topMediums.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3964,7 +3978,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Campañas (UTM)</p>
               {topCampaigns.length === 0 ? (
                 <p className="text-xs text-neutral-400">Sin datos.</p>
@@ -3980,7 +3994,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
 
-            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+            <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
               <p className="text-sm font-medium text-neutral-900 mb-2">Productos mas vendidos</p>
               {topProducts.length === 0 ? (
                 <p className="text-xs text-neutral-400">
@@ -4231,7 +4245,7 @@ function ShareLinkSection({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+    <div className="bg-white border border-neutral-200 rounded-xl p-4">
       <p className="text-sm text-neutral-600">
         Genera un link publico de solo lectura para este proyecto. Quien lo
         tenga puede ver el dashboard (sin editar, conectar ni borrar nada)
@@ -4301,7 +4315,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="flex items-end gap-2 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+    <div className="flex items-end gap-2 bg-white border border-neutral-200 rounded-xl p-4">
       <div className="flex flex-col gap-1">
         <label className="text-[14px] text-neutral-500">Pais</label>
         <select
@@ -4841,7 +4855,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
               {unique.map((t) => (
                 <span
                   key={t.name}
-                  className="flex items-center gap-1 text-[14px] bg-neutral-50 border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                  className="flex items-center gap-1 text-[14px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
                 >
                   <TechLogo url={t.url} icon={t.icon} size={14} />
                   {t.name}
@@ -4925,7 +4939,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
 
   if (!ownHasData && competitorsWithData.length === 0) {
     return (
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
@@ -4951,7 +4965,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
   }
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+    <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <div>
           <p className="text-sm font-medium text-neutral-900">Competencia organica</p>
@@ -5173,7 +5187,7 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-4 flex flex-col gap-3">
+    <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4 flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <p className="text-sm font-medium text-neutral-900">Detectar competidores</p>
@@ -5408,7 +5422,7 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
   const competitorDomains = competitorsWithKeywords.map((c) => c.domain);
 
   return (
-    <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+    <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
       <p className="text-sm font-medium text-neutral-900 mb-0.5">Comparativa de keywords</p>
       <p className="text-neutral-400 text-[14px] mb-3">
         Solo keywords donde tu y al menos un competidor coinciden (hasta 20
@@ -5588,7 +5602,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4"
+      className="flex flex-col gap-3 bg-white border border-neutral-200 rounded-xl p-4"
     >
       <div className="flex flex-col gap-1">
         <label className="text-[14px] text-neutral-500">Keyword</label>
@@ -5766,7 +5780,7 @@ function AppsSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+      <div className="bg-white border border-neutral-200 rounded-xl px-5 py-5">
         <p className="text-sm font-medium text-neutral-900">Apps iOS y Android</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
           Busca tu app (o la de tus competidores) en Google Play y la App
