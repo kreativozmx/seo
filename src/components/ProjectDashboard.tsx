@@ -4602,7 +4602,21 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
     <div className="bg-surface-low rounded-xl px-5 py-3.5 shadow-elevation-1">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-neutral-900">{competitor.domain}</p>
+          <p className="text-sm font-medium text-neutral-900 flex items-center gap-1.5">
+            {competitor.domain}
+            <a
+              href={`https://${competitor.domain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Abrir ${competitor.domain}`}
+              className="text-neutral-400 hover:text-[#1A73E8] transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <path d="M15 3h6v6M10 14 21 3" />
+              </svg>
+            </a>
+          </p>
           {competitor.ecommerceIsShopify && (
             <span className="text-[13px] uppercase tracking-wide bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
               Shopify
@@ -5224,7 +5238,24 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                         className="w-3.5 h-3.5 accent-[#1A73E8] cursor-pointer"
                       />
                     </td>
-                    <td className="px-2 py-1.5 text-neutral-700">{s.domain}</td>
+                    <td className="px-2 py-1.5 text-neutral-700">
+                      <span className="inline-flex items-center gap-1.5">
+                        {s.domain}
+                        <a
+                          href={`https://${s.domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title={`Abrir ${s.domain}`}
+                          className="text-neutral-400 hover:text-[#1A73E8] transition-colors"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <path d="M15 3h6v6M10 14 21 3" />
+                          </svg>
+                        </a>
+                      </span>
+                    </td>
                     <td className="px-2 py-1.5 text-right text-neutral-600">
                       {s.commonKeywords.toLocaleString("es-MX")}
                     </td>
