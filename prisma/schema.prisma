@@ -180,6 +180,13 @@ model Project {
   domainTrafficValueEstimate   Float?
   domainTrafficCheckedAt       DateTime?
 
+  // Auditoria tab: 50-point Shopify store checklist. Items we can detect
+  // automatically from data we already have are computed live (never
+  // stored) — this only persists the checkbox state for the
+  // recommendation-only items the merchant checks off by hand, as
+  // { [itemId]: boolean }.
+  auditManualChecksJson String?
+
   // Apps iOS/Android (DataForSEO App Data API) — search results cached per
   // platform, plus which result (if any) the user marked as "their app".
   appQuery              String? // last search term used

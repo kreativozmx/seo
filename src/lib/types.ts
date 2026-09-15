@@ -169,6 +169,7 @@ export interface ProjectDTO {
   domainPaidTrafficEstimate: number | null;
   domainTrafficValueEstimate: number | null;
   domainTrafficCheckedAt: string | null;
+  auditManualChecksJson: string | null;
   appQuery: string | null;
   appsResultsJson: string | null;
   appsCheckedAt: string | null;

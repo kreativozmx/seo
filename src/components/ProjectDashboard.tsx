@@ -17,6 +17,7 @@ import { ProjectDTO, KeywordDTO } from "@/lib/types";
 import { normalizeDomain } from "@/lib/domain";
 import { LOCATIONS, LANGUAGES } from "@/lib/locations";
 import { ProjectStats } from "@/lib/projectStats";
+import { AUDIT_ITEMS } from "@/lib/auditItems";
 
 // Where the "quiero que me ayude un experto" banner points. Change this to
 // a contact page, WhatsApp link, or booking page whenever you decide —
@@ -110,6 +111,7 @@ const NAV_ITEMS = [
   { id: "velocidad", label: "Velocidad" },
   { id: "youtube", label: "SEO Youtube" },
   { id: "ecommerce", label: "Ecommerce" },
+  { id: "auditoria", label: "Auditoria" },
   { id: "changelog", label: "Changelog Shopify" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
@@ -168,6 +170,13 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
     <>
       <path d="M6 8h12l-1 12H7L6 8Z" />
       <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
+  auditoria: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M9 3v2h6V3M8 9l1.5 1.5L12 8M8 14l1.5 1.5L12 13" />
+      <path d="M14 9.5h3M14 14.5h3" />
     </>
   ),
   changelog: (
@@ -956,6 +965,12 @@ export default function ProjectDashboard({
           {activeTab === "ecommerce" && (
             <section>
               <EcommerceSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "auditoria" && (
+            <section>
+              <AuditSection project={project} />
             </section>
           )}
 
@@ -2843,6 +2858,139 @@ function ChangelogSection() {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function AuditChecklistRow({
+  item,
+  checked,
+  auto,
+  onToggle,
+}: {
+  item: { id: string; label: string; hint: string };
+  checked: boolean;
+  auto: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <label
+      className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+        auto ? "cursor-default" : "cursor-pointer hover:bg-white"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={auto}
+        onChange={auto ? undefined : onToggle}
+        className="mt-0.5 w-4 h-4 accent-[#1A73E8] shrink-0 disabled:opacity-70"
+      />
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className={`text-sm ${checked ? "text-neutral-500 line-through decoration-neutral-300" : "text-neutral-800"}`}>
+            {item.label}
+          </p>
+          {auto && (
+            <span className="text-[13px] uppercase tracking-wide bg-blue-50 text-blue-600 rounded-full px-2 py-0.5 shrink-0">
+              Auto
+            </span>
+          )}
+        </div>
+        <p className="text-neutral-400 text-[14px] mt-0.5">{item.hint}</p>
+      </div>
+    </label>
+  );
+}
+
+function AuditSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [manualChecks, setManualChecks] = useState<Record<string, boolean>>(() =>
+    project.auditManualChecksJson ? JSON.parse(project.auditManualChecksJson) : {}
+  );
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const results = AUDIT_ITEMS.map((item) => ({
+    item,
+    auto: item.auto != null,
+    checked: item.auto ? item.auto(project) : manualChecks[item.id] === true,
+  }));
+
+  const completedCount = results.filter((r) => r.checked).length;
+  const totalCount = results.length;
+  const percent = Math.round((completedCount / totalCount) * 100);
+
+  const categories = Array.from(new Set(AUDIT_ITEMS.map((i) => i.category)));
+
+  async function handleToggle(itemId: string, nextChecked: boolean) {
+    setManualChecks((prev) => ({ ...prev, [itemId]: nextChecked }));
+    setSavingId(itemId);
+    try {
+      await fetch(`/api/projects/${project.id}/audit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, checked: nextChecked }),
+      });
+      router.refresh();
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-neutral-900">
+              Auditoria de tienda ({totalCount} puntos)
+            </p>
+            <p className="text-neutral-500 text-xs mt-0.5">
+              Los marcados como <strong>Auto</strong> los detectamos solos con
+              los datos de esta herramienta. El resto son recomendaciones que
+              tu marcas conforme las vas cumpliendo.
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-xl font-semibold text-neutral-900">
+              {completedCount}/{totalCount}
+            </p>
+            <p className="text-[14px] text-neutral-400">{percent}% completo</p>
+          </div>
+        </div>
+        <div className="mt-3 h-2 bg-neutral-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#1A73E8] transition-all"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+      </div>
+
+      {categories.map((category) => {
+        const rows = results.filter((r) => r.item.category === category);
+        const catCompleted = rows.filter((r) => r.checked).length;
+        return (
+          <div key={category}>
+            <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+              {category} ({catCompleted}/{rows.length})
+            </h2>
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-1.5 flex flex-col gap-0.5">
+              {rows.map(({ item, auto, checked }) => (
+                <AuditChecklistRow
+                  key={item.id}
+                  item={item}
+                  checked={checked}
+                  auto={auto}
+                  onToggle={() => handleToggle(item.id, !checked)}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {savingId && (
+        <p className="text-[14px] text-neutral-400">Guardando...</p>
       )}
     </div>
   );
