@@ -19,6 +19,7 @@ import { normalizeDomain } from "@/lib/domain";
 import { LOCATIONS, LANGUAGES } from "@/lib/locations";
 import { ProjectStats } from "@/lib/projectStats";
 import { AUDIT_ITEMS } from "@/lib/auditItems";
+import { normalizeShopifyShopInput } from "@/lib/shopifyDomain";
 
 // Where the "quiero que me ayude un experto" banner points. Change this to
 // a contact page, WhatsApp link, or booking page whenever you decide —
@@ -4071,14 +4072,16 @@ function ShopifyConnectSection({ project }: { project: ProjectDTO }) {
         <div className="flex items-center gap-2">
           <input
             value={shopDomain}
-            onChange={(e) => setShopDomain(e.target.value)}
-            placeholder="tu-tienda.myshopify.com (opcional)"
+            onChange={(e) => setShopDomain(normalizeShopifyShopInput(e.target.value))}
+            placeholder="tu-tienda.com, tu-tienda.myshopify.com o el link de admin.shopify.com (opcional)"
             className="flex-1 min-w-[200px] bg-white border border-emerald-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-emerald-400 transition-colors"
           />
         </div>
         <p className="text-[14px] text-neutral-400">
-          Normalmente detectamos el subdominio myshopify.com solos. Solo
-          escribelo arriba si el boton te pide confirmarlo.
+          Normalmente detectamos el subdominio myshopify.com solos. Si el
+          boton te pide confirmarlo, puedes pegar arriba tu dominio normal,
+          el .myshopify.com, o incluso el link de admin.shopify.com/store/...
+          — quitamos http(s):// y lo demas automaticamente.
         </p>
       </div>
     );

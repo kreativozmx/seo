@@ -5,6 +5,7 @@ import {
   buildShopifyAuthUrl,
   detectMyshopifyDomain,
 } from "@/lib/shopifyAuth";
+import { normalizeShopifyShopInput } from "@/lib/shopifyDomain";
 
 export async function GET(
   req: NextRequest,
@@ -26,8 +27,16 @@ export async function GET(
     );
   }
 
-  const givenShop = req.nextUrl.searchParams.get("shop")?.trim();
-  const shopDomain = givenShop || (await detectMyshopifyDomain(project.domain));
+  const rawShop = req.nextUrl.searchParams.get("shop")?.trim();
+  const givenShop = rawShop ? normalizeShopifyShopInput(rawShop) : "";
+
+  // Already a myshopify.com handle (typed directly, or resolved from an
+  // admin.shopify.com/store/xxx URL) — use it as-is. Otherwise it's a
+  // custom domain (or nothing was typed), so resolve it the same way we
+  // do for the project's own domain.
+  const shopDomain = givenShop.endsWith(".myshopify.com")
+    ? givenShop
+    : await detectMyshopifyDomain(givenShop || project.domain);
 
   if (!shopDomain) {
     return redirectTo("shopifyNeedsShopDomain=1");
