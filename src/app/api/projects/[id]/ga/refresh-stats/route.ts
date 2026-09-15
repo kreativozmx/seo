@@ -63,6 +63,7 @@ export async function POST(
         gaTopCampaignsJson: JSON.stringify(analytics.topCampaigns),
         gaTopSourcesJson: JSON.stringify(analytics.topSources),
         gaTopMediumsJson: JSON.stringify(analytics.topMediums),
+        gaSalesByChannelJson: JSON.stringify(analytics.salesByChannel),
         gaOrdersByDateJson: JSON.stringify(analytics.ordersByDate),
         gaTopProductsJson: JSON.stringify(analytics.topProducts),
         gaAnalyticsUpdatedAt: new Date(),

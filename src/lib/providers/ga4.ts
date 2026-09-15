@@ -281,6 +281,7 @@ export interface Ga4Analytics {
   topCampaigns: { source: string; sessions: number }[];
   topSources: { name: string; sessions: number }[];
   topMediums: { name: string; sessions: number }[];
+  salesByChannel: { channel: string; revenue: number; transactions: number; sessions: number }[];
   ordersByDate: { date: string; transactions: number; revenue: number }[];
   topProducts: { name: string; unitsSold: number; revenue: number }[];
 }
@@ -308,6 +309,7 @@ export async function fetchGa4Analytics(
     campaignsRes,
     sourcesRes,
     mediumsRes,
+    channelSalesRes,
     ordersRes,
     productsRes,
   ] = await Promise.all([
@@ -386,6 +388,20 @@ export async function fetchGa4Analytics(
           limit: "10",
         },
       }),
+      // Ventas por canal: GA4's own UTM-derived channel grouping (Organic
+      // Search, Paid Search, Direct, Referral, Email, Social, etc.) next to
+      // revenue/transactions — real ecommerce data, not just session
+      // counts, so a merchant can see which channel actually drives sales.
+      analyticsData.properties.runReport({
+        property,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: "sessionDefaultChannelGroup" }],
+          metrics: [{ name: "totalRevenue" }, { name: "transactions" }, { name: "sessions" }],
+          orderBys: [{ metric: { metricName: "totalRevenue" }, desc: true }],
+          limit: "10",
+        },
+      }),
       // Daily order trend — how many purchases and how much revenue per day.
       analyticsData.properties.runReport({
         property,
@@ -454,6 +470,13 @@ export async function fetchGa4Analytics(
     sessions: Number(row.metricValues?.[0]?.value ?? 0),
   }));
 
+  const salesByChannel = (channelSalesRes.data.rows ?? []).map((row) => ({
+    channel: row.dimensionValues?.[0]?.value ?? "(not set)",
+    revenue: Number(row.metricValues?.[0]?.value ?? 0),
+    transactions: Number(row.metricValues?.[1]?.value ?? 0),
+    sessions: Number(row.metricValues?.[2]?.value ?? 0),
+  }));
+
   const ordersByDate = (ordersRes.data.rows ?? []).map((row) => {
     const raw = row.dimensionValues?.[0]?.value ?? ""; // YYYYMMDD
     const date =
@@ -484,6 +507,7 @@ export async function fetchGa4Analytics(
     topCampaigns,
     topSources,
     topMediums,
+    salesByChannel,
     ordersByDate,
     topProducts,
   };
