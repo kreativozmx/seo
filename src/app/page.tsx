@@ -82,7 +82,7 @@ export default async function Home() {
       <header className="mb-8 flex items-start justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="" width={32} height={32} className="shrink-0" />
+          <img src="/logo.png" alt="" width={32} height={32} className="shrink-0" />
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
               Shopify Audit

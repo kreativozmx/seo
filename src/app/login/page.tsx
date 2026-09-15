@@ -12,7 +12,7 @@ export default function LoginPage() {
       <div className="w-full max-w-4xl grid md:grid-cols-2 gap-10 items-center">
         <div className="max-w-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="" width={40} height={40} className="mb-3" />
+          <img src="/logo.png" alt="" width={40} height={40} className="mb-3" />
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-3">
             Shopify Audit
           </h1>
