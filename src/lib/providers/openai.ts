@@ -87,3 +87,65 @@ Reglas para "description": una descripcion optimizada para SEO de YouTube (200-4
 
   return { titles, description: suggestedDescription };
 }
+
+export interface ChangelogTranslation {
+  titleEs: string;
+  summaryEs: string;
+}
+
+// Translates a Shopify changelog entry's title and writes a short original
+// summary (not a verbatim translation of the body) so we don't republish
+// Shopify's full copyrighted write-up — just enough for a merchant to
+// understand what changed, with a link back to the original.
+export async function translateChangelogEntry(params: {
+  title: string;
+  bodyText: string;
+}): Promise<ChangelogTranslation> {
+  const { title, bodyText } = params;
+
+  const prompt = `Traduce al español el siguiente titulo de una entrada del changelog oficial de Shopify, y escribe un resumen breve (2-3 oraciones, con tus propias palabras, no una traduccion literal) de que cambio y por que le importaria a un merchant de Shopify.
+
+Titulo original (ingles): "${title}"
+Contenido original (ingles): "${bodyText.slice(0, 2000)}"
+
+Responde SOLO como JSON valido, sin texto adicional:
+{
+  "titleEs": "titulo traducido al español",
+  "summaryEs": "resumen breve en español, en tus propias palabras"
+}`;
+
+  const res = await fetch(BASE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OpenAI request failed (${res.status}): ${text}`);
+  }
+
+  const json = await res.json();
+  const content: string | undefined = json?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI no devolvio contenido");
+
+  let parsed: { titleEs?: unknown; summaryEs?: unknown };
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error("No se pudo interpretar la respuesta de OpenAI");
+  }
+
+  const titleEs = typeof parsed.titleEs === "string" ? parsed.titleEs : title;
+  const summaryEs = typeof parsed.summaryEs === "string" ? parsed.summaryEs : "";
+
+  return { titleEs, summaryEs };
+}

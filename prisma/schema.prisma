@@ -283,3 +283,20 @@ model CronRun {
   gscProjectsOk  Int      @default(0)
   error          String?
 }
+
+// Shopify's own changelog.shopify.com feed, mirrored and translated to
+// Spanish (title + a short original summary, not a full reproduction) so
+// merchants can see product updates without reading English. Global, not
+// per-project — shown in the "Changelog Shopify" tab on every project.
+model ShopifyChangelogEntry {
+  id          String   @id @default(cuid())
+  sourceUrl   String   @unique
+  title       String
+  titleEs     String
+  summaryEs   String
+  category    String
+  publishedAt DateTime
+  fetchedAt   DateTime @default(now())
+
+  @@index([publishedAt])
+}

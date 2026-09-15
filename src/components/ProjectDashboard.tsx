@@ -106,6 +106,7 @@ const NAV_ITEMS = [
   { id: "velocidad", label: "Velocidad" },
   { id: "youtube", label: "SEO Youtube" },
   { id: "ecommerce", label: "Ecommerce" },
+  { id: "changelog", label: "Changelog Shopify" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
   { id: "conexiones", label: "Conexiones" },
@@ -163,6 +164,12 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
     <>
       <path d="M6 8h12l-1 12H7L6 8Z" />
       <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
+  changelog: (
+    <>
+      <path d="M4 4h13l3 3v13H4Z" />
+      <path d="M9 9h7M9 13h7M9 17h4" />
     </>
   ),
   apps: (
@@ -945,6 +952,12 @@ export default function ProjectDashboard({
           {activeTab === "ecommerce" && (
             <section>
               <EcommerceSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "changelog" && (
+            <section>
+              <ChangelogSection />
             </section>
           )}
 
@@ -2728,6 +2741,113 @@ interface FlaggedProduct {
   title: string;
   handle: string;
   issues: string[];
+}
+
+interface ChangelogEntryDTO {
+  id: string;
+  sourceUrl: string;
+  title: string;
+  titleEs: string;
+  summaryEs: string;
+  category: string;
+  publishedAt: string;
+}
+
+function ChangelogSection() {
+  const [entries, setEntries] = useState<ChangelogEntryDTO[] | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadEntries() {
+    const res = await fetch("/api/changelog");
+    const data = await res.json();
+    setEntries(data.entries ?? []);
+  }
+
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  async function handleSync() {
+    setSyncing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/changelog/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      await loadEntries();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Changelog de Shopify</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Novedades oficiales de Shopify (changelog.shopify.com), traducidas
+            al español. Se actualiza solo todos los dias.
+          </p>
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+        >
+          {syncing ? "Actualizando..." : "Actualizar ahora"}
+        </button>
+      </div>
+
+      {error && <p className="text-red-600 text-xs">{error}</p>}
+
+      {entries === null ? (
+        <p className="text-neutral-400 text-sm">Cargando...</p>
+      ) : entries.length === 0 ? (
+        <p className="text-neutral-400 text-sm">
+          Aun no hay entradas. Dale clic a &ldquo;Actualizar ahora&rdquo; para traer las
+          mas recientes.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {entries.map((entry) => (
+            <div
+              key={entry.id}
+              className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5"
+            >
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="text-[11px] uppercase tracking-wide bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-500">
+                  {entry.category}
+                </span>
+                <span className="text-[11px] text-neutral-400">
+                  {new Date(entry.publishedAt).toLocaleDateString("es-MX", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-neutral-900">{entry.titleEs}</p>
+              {entry.summaryEs && (
+                <p className="text-neutral-600 text-sm mt-1">{entry.summaryEs}</p>
+              )}
+              <a
+                href={entry.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#1A73E8] hover:underline mt-2 inline-block"
+              >
+                Ver original en changelog.shopify.com ↗
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function EcommerceSection({ project }: { project: ProjectDTO }) {
