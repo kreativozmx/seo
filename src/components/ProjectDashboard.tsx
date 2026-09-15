@@ -3528,8 +3528,11 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
   const [removing, setRemoving] = useState(false);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
   const [showKeywords, setShowKeywords] = useState(false);
+  const [kwViewMode, setKwViewMode] = useState<"keywords" | "pages">("keywords");
   const [kwSortBy, setKwSortBy] = useState<"keyword" | "volume" | "position">("position");
   const [kwSortDir, setKwSortDir] = useState<"asc" | "desc">("asc");
+  const [pageSortBy, setPageSortBy] = useState<"url" | "count" | "volume" | "position">("count");
+  const [pageSortDir, setPageSortDir] = useState<"asc" | "desc">("desc");
 
   const hasData = competitor.trafficCheckedAt != null || competitor.ecommerceCheckedAt != null;
   const rankedKeywords: { keyword: string; position: number | null; searchVolume: number | null; url: string | null }[] =
@@ -3550,6 +3553,66 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
     const key = kwSortBy === "volume" ? "searchVolume" : "position";
     const va = a[key];
     const vb = b[key];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return (va - vb) * dir;
+  });
+
+  // Ahrefs-style "top pages" view: DataForSEO gives us ranked keywords, not
+  // page-level traffic/backlinks (no Site Explorer-equivalent API here), so
+  // we approximate it by grouping the same ranked-keywords list by URL.
+  type PageGroup = {
+    url: string;
+    keywordCount: number;
+    topKeyword: string;
+    topVolume: number | null;
+    totalVolume: number;
+    bestPosition: number | null;
+  };
+  const pagesByUrl = new Map<string, PageGroup>();
+  for (const k of rankedKeywords) {
+    if (!k.url) continue;
+    const existing = pagesByUrl.get(k.url);
+    if (!existing) {
+      pagesByUrl.set(k.url, {
+        url: k.url,
+        keywordCount: 1,
+        topKeyword: k.keyword,
+        topVolume: k.searchVolume,
+        totalVolume: k.searchVolume ?? 0,
+        bestPosition: k.position,
+      });
+    } else {
+      existing.keywordCount++;
+      existing.totalVolume += k.searchVolume ?? 0;
+      if ((k.searchVolume ?? 0) > (existing.topVolume ?? 0)) {
+        existing.topKeyword = k.keyword;
+        existing.topVolume = k.searchVolume;
+      }
+      if (existing.bestPosition == null || (k.position != null && k.position < existing.bestPosition)) {
+        existing.bestPosition = k.position;
+      }
+    }
+  }
+  const pageGroups = Array.from(pagesByUrl.values());
+
+  function togglePageSort(column: "url" | "count" | "volume" | "position") {
+    if (pageSortBy === column) {
+      setPageSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setPageSortBy(column);
+      setPageSortDir(column === "url" || column === "position" ? "asc" : "desc");
+    }
+  }
+
+  const sortedPageGroups = [...pageGroups].sort((a, b) => {
+    const dir = pageSortDir === "asc" ? 1 : -1;
+    if (pageSortBy === "url") return a.url.localeCompare(b.url) * dir;
+    if (pageSortBy === "count") return (a.keywordCount - b.keywordCount) * dir;
+    if (pageSortBy === "volume") return (a.totalVolume - b.totalVolume) * dir;
+    const va = a.bestPosition;
+    const vb = b.bestPosition;
     if (va == null && vb == null) return 0;
     if (va == null) return 1;
     if (vb == null) return -1;
@@ -3650,13 +3713,35 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
 
       {rankedKeywords.length > 0 && (
         <div className="mt-3 pt-3 border-t border-neutral-100">
-          <button
-            onClick={() => setShowKeywords((v) => !v)}
-            className="text-xs text-neutral-500 hover:text-[#1A73E8] transition-colors"
-          >
-            {showKeywords ? "Ocultar" : "Ver"} keywords posicionadas ({rankedKeywords.length}) {showKeywords ? "▲" : "▼"}
-          </button>
-          {showKeywords && (
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <button
+              onClick={() => setShowKeywords((v) => !v)}
+              className="text-xs text-neutral-500 hover:text-[#1A73E8] transition-colors"
+            >
+              {showKeywords ? "Ocultar" : "Ver"} keywords posicionadas ({rankedKeywords.length}) {showKeywords ? "▲" : "▼"}
+            </button>
+            {showKeywords && (
+              <div className="flex bg-neutral-100 rounded-full p-0.5 text-[11px]">
+                <button
+                  onClick={() => setKwViewMode("keywords")}
+                  className={`px-2.5 py-1 rounded-full transition-colors ${
+                    kwViewMode === "keywords" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-500"
+                  }`}
+                >
+                  Por keyword
+                </button>
+                <button
+                  onClick={() => setKwViewMode("pages")}
+                  className={`px-2.5 py-1 rounded-full transition-colors ${
+                    kwViewMode === "pages" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-500"
+                  }`}
+                >
+                  Por página ({pageGroups.length})
+                </button>
+              </div>
+            )}
+          </div>
+          {showKeywords && kwViewMode === "keywords" && (
             <div className="mt-2 overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
@@ -3701,6 +3786,65 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
                       <td className="px-2 py-1.5 text-right">
                         <span className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600 font-medium">
                           #{k.position ?? "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {showKeywords && kwViewMode === "pages" && (
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-neutral-400">
+                    <th className="text-left font-normal px-2 py-1.5">
+                      <SortHeader label="URL" active={pageSortBy === "url"} dir={pageSortDir} onClick={() => togglePageSort("url")} />
+                    </th>
+                    <th className="text-left font-normal px-2 py-1.5">Palabra clave principal</th>
+                    <th className="text-right font-normal px-2 py-1.5">
+                      <span className="inline-flex justify-end">
+                        <SortHeader label="Keywords" active={pageSortBy === "count"} dir={pageSortDir} onClick={() => togglePageSort("count")} />
+                      </span>
+                    </th>
+                    <th className="text-right font-normal px-2 py-1.5">
+                      <span className="inline-flex justify-end">
+                        <SortHeader label="Volumen/mes" active={pageSortBy === "volume"} dir={pageSortDir} onClick={() => togglePageSort("volume")} />
+                      </span>
+                    </th>
+                    <th className="text-right font-normal px-2 py-1.5">
+                      <span className="inline-flex justify-end">
+                        <SortHeader label="Mejor posicion" active={pageSortBy === "position"} dir={pageSortDir} onClick={() => togglePageSort("position")} />
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedPageGroups.map((p) => (
+                    <tr key={p.url} className="odd:bg-neutral-50">
+                      <td className="px-2 py-1.5 max-w-[220px]">
+                        <a
+                          href={p.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-neutral-700 hover:text-[#1A73E8] hover:underline truncate block"
+                        >
+                          {p.url.replace(/^https?:\/\//, "")}
+                        </a>
+                      </td>
+                      <td className="px-2 py-1.5 text-neutral-500 whitespace-nowrap">{p.topKeyword}</td>
+                      <td className="px-2 py-1.5 text-right">
+                        <span className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600 font-medium">
+                          {p.keywordCount}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1.5 text-right text-neutral-400 whitespace-nowrap">
+                        {p.totalVolume > 0 ? `${p.totalVolume.toLocaleString("es-MX")}/mes` : "—"}
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        <span className="bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600 font-medium">
+                          #{p.bestPosition ?? "—"}
                         </span>
                       </td>
                     </tr>
