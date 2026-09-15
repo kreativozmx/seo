@@ -701,10 +701,17 @@ export default function ProjectDashboard({
               <p className="text-neutral-500 text-xs truncate">{project.domain}</p>
             </div>
           </div>
-          {readOnly && (
+          {readOnly ? (
             <span className="text-[12px] uppercase tracking-wide bg-neutral-100 text-neutral-500 rounded-full px-2.5 py-1 shrink-0">
               Vista de solo lectura
             </span>
+          ) : (
+            <a
+              href="/api/logout"
+              className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
+            >
+              Cerrar sesión
+            </a>
           )}
         </div>
       </header>
@@ -722,7 +729,7 @@ export default function ProjectDashboard({
                   {group.id === null ? (
                     <button
                       onClick={() => toggleGroup(gi)}
-                      className="w-full flex items-center gap-3 px-4 pt-2 pb-0.5 text-[13px] font-medium text-neutral-400 uppercase tracking-wide hover:text-neutral-600 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
                     >
                       <svg
                         width="16"

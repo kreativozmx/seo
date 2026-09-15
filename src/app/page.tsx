@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import NewProjectForm from "@/components/NewProjectForm";
-import RefreshGscStatsButton from "@/components/RefreshGscStatsButton";
 import { computeProjectStats } from "@/lib/projectStats";
 
 export const dynamic = "force-dynamic";
@@ -89,9 +88,12 @@ export default async function Home() {
             Resumen de posiciones y visibilidad de todos tus proyectos.
           </p>
         </div>
-        <RefreshGscStatsButton
-          projectIds={gscConnectedProjects.map((p) => p.id)}
-        />
+        <a
+          href="/api/logout"
+          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+        >
+          Cerrar sesión
+        </a>
       </header>
 
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
