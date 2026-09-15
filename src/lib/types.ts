@@ -112,6 +112,8 @@ export interface ProjectDTO {
   gaAiLandingPagesJson: string | null;
   aiQueryCrossRefJson: string | null;
   aiQueryCrossRefUpdatedAt: string | null;
+  contentIdeasJson: string | null;
+  contentIdeasUpdatedAt: string | null;
   shopifyShopDomain: string | null;
   shopifyConnectedAt: string | null;
   shopifyOrders28d: number | null;

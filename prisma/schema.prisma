@@ -92,6 +92,11 @@ model Project {
   gaAiLandingPagesJson    String? // cached array of {path, sessions} — pages AI traffic actually lands on
   aiQueryCrossRefJson     String? // cached array of {path, queries:[{query,impressions,clicks,position}]} — real GSC queries for those AI landing pages
   aiQueryCrossRefUpdatedAt DateTime?
+
+  // Estrategia > Contenidos: 12 blog title ideas generated from real GSC
+  // queries of the last 7 days, aimed at helping the domain rank.
+  contentIdeasJson      String? // cached array of {title, keywords: string[]}
+  contentIdeasUpdatedAt DateTime?
   gaAnalyticsUpdatedAt  DateTime?
 
   // Shopify Admin API (own store only) — one-click OAuth install, not a

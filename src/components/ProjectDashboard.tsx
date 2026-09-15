@@ -113,6 +113,7 @@ const NAV_ITEMS = [
   { id: "youtube", label: "SEO Youtube" },
   { id: "planificacion", label: "Keywords" },
   { id: "changelog", label: "Actualizaciones Shopify" },
+  { id: "contenidos", label: "Contenidos" },
   { id: "competencia", label: "Competencia" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
@@ -132,6 +133,7 @@ const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
   { id: "analiticas" },
   { id: "rankings", children: ["seo-ia", "youtube"] },
   { id: null, label: "Planificacion", children: ["planificacion", "changelog"] },
+  { id: null, label: "Estrategia", children: ["contenidos"] },
   { id: "competencia" },
   { id: "apps" },
   { id: "marketplaces" },
@@ -196,6 +198,13 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
     <>
       <path d="M4 4h13l3 3v13H4Z" />
       <path d="M9 9h7M9 13h7M9 17h4" />
+    </>
+  ),
+  contenidos: (
+    <>
+      <path d="M4 19.5V6a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v13.5" />
+      <path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19a2 2 0 0 0 2-2" />
+      <path d="M8 8h8M8 12h5" />
     </>
   ),
   apps: (
@@ -1100,6 +1109,12 @@ export default function ProjectDashboard({
           {activeTab === "changelog" && (
             <section>
               <ChangelogSection />
+            </section>
+          )}
+
+          {activeTab === "contenidos" && (
+            <section>
+              <ContentStrategySection project={project} />
             </section>
           )}
 
@@ -2924,6 +2939,124 @@ interface ChangelogEntryDTO {
   summaryEs: string;
   category: string;
   publishedAt: string;
+}
+
+interface ContentIdeaRow {
+  title: string;
+  keywords: string[];
+}
+
+function ContentStrategySection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const connected = Boolean(project.gscConnectedAt);
+  const ideas: ContentIdeaRow[] = project.contentIdeasJson
+    ? JSON.parse(project.contentIdeasJson)
+    : [];
+
+  async function handleGenerate() {
+    setGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/content-strategy/generate`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al generar ideas");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al generar ideas");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  if (!connected) {
+    return (
+      <div className="flex items-center justify-between flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-xl px-5 py-4">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Contenidos</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Necesitas Search Console conectado para generar ideas basadas en
+            busquedas reales — conectalo desde &ldquo;Conexiones&rdquo;.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-neutral-900">
+              Ideas de contenido para el blog
+            </p>
+            <p className="text-neutral-500 text-xs mt-0.5">
+              12 titulos generados con IA a partir de las busquedas reales
+              en Google de los ultimos 7 dias (Search Console), pensados
+              para ayudarte a posicionar.
+            </p>
+          </div>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="text-sm bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap"
+          >
+            {generating ? "Generando..." : ideas.length > 0 ? "Generar de nuevo" : "Generar ideas"}
+          </button>
+        </div>
+        {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
+        {project.contentIdeasUpdatedAt && (
+          <p className="text-[14px] text-neutral-400 mt-3">
+            Ultima vez: {new Date(project.contentIdeasUpdatedAt).toLocaleDateString("es-MX", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
+      </div>
+
+      {ideas.length === 0 ? (
+        <p className="text-neutral-400 text-sm">
+          Aun no hay ideas generadas. Dale clic a &ldquo;Generar ideas&rdquo; arriba.
+        </p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {ideas.map((idea, i) => (
+            <div
+              key={i}
+              className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5 flex flex-col gap-2"
+            >
+              <div>
+                <p className="text-[13px] text-neutral-400 uppercase tracking-wide">Titulo</p>
+                <p className="text-sm font-medium text-neutral-900">{idea.title}</p>
+              </div>
+              <div>
+                <p className="text-[13px] text-neutral-400 uppercase tracking-wide">Keywords</p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {idea.keywords.map((k) => (
+                    <span
+                      key={k}
+                      className="text-[13px] bg-white border border-neutral-200 rounded-full px-2 py-0.5 text-neutral-600"
+                    >
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ChangelogSection() {

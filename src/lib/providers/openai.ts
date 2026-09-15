@@ -149,3 +149,88 @@ Responde SOLO como JSON valido, sin texto adicional:
 
   return { titleEs, summaryEs };
 }
+
+export interface ContentIdea {
+  title: string;
+  keywords: string[];
+}
+
+// 12 blog title ideas aimed at ranking the domain, based on real Search
+// Console queries from the last 7 days — so suggestions follow actual
+// demand instead of generic keyword brainstorming.
+export async function generateContentIdeas(params: {
+  domain: string;
+  queries: { query: string; clicks: number; impressions: number }[];
+}): Promise<ContentIdea[]> {
+  const { domain, queries } = params;
+
+  const queryLines = queries
+    .slice(0, 60)
+    .map((q) => `- "${q.query}" (${q.clicks} clics, ${q.impressions} impresiones)`)
+    .join("\n");
+
+  const prompt = `Eres un estratega de contenido SEO para el sitio ${domain}.
+
+Estas son las busquedas reales que la gente hizo en Google en los ultimos 7 dias y que ya le traen trafico o impresiones al sitio (datos de Google Search Console):
+${queryLines}
+
+Con base en esas busquedas reales, genera exactamente 12 ideas de titulos de blog en español, pensados para ayudar a posicionar mejor el dominio en Google. Cada idea debe:
+- Tener un titulo de blog atractivo y especifico (no generico), inspirado en una o varias de las busquedas reales de arriba.
+- Traer 3 a 6 palabras clave relacionadas que ese articulo deberia intentar posicionar (pueden incluir variantes de las busquedas reales, no solo copiarlas literal).
+
+Responde SOLO como JSON valido, sin texto adicional, con esta forma exacta:
+{
+  "ideas": [
+    { "title": "titulo del blog 1", "keywords": ["keyword 1", "keyword 2", "keyword 3"] }
+  ]
+}
+El array "ideas" debe tener exactamente 12 elementos.`;
+
+  const res = await fetch(BASE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OpenAI request failed (${res.status}): ${text}`);
+  }
+
+  const json = await res.json();
+  const content: string | undefined = json?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI no devolvio contenido");
+
+  let parsed: { ideas?: unknown };
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error("No se pudo interpretar la respuesta de OpenAI");
+  }
+
+  if (!Array.isArray(parsed.ideas)) {
+    throw new Error("OpenAI no devolvio ideas validas");
+  }
+
+  return parsed.ideas
+    .filter(
+      (idea): idea is { title: string; keywords: string[] } =>
+        typeof idea === "object" &&
+        idea !== null &&
+        typeof (idea as { title?: unknown }).title === "string" &&
+        Array.isArray((idea as { keywords?: unknown }).keywords)
+    )
+    .map((idea) => ({
+      title: idea.title,
+      keywords: idea.keywords.filter((k): k is string => typeof k === "string"),
+    }))
+    .slice(0, 12);
+}
