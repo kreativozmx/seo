@@ -278,8 +278,8 @@ function NavButton({
         indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-sm"
       } ${
         active
-          ? "bg-white/10 text-white font-medium border-[#4C9AFF]"
-          : "text-slate-300 hover:bg-white/5 hover:text-white border-transparent"
+          ? "bg-primary/10 text-primary font-medium border-primary"
+          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border-transparent"
       }`}
     >
       <NavIcon id={item.id} />
@@ -291,7 +291,7 @@ function NavButton({
 
 function ComingSoonBadge() {
   return (
-    <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide bg-amber-400/20 text-amber-300 rounded-full px-1.5 py-0.5 align-middle">
+    <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 align-middle">
       Soon
     </span>
   );
@@ -505,6 +505,131 @@ function PositionBadgeMini({ position }: { position: number | null }) {
   return <span className={`font-semibold text-xs shrink-0 ${color}`}>#{position}</span>;
 }
 
+interface ProjectListEntry {
+  id: string;
+  name: string;
+  domain: string;
+}
+
+// Dropdown at the top of the sidebar so a merchant can jump straight to
+// another project without going back to the project list first.
+function ProjectSwitcher({
+  currentId,
+  currentName,
+  currentDomain,
+}: {
+  currentId: string;
+  currentName: string;
+  currentDomain: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [projects, setProjects] = useState<ProjectListEntry[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+
+  async function handleToggle() {
+    const next = !open;
+    setOpen(next);
+    if (next && !projects && !loading) {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/projects");
+        const data = await res.json();
+        setProjects(
+          Array.isArray(data)
+            ? data.map((p: ProjectListEntry) => ({ id: p.id, name: p.name, domain: p.domain }))
+            : []
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
+
+  const filtered = (projects ?? []).filter(
+    (p) =>
+      p.name.toLowerCase().includes(query.toLowerCase()) ||
+      p.domain.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleToggle}
+        className="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-neutral-100 transition-colors text-left"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
+        <div className="min-w-0 flex-1">
+          <p className="text-neutral-900 text-[13px] font-medium truncate">{currentName}</p>
+          <p className="text-neutral-400 text-[11px] truncate">{currentDomain}</p>
+        </div>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 text-neutral-400"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 right-0 mt-1 z-40 bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden">
+            <div className="p-2 border-b border-neutral-100">
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar proyecto..."
+                className="w-full text-[13px] px-2.5 py-1.5 rounded-md border border-neutral-200 focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div className="max-h-72 overflow-y-auto py-1">
+              {loading && <p className="px-3 py-2 text-xs text-neutral-400">Cargando...</p>}
+              {!loading && filtered.length === 0 && (
+                <p className="px-3 py-2 text-xs text-neutral-400">Sin resultados.</p>
+              )}
+              {filtered.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/projects/${p.id}`}
+                  onClick={() => setOpen(false)}
+                  className={`flex flex-col px-3 py-2 text-[13px] hover:bg-neutral-50 transition-colors ${
+                    p.id === currentId ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <span
+                    className={`truncate ${
+                      p.id === currentId ? "text-primary font-medium" : "text-neutral-800"
+                    }`}
+                  >
+                    {p.name}
+                  </span>
+                  <span className="text-[11px] text-neutral-400 truncate">{p.domain}</span>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href="/"
+              className="block px-3 py-2 text-[13px] text-neutral-500 hover:bg-neutral-50 border-t border-neutral-100 transition-colors"
+            >
+              Ver todos los proyectos
+            </Link>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDashboard({
   project,
   stats,
@@ -687,14 +812,20 @@ export default function ProjectDashboard({
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] md:flex">
-      <aside className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0 bg-[#0E1B33] md:min-h-screen md:sticky md:top-0 px-3 py-3 md:py-4">
-        <div className="hidden md:flex items-center gap-2 px-2 pb-3 mb-1 border-b border-white/10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
-          <div className="min-w-0">
-            <p className="text-white text-[13px] font-medium truncate">{project.name}</p>
-            <p className="text-slate-400 text-[11px] truncate">{project.domain}</p>
-          </div>
+      <aside className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-screen md:sticky md:top-0 px-3 py-3 md:py-4">
+        <div className="hidden md:block pb-2 mb-1 border-b border-neutral-100">
+          {readOnly ? (
+            <div className="flex items-center gap-2 px-2 py-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="" width={26} height={26} className="shrink-0 rounded" />
+              <div className="min-w-0">
+                <p className="text-neutral-900 text-[13px] font-medium truncate">{project.name}</p>
+                <p className="text-neutral-400 text-[11px] truncate">{project.domain}</p>
+              </div>
+            </div>
+          ) : (
+            <ProjectSwitcher currentId={project.id} currentName={project.name} currentDomain={project.domain} />
+          )}
         </div>
         <nav className="flex md:flex-col gap-2 md:gap-1 shrink-0">
           {NAV_GROUPS.filter(
@@ -708,7 +839,7 @@ export default function ProjectDashboard({
                   {group.id === null ? (
                     <button
                       onClick={() => toggleGroup(gi)}
-                      className="w-full flex items-center gap-3 px-3 py-1.5 text-[13px] font-medium text-slate-400 hover:bg-white/5 hover:text-white rounded-md transition-colors uppercase tracking-wide"
+                      className="w-full flex items-center gap-3 px-3 py-1.5 text-[13px] font-medium text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 rounded-md transition-colors uppercase tracking-wide"
                     >
                       <svg
                         width="14"
@@ -738,7 +869,7 @@ export default function ProjectDashboard({
                   <button
                     onClick={() => toggleGroup(gi)}
                     title={collapsedGroups.has(gi) ? "Expandir" : "Contraer"}
-                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors"
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
                   >
                     <svg
                       width="14"
