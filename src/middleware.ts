@@ -47,5 +47,10 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Also skips static files served straight out of /public (images, etc.)
+  // — those aren't pages/API routes, so gating them just breaks <img> tags
+  // like the logo on the login page itself.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|avif)$).*)",
+  ],
 };
