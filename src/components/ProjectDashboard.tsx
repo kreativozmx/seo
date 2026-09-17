@@ -889,15 +889,16 @@ export default function ProjectDashboard({
         <div className="flex items-center gap-3 min-w-0">
           {activeSyncLabels.length > 0 && (
             <span
-              title={activeSyncLabels.join(", ")}
+              title={`${activeSyncLabels.join(", ")} — puedes seguir navegando, esto sigue corriendo en segundo plano`}
               className="flex items-center gap-2 text-[11px] text-slate-300 bg-white/5 border border-white/10 rounded-md px-2.5 py-1 min-w-0"
             >
               <span className="w-3 h-3 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
-              <span className="truncate max-w-[160px] sm:max-w-[320px]">
+              <span className="truncate max-w-[140px] sm:max-w-[280px]">
                 {activeSyncLabels.length === 1
                   ? activeSyncLabels[0]
                   : `Sincronizando ${activeSyncLabels.length}: ${activeSyncLabels.join(", ")}`}
               </span>
+              <span className="hidden md:inline text-slate-500 shrink-0">· puedes seguir navegando</span>
             </span>
           )}
           {readOnly ? (
