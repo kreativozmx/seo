@@ -3757,10 +3757,16 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Marcas / vendedores</p>
               <div className="flex flex-col gap-1">
                 {topVendors.map((v) => (
-                  <div key={v.name} className="flex items-center justify-between text-xs">
-                    <span className="text-neutral-700 truncate">{v.name}</span>
+                  <a
+                    key={v.name}
+                    href={`https://${project.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between gap-2 text-xs transition-colors"
+                  >
+                    <span className="text-neutral-700 group-hover:text-[#228449] truncate">{v.name}</span>
                     <span className="text-neutral-400 shrink-0">{v.count}</span>
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>
@@ -3770,10 +3776,16 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Categorias / tipos</p>
               <div className="flex flex-col gap-1">
                 {topTypes.map((v) => (
-                  <div key={v.name} className="flex items-center justify-between text-xs">
-                    <span className="text-neutral-700 truncate">{v.name}</span>
+                  <a
+                    key={v.name}
+                    href={`https://${project.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between gap-2 text-xs transition-colors"
+                  >
+                    <span className="text-neutral-700 group-hover:text-[#228449] truncate">{v.name}</span>
                     <span className="text-neutral-400 shrink-0">{v.count}</span>
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>
@@ -3783,12 +3795,15 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
               <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Tags mas usados</p>
               <div className="flex flex-wrap gap-1.5">
                 {topTags.map((v) => (
-                  <span
+                  <a
                     key={v.name}
-                    className="text-[14px] bg-white border border-neutral-200 rounded-md px-2 py-0.5 text-neutral-600"
+                    href={`https://${project.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[14px] bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
                   >
                     {v.name} · {v.count}
-                  </span>
+                  </a>
                 ))}
               </div>
             </div>
@@ -4732,12 +4747,15 @@ function CompetitorShopifyDetails({
           <p className="text-neutral-400 mb-1">Marcas mas comunes</p>
           <div className="flex flex-wrap gap-1.5">
             {vendors.map((v) => (
-              <span
+              <a
                 key={v.name}
-                className="bg-white border border-neutral-200 rounded-md px-2 py-0.5 text-neutral-600"
+                href={`https://${competitor.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
               >
                 {v.name} <span className="text-neutral-400">({v.count})</span>
-              </span>
+              </a>
             ))}
           </div>
         </div>
@@ -4748,12 +4766,15 @@ function CompetitorShopifyDetails({
           <p className="text-neutral-400 mb-1">Categorias / tipos</p>
           <div className="flex flex-wrap gap-1.5">
             {types.map((t) => (
-              <span
+              <a
                 key={t.name}
-                className="bg-white border border-neutral-200 rounded-md px-2 py-0.5 text-neutral-600"
+                href={`https://${competitor.domain}/search?q=${encodeURIComponent(t.name)}&type=product`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
               >
                 {t.name} <span className="text-neutral-400">({t.count})</span>
-              </span>
+              </a>
             ))}
           </div>
         </div>
@@ -4764,12 +4785,15 @@ function CompetitorShopifyDetails({
           <p className="text-neutral-400 mb-1">Tags mas usados</p>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((t) => (
-              <span
+              <a
                 key={t.name}
-                className="bg-white border border-neutral-200 rounded-md px-2 py-0.5 text-neutral-600"
+                href={`https://${competitor.domain}/search?q=${encodeURIComponent(t.name)}&type=product`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
               >
                 {t.name} <span className="text-neutral-400">({t.count})</span>
-              </span>
+              </a>
             ))}
           </div>
         </div>
