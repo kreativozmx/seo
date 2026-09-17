@@ -2,18 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Material Design 3 color roles (light scheme), tuned to match Google
-   Search Console: Google blue primary, cool neutral surfaces. Mirrored in
-   tailwind.config.ts as the primary/surface/outline color families so both
-   CSS vars and Tailwind utilities agree. */
+/* Material Design 3 color roles (light scheme), tuned toward a
+   Linear/Vercel-style monochrome look: near-black primary, cool neutral
+   surfaces. Mirrored in tailwind.config.ts as the primary/surface/outline
+   color families so both CSS vars and Tailwind utilities agree. */
 :root {
   --background: #ffffff;
   --foreground: #202124;
 
-  --md-primary: #1a73e8;
+  --md-primary: #18181b;
   --md-on-primary: #ffffff;
-  --md-primary-container: #d3e3fd;
-  --md-on-primary-container: #041e49;
+  --md-primary-container: #f4f4f5;
+  --md-on-primary-container: #18181b;
   --md-surface: #ffffff;
   --md-on-surface: #202124;
   --md-outline: #80868b;

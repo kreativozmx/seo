@@ -1,8 +1,9 @@
 import type { Config } from "tailwindcss";
 
-// Material Design 3 color roles, tuned to match Google Search Console's
-// look: Google blue (#1a73e8) as primary, cool neutral grays (Google's
-// own gray scale) instead of a warm palette, white surfaces.
+// Material Design 3 color roles, but tuned toward a Linear/Vercel-style
+// "monochrome + one carbon accent" look: near-black (#18181B) as primary
+// instead of Google blue, cool neutral grays, white surfaces, sharper
+// (near-rectangular) corners.
 // https://m3.material.io/styles/color/roles
 const config: Config = {
   content: [
@@ -18,11 +19,11 @@ const config: Config = {
 
         // M3 color roles
         primary: {
-          DEFAULT: "#1A73E8",
-          container: "#D3E3FD",
+          DEFAULT: "#18181B",
+          container: "#F4F4F5",
         },
         "on-primary": "#FFFFFF",
-        "on-primary-container": "#041E49",
+        "on-primary-container": "#18181B",
         secondary: {
           DEFAULT: "#5F6368",
           container: "#E8EAED",
@@ -72,19 +73,25 @@ const config: Config = {
         "elevation-3": "0 1px 3px 0 rgba(60,64,67,0.30), 0 4px 8px 3px rgba(60,64,67,0.15)",
       },
       fontFamily: {
-        sans: ["var(--font-roboto)", "Roboto", "Arial", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "system-ui", "Arial", "sans-serif"],
       },
-      // Bumped vs Tailwind's defaults so the app stays legible when
-      // screen-sharing in calls (most of the UI runs on text-xs/text-sm).
-      // Overriding the scale here covers every existing text-xs/sm/base/etc
-      // usage without touching each className.
+      // Near-rectangular corners (Linear/Vercel-style) instead of the
+      // rounder M3 defaults — every existing rounded-lg/rounded-xl usage
+      // in the app picks this up automatically.
+      borderRadius: {
+        lg: "0.25rem", // 4px (was 8px)
+        xl: "0.375rem", // 6px (was 12px)
+      },
+      // Compact, Ahrefs/Excel-style density: smaller than the previous
+      // "bumped for screen-sharing" scale, but still a notch above raw
+      // Tailwind defaults for legibility.
       fontSize: {
-        xs: ["0.875rem", { lineHeight: "1.3rem" }], // 14px (was 12px)
-        sm: ["1rem", { lineHeight: "1.5rem" }], // 16px (was 14px)
-        base: ["1.125rem", { lineHeight: "1.7rem" }], // 18px (was 16px)
-        lg: ["1.25rem", { lineHeight: "1.85rem" }], // 20px (was 18px)
-        xl: ["1.375rem", { lineHeight: "1.85rem" }], // 22px (was 20px)
-        "2xl": ["1.625rem", { lineHeight: "2.1rem" }], // 26px (was 24px)
+        xs: ["0.75rem", { lineHeight: "1.1rem" }], // 12px
+        sm: ["0.8125rem", { lineHeight: "1.25rem" }], // 13px
+        base: ["0.9375rem", { lineHeight: "1.4rem" }], // 15px
+        lg: ["1.0625rem", { lineHeight: "1.5rem" }], // 17px
+        xl: ["1.125rem", { lineHeight: "1.6rem" }], // 18px
+        "2xl": ["1.375rem", { lineHeight: "1.85rem" }], // 22px
       },
       spacing: {
         4.5: "1.125rem",
