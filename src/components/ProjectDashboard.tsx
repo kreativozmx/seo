@@ -292,7 +292,7 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 text-left rounded-md whitespace-nowrap transition-colors ${
+      className={`flex items-center gap-3 w-full text-left rounded-md whitespace-nowrap transition-colors ${
         indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-[13px]"
       } ${
         active
