@@ -292,8 +292,8 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
 function NavIcon({ id }: { id: NavId }) {
   return (
     <svg
-      width="18"
-      height="18"
+      width="15"
+      height="15"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -321,12 +321,12 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 w-full text-left rounded-md whitespace-nowrap transition-colors ${
-        indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-[13px]"
+      className={`flex items-center gap-2 w-full text-left rounded-md whitespace-nowrap transition-colors ${
+        indent ? "pl-7 pr-2.5 py-1 text-[13px]" : "px-2.5 py-1.5 text-[13px]"
       } ${
         active
-          ? "bg-[#228449] text-white font-medium"
-          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+          ? "text-[#228449] font-semibold"
+          : "text-neutral-600 hover:text-neutral-900"
       }`}
     >
       <NavIcon id={item.id} />
@@ -722,7 +722,6 @@ export default function ProjectDashboard({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<NavId>("panel");
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(new Set());
 
   // Lives here (not inside the section that starts the sync) specifically
   // so it survives the user switching tabs — see SyncStatusContext above.
@@ -742,14 +741,6 @@ export default function ProjectDashboard({
   );
   const activeSyncLabels = Object.values(activeSyncs);
 
-  function toggleGroup(gi: number) {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(gi)) next.delete(gi);
-      else next.add(gi);
-      return next;
-    });
-  }
   const [selectedKeywordId, setSelectedKeywordId] = useState<string | null>(
     project.keywords[0]?.id ?? null
   );
@@ -946,63 +937,34 @@ export default function ProjectDashboard({
       </div>
 
       <div className="flex flex-1 min-h-0 md:flex">
-        <aside className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible md:w-56 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-[calc(100vh-3rem)] md:sticky md:top-12 px-3 py-3 md:py-4">
-          <nav className="flex md:flex-col gap-2 md:gap-0.5 shrink-0">
+        <aside className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible md:w-64 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-[calc(100vh-3rem)] md:sticky md:top-12 px-2 py-2 md:py-3">
+          <nav className="flex md:flex-col gap-1.5 md:gap-0 shrink-0">
             {NAV_GROUPS.filter(
               (group) =>
                 !readOnly ||
                 (group.id !== "conexiones" && group.id !== "configuracion")
             ).map((group, gi) => (
-              <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-1 md:mb-1">
-                <div className="flex items-center gap-0.5">
-                  <div className="flex-1 min-w-0">
-                    {group.id === null ? (
-                      <button
-                        onClick={() => toggleGroup(gi)}
-                        className="w-full flex items-center px-3 py-1.5 text-[11px] font-semibold text-neutral-400 hover:text-neutral-600 rounded-md transition-colors uppercase tracking-wider"
-                      >
-                        {group.label}
-                      </button>
-                    ) : (
-                      <NavButton
-                        item={NAV_ITEMS.find((i) => i.id === group.id)!}
-                        active={activeTab === group.id}
-                        onClick={() => setActiveTab(group.id as NavId)}
-                      />
-                    )}
-                  </div>
-                  {group.children && (
-                    <button
-                      onClick={() => toggleGroup(gi)}
-                      title={collapsedGroups.has(gi) ? "Expandir" : "Contraer"}
-                      className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
-                    >
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`transition-transform ${collapsedGroups.has(gi) ? "" : "rotate-90"}`}
-                      >
-                        <path d="m9 6 6 6-6 6" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                {!collapsedGroups.has(gi) &&
-                  group.children?.map((childId) => (
-                    <NavButton
-                      key={childId}
-                      item={NAV_ITEMS.find((i) => i.id === childId)!}
-                      active={activeTab === childId}
-                      indent
-                      onClick={() => setActiveTab(childId)}
-                    />
-                  ))}
+              <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-0.5 md:mb-0.5">
+                {group.id === null ? (
+                  <p className="px-2.5 py-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                    {group.label}
+                  </p>
+                ) : (
+                  <NavButton
+                    item={NAV_ITEMS.find((i) => i.id === group.id)!}
+                    active={activeTab === group.id}
+                    onClick={() => setActiveTab(group.id as NavId)}
+                  />
+                )}
+                {group.children?.map((childId) => (
+                  <NavButton
+                    key={childId}
+                    item={NAV_ITEMS.find((i) => i.id === childId)!}
+                    active={activeTab === childId}
+                    indent
+                    onClick={() => setActiveTab(childId)}
+                  />
+                ))}
               </div>
             ))}
           </nav>

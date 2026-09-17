@@ -30,9 +30,9 @@ function StatCard({
 // label on top, the number front and center underneath.
 function ProjectMetric({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
   return (
-    <div className="min-w-[76px]">
+    <div className="min-w-[62px] flex items-baseline gap-1">
+      <p className={`text-[13px] font-semibold leading-tight ${valueClassName ?? "text-neutral-900"}`}>{value}</p>
       <p className="text-[11px] text-neutral-400 leading-tight">{label}</p>
-      <p className={`text-[15px] font-semibold leading-tight ${valueClassName ?? "text-neutral-900"}`}>{value}</p>
     </div>
   );
 }
@@ -110,17 +110,17 @@ export default async function Home() {
         </a>
       </div>
 
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-5">
-        <header className="mb-3">
-          <h1 className="text-base font-semibold tracking-tight text-neutral-900">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-3 sm:py-4">
+        <header className="mb-2.5 flex items-baseline gap-2">
+          <h1 className="text-[15px] font-semibold tracking-tight text-neutral-900">
             Proyectos
           </h1>
-          <p className="text-neutral-500 text-[13px]">
+          <p className="text-neutral-400 text-[12px]">
             Resumen de posiciones y visibilidad de todos tus proyectos.
           </p>
         </header>
 
-        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 mb-3">
           <StatCard label="Proyectos" value={String(projects.length)} />
           <StatCard label="Keywords" value={String(totalKeywords)} />
           <StatCard label="Posicion prom." value={overallAvgPosition} />
@@ -133,11 +133,11 @@ export default async function Home() {
           />
         </section>
 
-        <section className="mb-4">
+        <section className="mb-3">
           <NewProjectForm />
         </section>
 
-        <section className="flex flex-col gap-1.5">
+        <section className="flex flex-col gap-1">
           {projects.length === 0 && (
             <p className="text-neutral-400 text-sm">
               Aun no hay proyectos. Crea el primero arriba.
@@ -147,10 +147,10 @@ export default async function Home() {
             <Link
               key={project.id}
               href={`/projects/${project.id}`}
-              className="flex items-center flex-wrap gap-x-6 gap-y-2 bg-white border border-neutral-200 hover:border-neutral-300 rounded-lg px-4 py-2.5 transition-colors"
+              className="flex items-center flex-wrap gap-x-4 gap-y-1.5 bg-white border border-neutral-200 hover:border-neutral-300 rounded-lg px-3 py-1.5 transition-colors"
             >
-              <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto sm:shrink-0 sm:basis-64">
-                <FaviconThumb domain={project.domain} size={28} />
+              <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto sm:shrink-0 sm:basis-56">
+                <FaviconThumb domain={project.domain} size={22} />
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium text-neutral-900 truncate leading-tight">
                     {project.name}
@@ -178,7 +178,7 @@ export default async function Home() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-x-5 gap-y-1 flex-1 min-w-0">
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1 min-w-0">
                 <ProjectMetric label="Keywords" value={String(project._count.keywords)} />
                 <ProjectMetric
                   label="Pos. prom."
