@@ -16,12 +16,12 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3.5">
-      <p className="text-[14px] text-neutral-400 uppercase tracking-wide">
+    <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2">
+      <p className="text-[11px] text-neutral-400 uppercase tracking-wide">
         {label}
       </p>
-      <p className="text-2xl font-semibold text-neutral-900 mt-1">{value}</p>
-      {hint && <p className="text-[14px] text-neutral-400 mt-0.5">{hint}</p>}
+      <p className="text-lg font-semibold text-neutral-900 leading-tight">{value}</p>
+      {hint && <p className="text-[11px] text-neutral-400">{hint}</p>}
     </div>
   );
 }
@@ -30,9 +30,9 @@ function StatCard({
 // label on top, the number front and center underneath.
 function ProjectMetric({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
   return (
-    <div className="min-w-[92px]">
-      <p className="text-[13px] text-neutral-400">{label}</p>
-      <p className={`text-lg font-semibold mt-0.5 ${valueClassName ?? "text-neutral-900"}`}>{value}</p>
+    <div className="min-w-[76px]">
+      <p className="text-[11px] text-neutral-400 leading-tight">{label}</p>
+      <p className={`text-[15px] font-semibold leading-tight ${valueClassName ?? "text-neutral-900"}`}>{value}</p>
     </div>
   );
 }
@@ -110,17 +110,17 @@ export default async function Home() {
         </a>
       </div>
 
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
-        <header className="mb-6">
-          <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-5">
+        <header className="mb-3">
+          <h1 className="text-base font-semibold tracking-tight text-neutral-900">
             Proyectos
           </h1>
-          <p className="text-neutral-500 text-sm mt-0.5">
+          <p className="text-neutral-500 text-[13px]">
             Resumen de posiciones y visibilidad de todos tus proyectos.
           </p>
         </header>
 
-        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
           <StatCard label="Proyectos" value={String(projects.length)} />
           <StatCard label="Keywords" value={String(totalKeywords)} />
           <StatCard label="Posicion prom." value={overallAvgPosition} />
@@ -133,11 +133,11 @@ export default async function Home() {
           />
         </section>
 
-        <section className="mb-6">
+        <section className="mb-4">
           <NewProjectForm />
         </section>
 
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-1.5">
           {projects.length === 0 && (
             <p className="text-neutral-400 text-sm">
               Aun no hay proyectos. Crea el primero arriba.
@@ -147,54 +147,53 @@ export default async function Home() {
             <Link
               key={project.id}
               href={`/projects/${project.id}`}
-              className="block bg-white border border-neutral-200 hover:border-neutral-300 rounded-lg px-5 py-4 transition-colors"
+              className="flex items-center flex-wrap gap-x-6 gap-y-2 bg-white border border-neutral-200 hover:border-neutral-300 rounded-lg px-4 py-2.5 transition-colors"
             >
-              <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <FaviconThumb domain={project.domain} />
-                  <div className="min-w-0">
-                    <p className="font-medium text-neutral-900 truncate">
-                      {project.name}
-                    </p>
-                    <p className="text-neutral-400 text-[13px] truncate">
-                      {project.domain}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span
-                    className={`text-[13px] rounded-md px-2 py-0.5 ${
-                      project.gscSiteUrl
-                        ? "bg-[#E6F4EC] text-[#155D34]"
-                        : "bg-neutral-100 text-neutral-400"
-                    }`}
-                  >
-                    {project.gscSiteUrl ? "GSC conectado" : "Sin GSC"}
-                  </span>
-                  {project.gaConnectedAt && (
-                    <span className="text-[13px] rounded-md px-2 py-0.5 bg-[#E6F4EC] text-[#155D34]">
-                      GA4 conectado
-                    </span>
-                  )}
+              <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto sm:shrink-0 sm:basis-64">
+                <FaviconThumb domain={project.domain} size={28} />
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-neutral-900 truncate leading-tight">
+                    {project.name}
+                  </p>
+                  <p className="text-neutral-400 text-[12px] truncate leading-tight">
+                    {project.domain}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-x-8 gap-y-3">
+              <div className="flex items-center gap-1 shrink-0">
+                <span
+                  className={`text-[11px] rounded-md px-1.5 py-0.5 whitespace-nowrap ${
+                    project.gscSiteUrl
+                      ? "bg-[#E6F4EC] text-[#155D34]"
+                      : "bg-neutral-100 text-neutral-400"
+                  }`}
+                >
+                  {project.gscSiteUrl ? "GSC" : "Sin GSC"}
+                </span>
+                {project.gaConnectedAt && (
+                  <span className="text-[11px] rounded-md px-1.5 py-0.5 bg-[#E6F4EC] text-[#155D34] whitespace-nowrap">
+                    GA4
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-x-5 gap-y-1 flex-1 min-w-0">
                 <ProjectMetric label="Keywords" value={String(project._count.keywords)} />
                 <ProjectMetric
-                  label="Posicion prom."
+                  label="Pos. prom."
                   value={stats.avgPosition != null ? stats.avgPosition.toFixed(1) : "—"}
                 />
-                <ProjectMetric label="En Top 3" value={String(stats.top3)} valueClassName="text-[#155D34]" />
-                <ProjectMetric label="En Top 10" value={String(stats.top10)} valueClassName="text-[#155D34]" />
+                <ProjectMetric label="Top 3" value={String(stats.top3)} valueClassName="text-[#155D34]" />
+                <ProjectMetric label="Top 10" value={String(stats.top10)} valueClassName="text-[#155D34]" />
                 {project.gscSiteUrl && (
                   <>
                     <ProjectMetric
-                      label="Clics GSC (28d)"
+                      label="Clics (28d)"
                       value={(project.gscClicks28d ?? 0).toLocaleString("es-MX")}
                     />
                     <ProjectMetric
-                      label="Impresiones (28d)"
+                      label="Impr. (28d)"
                       value={(project.gscImpressions28d ?? 0).toLocaleString("es-MX")}
                     />
                   </>
