@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import NewProjectForm from "@/components/NewProjectForm";
+import FaviconThumb from "@/components/FaviconThumb";
 import { computeProjectStats } from "@/lib/projectStats";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +16,23 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="bg-surface-low rounded-xl px-4 py-3.5 shadow-elevation-1">
+    <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3.5">
       <p className="text-[14px] text-neutral-400 uppercase tracking-wide">
         {label}
       </p>
       <p className="text-2xl font-semibold text-neutral-900 mt-1">{value}</p>
       {hint && <p className="text-[14px] text-neutral-400 mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+// One column of a project card's metric row — Ahrefs-style: small uppercase
+// label on top, the number front and center underneath.
+function ProjectMetric({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
+  return (
+    <div className="min-w-[92px]">
+      <p className="text-[13px] text-neutral-400">{label}</p>
+      <p className={`text-lg font-semibold mt-0.5 ${valueClassName ?? "text-neutral-900"}`}>{value}</p>
     </div>
   );
 }
@@ -78,97 +90,120 @@ export default async function Home() {
       : "—";
 
   return (
-    <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-10 sm:py-16">
-      <header className="mb-8 flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#F4F5F7]">
+      {/* Global bar — same dark strip as the project dashboard, so the
+          project list reads as part of the same app instead of a
+          different, older screen. */}
+      <div className="h-12 bg-[#14171C] flex items-center justify-between px-3 sm:px-4">
+        <div className="flex items-center gap-2 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={32} height={32} className="shrink-0" />
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
-              Shopify Audit
-            </h1>
-            <p className="text-neutral-500 text-sm mt-1">
-              Resumen de posiciones y visibilidad de todos tus proyectos.
-            </p>
-          </div>
+          <img src="/logo.png" alt="" width={22} height={22} className="shrink-0 rounded" />
+          <span className="text-white text-sm font-medium tracking-tight truncate">
+            Shopify Audit
+          </span>
         </div>
         <a
           href="/api/logout"
-          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 rounded-full px-3 py-1.5 transition-colors whitespace-nowrap"
+          className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
         >
           Cerrar sesión
         </a>
-      </header>
+      </div>
 
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
-        <StatCard label="Proyectos" value={String(projects.length)} />
-        <StatCard label="Keywords" value={String(totalKeywords)} />
-        <StatCard label="Posicion prom." value={overallAvgPosition} />
-        <StatCard label="En Top 3" value={String(totalTop3)} />
-        <StatCard label="En Top 10" value={String(totalTop10)} />
-        <StatCard
-          label="Clics GSC (28d)"
-          value={totalClicks.toLocaleString("es-MX")}
-          hint={`${totalImpressions.toLocaleString("es-MX")} impresiones`}
-        />
-      </section>
-
-      <section className="mb-8">
-        <NewProjectForm />
-      </section>
-
-      <section className="flex flex-col gap-2">
-        {projects.length === 0 && (
-          <p className="text-neutral-400 text-sm">
-            Aun no hay proyectos. Crea el primero arriba.
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+        <header className="mb-6">
+          <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+            Proyectos
+          </h1>
+          <p className="text-neutral-500 text-sm mt-0.5">
+            Resumen de posiciones y visibilidad de todos tus proyectos.
           </p>
-        )}
-        {withStats.map(({ project, stats }) => (
-          <Link
-            key={project.id}
-            href={`/projects/${project.id}`}
-            className="flex items-center justify-between bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm rounded-xl px-4 py-3.5 transition-all flex-wrap gap-3"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="min-w-0">
-                <p className="font-medium text-neutral-900 truncate">
-                  {project.name}
-                </p>
-                <p className="text-neutral-500 text-sm truncate">
-                  {project.domain}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 text-[14px] rounded-full px-2 py-0.5 ${
-                  project.gscSiteUrl
-                    ? "bg-blue-50 text-blue-600"
-                    : "bg-neutral-100 text-neutral-400"
-                }`}
-              >
-                {project.gscSiteUrl ? "GSC conectado" : "Sin GSC"}
-              </span>
-            </div>
+        </header>
 
-            <div className="flex items-center gap-4 text-xs text-neutral-500 shrink-0">
-              <span>{project._count.keywords} keywords</span>
-              <span>
-                Pos. prom.{" "}
-                <strong className="text-neutral-700">
-                  {stats.avgPosition != null
-                    ? stats.avgPosition.toFixed(1)
-                    : "—"}
-                </strong>
-              </span>
-              <span className="text-emerald-600">{stats.top10} en top10</span>
-              {project.gscSiteUrl && (
-                <span>
-                  {(project.gscClicks28d ?? 0).toLocaleString("es-MX")} clics
-                </span>
-              )}
-            </div>
-          </Link>
-        ))}
-      </section>
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          <StatCard label="Proyectos" value={String(projects.length)} />
+          <StatCard label="Keywords" value={String(totalKeywords)} />
+          <StatCard label="Posicion prom." value={overallAvgPosition} />
+          <StatCard label="En Top 3" value={String(totalTop3)} />
+          <StatCard label="En Top 10" value={String(totalTop10)} />
+          <StatCard
+            label="Clics GSC (28d)"
+            value={totalClicks.toLocaleString("es-MX")}
+            hint={`${totalImpressions.toLocaleString("es-MX")} impresiones`}
+          />
+        </section>
+
+        <section className="mb-6">
+          <NewProjectForm />
+        </section>
+
+        <section className="flex flex-col gap-3">
+          {projects.length === 0 && (
+            <p className="text-neutral-400 text-sm">
+              Aun no hay proyectos. Crea el primero arriba.
+            </p>
+          )}
+          {withStats.map(({ project, stats }) => (
+            <Link
+              key={project.id}
+              href={`/projects/${project.id}`}
+              className="block bg-white border border-neutral-200 hover:border-neutral-300 rounded-lg px-5 py-4 transition-colors"
+            >
+              <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <FaviconThumb domain={project.domain} />
+                  <div className="min-w-0">
+                    <p className="font-medium text-neutral-900 truncate">
+                      {project.name}
+                    </p>
+                    <p className="text-neutral-400 text-[13px] truncate">
+                      {project.domain}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className={`text-[13px] rounded-md px-2 py-0.5 ${
+                      project.gscSiteUrl
+                        ? "bg-[#E6F4EC] text-[#155D34]"
+                        : "bg-neutral-100 text-neutral-400"
+                    }`}
+                  >
+                    {project.gscSiteUrl ? "GSC conectado" : "Sin GSC"}
+                  </span>
+                  {project.gaConnectedAt && (
+                    <span className="text-[13px] rounded-md px-2 py-0.5 bg-[#E6F4EC] text-[#155D34]">
+                      GA4 conectado
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-x-8 gap-y-3">
+                <ProjectMetric label="Keywords" value={String(project._count.keywords)} />
+                <ProjectMetric
+                  label="Posicion prom."
+                  value={stats.avgPosition != null ? stats.avgPosition.toFixed(1) : "—"}
+                />
+                <ProjectMetric label="En Top 3" value={String(stats.top3)} valueClassName="text-[#155D34]" />
+                <ProjectMetric label="En Top 10" value={String(stats.top10)} valueClassName="text-[#155D34]" />
+                {project.gscSiteUrl && (
+                  <>
+                    <ProjectMetric
+                      label="Clics GSC (28d)"
+                      value={(project.gscClicks28d ?? 0).toLocaleString("es-MX")}
+                    />
+                    <ProjectMetric
+                      label="Impresiones (28d)"
+                      value={(project.gscImpressions28d ?? 0).toLocaleString("es-MX")}
+                    />
+                  </>
+                )}
+              </div>
+            </Link>
+          ))}
+        </section>
+      </div>
     </div>
   );
 }

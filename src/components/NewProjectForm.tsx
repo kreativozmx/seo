@@ -41,24 +41,24 @@ export default function NewProjectForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row gap-3 bg-neutral-50 border border-neutral-200 rounded-xl p-4"
+      className="flex flex-col sm:flex-row gap-3 bg-white border border-neutral-200 rounded-lg p-4"
     >
       <input
-        className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        className="flex-1 bg-white border border-neutral-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         placeholder="Nombre del proyecto"
         value={name}
         onChange={(e) => setName(e.target.value)}
         required
       />
       <input
-        className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        className="flex-1 bg-white border border-neutral-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         placeholder="dominio.com"
         value={domain}
         onChange={(e) => setDomain(normalizeDomain(e.target.value))}
         required
       />
       <select
-        className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        className="bg-white border border-neutral-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         value={locationCode}
         onChange={(e) => setLocationCode(e.target.value)}
       >
@@ -69,7 +69,7 @@ export default function NewProjectForm() {
         ))}
       </select>
       <select
-        className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+        className="bg-white border border-neutral-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         value={languageCode}
         onChange={(e) => setLanguageCode(e.target.value)}
       >
@@ -82,7 +82,7 @@ export default function NewProjectForm() {
       <button
         type="submit"
         disabled={loading}
-        className="bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2 text-sm transition-colors"
+        className="bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors whitespace-nowrap"
       >
         {loading ? "Creando..." : "Crear proyecto"}
       </button>
