@@ -2,18 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Material Design 3 color roles (light scheme), tuned toward a
-   Linear/Vercel-style monochrome look: near-black primary, cool neutral
-   surfaces. Mirrored in tailwind.config.ts as the primary/surface/outline
-   color families so both CSS vars and Tailwind utilities agree. */
+/* Material Design 3 color roles (light scheme), tuned to the brand green
+   (#228449) from the logo as primary, cool neutral surfaces. Mirrored in
+   tailwind.config.ts as the primary/surface/outline color families so both
+   CSS vars and Tailwind utilities agree. */
 :root {
   --background: #ffffff;
   --foreground: #202124;
 
-  --md-primary: #18181b;
+  --md-primary: #228449;
   --md-on-primary: #ffffff;
-  --md-primary-container: #f4f4f5;
-  --md-on-primary-container: #18181b;
+  --md-primary-container: #e6f4ec;
+  --md-on-primary-container: #155d34;
   --md-surface: #ffffff;
   --md-on-surface: #202124;
   --md-outline: #80868b;

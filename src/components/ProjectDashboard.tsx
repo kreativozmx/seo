@@ -278,7 +278,7 @@ function NavButton({
         indent ? "pl-8 pr-3 py-1.5 text-[13px]" : "px-3 py-2 text-[13px]"
       } ${
         active
-          ? "bg-neutral-900 text-white font-medium"
+          ? "bg-[#228449] text-white font-medium"
           : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
       }`}
     >
@@ -480,7 +480,7 @@ function BestWorstKeywordsCard({
                     href={ranking.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[13px] text-neutral-400 hover:text-[#18181B] hover:underline truncate block"
+                    className="text-[13px] text-neutral-400 hover:text-[#228449] hover:underline truncate block"
                   >
                     {ranking.url.replace(/^https?:\/\//, "")}
                   </a>
@@ -1115,7 +1115,7 @@ export default function ProjectDashboard({
                           <button
                             onClick={handleBulkCheck}
                             disabled={bulkChecking}
-                            className="text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-2.5 py-1 transition-colors"
+                            className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-2.5 py-1 transition-colors"
                           >
                             {bulkChecking
                               ? "Rastreando..."
@@ -1151,7 +1151,7 @@ export default function ProjectDashboard({
                                     checkedKeywordIds.size === sortedKeywords.length
                                   }
                                   onChange={toggleCheckAll}
-                                  className="w-4 h-4 accent-[#18181B] cursor-pointer"
+                                  className="w-4 h-4 accent-[#228449] cursor-pointer"
                                 />
                               </th>
                               <th className="px-2 py-2 text-left font-normal">
@@ -1440,7 +1440,7 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
                     <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-neutral-200 text-xs shrink-0 overflow-hidden">
                       <TechLogo url={item.url} icon={item.icon} size={16} />
                     </span>
-                    <span className="text-sm text-neutral-700 group-hover:text-[#18181B] group-hover:underline transition-colors">
+                    <span className="text-sm text-neutral-700 group-hover:text-[#228449] group-hover:underline transition-colors">
                       {item.name}
                     </span>
                   </a>
@@ -1613,13 +1613,13 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
               placeholder="mobiliario para hoteles"
-              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
             />
           </div>
           <button
             type="submit"
             disabled={loading || !seed}
-            className="bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
+            className="bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
           >
             {loading ? "Buscando..." : "Buscar ideas"}
           </button>
@@ -1630,14 +1630,14 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-2">
           {checkedSuggestions.size > 0 && (
-            <div className="flex items-center justify-between bg-neutral-100 border border-[#18181B]/20 rounded-xl px-3 py-2">
+            <div className="flex items-center justify-between bg-neutral-100 border border-[#228449]/20 rounded-xl px-3 py-2">
               <p className="text-xs text-neutral-600">
                 {checkedSuggestions.size} keyword{checkedSuggestions.size > 1 ? "s" : ""} seleccionada{checkedSuggestions.size > 1 ? "s" : ""}
               </p>
               <button
                 onClick={handleAddBulk}
                 disabled={addingBulk}
-                className="text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors"
+                className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors"
               >
                 {addingBulk ? "Agregando..." : `+ Rastrear ${checkedSuggestions.size} seleccionada${checkedSuggestions.size > 1 ? "s" : ""}`}
               </button>
@@ -1655,7 +1655,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
                       checkedSuggestions.size === selectableSuggestions.length
                     }
                     onChange={toggleCheckAllSuggestions}
-                    className="w-4 h-4 accent-[#18181B] cursor-pointer"
+                    className="w-4 h-4 accent-[#228449] cursor-pointer"
                   />
                 </th>
                 <th className="text-left font-medium text-neutral-500 text-xs px-3 py-2">
@@ -1702,7 +1702,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
                           type="checkbox"
                           checked={checkedSuggestions.has(s.keyword)}
                           onChange={() => toggleSuggestionChecked(s.keyword)}
-                          className="w-4 h-4 accent-[#18181B] cursor-pointer"
+                          className="w-4 h-4 accent-[#228449] cursor-pointer"
                         />
                       )}
                     </td>
@@ -1723,7 +1723,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
                         <button
                           onClick={() => handleAdd(s.keyword)}
                           disabled={addingKeyword === s.keyword}
-                          className="text-xs bg-white border border-neutral-200 hover:border-[#18181B] disabled:opacity-50 text-neutral-700 rounded-md px-2.5 py-1 transition-colors"
+                          className="text-xs bg-white border border-neutral-200 hover:border-[#228449] disabled:opacity-50 text-neutral-700 rounded-md px-2.5 py-1 transition-colors"
                         >
                           {addingKeyword === s.keyword ? "Agregando..." : "+ Rastrear"}
                         </button>
@@ -1773,7 +1773,7 @@ function AiKeywordRow({
             type="checkbox"
             checked={checked}
             onChange={onToggleChecked}
-            className="shrink-0 w-4 h-4 accent-[#18181B] cursor-pointer"
+            className="shrink-0 w-4 h-4 accent-[#228449] cursor-pointer"
           />
           <div className="min-w-0">
             <p className="text-sm text-neutral-900 truncate">{keyword.text}</p>
@@ -1948,7 +1948,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
                   rel="noopener noreferrer"
                   className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs hover:bg-purple-100/60 transition-colors"
                 >
-                  <span className="text-neutral-700 hover:text-[#18181B] hover:underline truncate">{p.path}</span>
+                  <span className="text-neutral-700 hover:text-[#228449] hover:underline truncate">{p.path}</span>
                   <span className="text-neutral-400 shrink-0">{p.sessions.toLocaleString("es-MX")}</span>
                 </a>
               ))}
@@ -2047,7 +2047,7 @@ function AiQueryCrossRefSection({ project }: { project: ProjectDTO }) {
                 href={`https://${project.domain}${r.path}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-medium text-neutral-800 hover:text-[#18181B] hover:underline"
+                className="text-xs font-medium text-neutral-800 hover:text-[#228449] hover:underline"
               >
                 {r.path}
               </a>
@@ -2188,7 +2188,7 @@ function AiVisibilitySection({ project }: { project: ProjectDTO }) {
                 type="checkbox"
                 checked={selectableIds.length > 0 && checkedIds.size === selectableIds.length}
                 onChange={toggleCheckAll}
-                className="w-4 h-4 accent-[#18181B] cursor-pointer"
+                className="w-4 h-4 accent-[#228449] cursor-pointer"
               />
               <SortHeader label="Keyword" active={sortBy === "keyword"} dir={sortDir} onClick={() => toggleSort("keyword")} />
               <span className="text-neutral-200">·</span>
@@ -2330,7 +2330,7 @@ function GscSection({ project }: { project: ProjectDTO }) {
           <button
             onClick={handleImport}
             disabled={importing}
-            className="text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5"
+            className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5"
           >
             {importing ? "Importando..." : "Importar desde GSC"}
           </button>
@@ -2485,10 +2485,10 @@ function ExpertBanner() {
       href={EXPERT_CONTACT_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-between gap-3 text-xs bg-white border border-dashed border-neutral-200 hover:border-[#18181B]/40 rounded-lg px-3 py-2 text-neutral-500 hover:text-neutral-700 transition-colors"
+      className="flex items-center justify-between gap-3 text-xs bg-white border border-dashed border-neutral-200 hover:border-[#228449]/40 rounded-lg px-3 py-2 text-neutral-500 hover:text-neutral-700 transition-colors"
     >
       <span>¿Prefieres que un experto te ayude a corregir esto?</span>
-      <span className="text-[#18181B] font-medium whitespace-nowrap">Quiero que me ayude un experto →</span>
+      <span className="text-[#228449] font-medium whitespace-nowrap">Quiero que me ayude un experto →</span>
     </a>
   );
 }
@@ -2639,7 +2639,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                         type="checkbox"
                         checked={resolved}
                         onChange={() => toggleResolved(issue.id)}
-                        className="mt-0.5 w-4 h-4 accent-[#18181B] cursor-pointer shrink-0"
+                        className="mt-0.5 w-4 h-4 accent-[#228449] cursor-pointer shrink-0"
                       />
                       <div className="min-w-0">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -2745,14 +2745,14 @@ function YoutubeVideoRow({
             <img src={video.thumbnailUrl} alt="" className="w-16 h-10 rounded object-cover" />
           )}
           {isTop5 && (
-            <span className="absolute -top-1 -left-1 text-[13px] bg-[#18181B] text-white rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute -top-1 -left-1 text-[13px] bg-[#228449] text-white rounded-full w-4 h-4 flex items-center justify-center">
               🔥
             </span>
           )}
         </a>
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="text-sm text-neutral-800 truncate flex-1 text-left hover:text-[#18181B] transition-colors"
+          className="text-sm text-neutral-800 truncate flex-1 text-left hover:text-[#228449] transition-colors"
         >
           {video.title}
         </button>
@@ -2770,7 +2770,7 @@ function YoutubeVideoRow({
         </span>
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-neutral-400 hover:text-[#18181B] hover:bg-neutral-100 transition-colors"
+          className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-neutral-400 hover:text-[#228449] hover:bg-neutral-100 transition-colors"
           title="Ver descripcion y sugerencias de IA"
         >
           {expanded ? "▲" : "▼"}
@@ -2790,7 +2790,7 @@ function YoutubeVideoRow({
             <button
               onClick={handleImprove}
               disabled={improving}
-              className="text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors"
+              className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors"
             >
               {improving ? "Generando..." : video.aiTitles?.length ? "Volver a generar con IA" : "Mejorar con IA"}
             </button>
@@ -2984,13 +2984,13 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="@acehrproyectos"
-              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
             />
           </div>
           <button
             type="submit"
             disabled={connecting || !input}
-            className="bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
+            className="bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
           >
             {connecting ? "Conectando..." : "Conectar canal"}
           </button>
@@ -3205,7 +3205,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="text-sm bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
+              className="text-sm bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
             >
               {generating ? "Generando..." : ideas.length > 0 ? "Generar de nuevo" : "Generar ideas"}
             </button>
@@ -3244,7 +3244,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
                 type="checkbox"
                 checked={Boolean(idea.done)}
                 onChange={() => handleToggle(i)}
-                className="mt-1 w-4 h-4 accent-[#18181B] shrink-0 cursor-pointer"
+                className="mt-1 w-4 h-4 accent-[#228449] shrink-0 cursor-pointer"
               />
               <div className="min-w-0">
                 <p>
@@ -3366,7 +3366,7 @@ function ChangelogSection() {
                 href={entry.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[#18181B] hover:underline mt-2 inline-block"
+                className="text-xs text-[#228449] hover:underline mt-2 inline-block"
               >
                 Ver original en changelog.shopify.com ↗
               </a>
@@ -3400,7 +3400,7 @@ function AuditChecklistRow({
         checked={checked}
         disabled={auto}
         onChange={auto ? undefined : onToggle}
-        className="mt-0.5 w-4 h-4 accent-[#18181B] shrink-0 disabled:opacity-70"
+        className="mt-0.5 w-4 h-4 accent-[#228449] shrink-0 disabled:opacity-70"
       />
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -3476,7 +3476,7 @@ function AuditSection({ project }: { project: ProjectDTO }) {
         </div>
         <div className="mt-3 h-2 bg-neutral-200 rounded-md overflow-hidden">
           <div
-            className="h-full bg-[#18181B] transition-all"
+            className="h-full bg-[#228449] transition-all"
             style={{ width: `${percent}%` }}
           />
         </div>
@@ -3574,7 +3574,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
           <button
             onClick={handleRun}
             disabled={loading}
-            className="text-sm bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
+            className="text-sm bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
           >
             {loading ? "Analizando..." : hasResult ? "Volver a analizar" : "Analizar tienda"}
           </button>
@@ -3951,7 +3951,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                       rel="noopener noreferrer"
                       className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs hover:bg-neutral-100 transition-colors"
                     >
-                      <span className="text-neutral-700 hover:text-[#18181B] hover:underline truncate">{p.path}</span>
+                      <span className="text-neutral-700 hover:text-[#228449] hover:underline truncate">{p.path}</span>
                       <span className="text-neutral-400 shrink-0">{p.views.toLocaleString("es-MX")}</span>
                     </a>
                   ))}
@@ -3980,12 +3980,12 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
             <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
               <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
               <div className="flex h-3 rounded-md overflow-hidden">
-                <div className="bg-[#18181B]" style={{ width: `${(device.mobile / deviceTotal) * 100}%` }} />
+                <div className="bg-[#228449]" style={{ width: `${(device.mobile / deviceTotal) * 100}%` }} />
                 <div className="bg-emerald-500" style={{ width: `${(device.desktop / deviceTotal) * 100}%` }} />
                 <div className="bg-amber-500" style={{ width: `${(device.tablet / deviceTotal) * 100}%` }} />
               </div>
               <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
-                <span><span className="inline-block w-2 h-2 rounded-full bg-[#18181B] mr-1.5" />Movil {Math.round((device.mobile / deviceTotal) * 100)}%</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Movil {Math.round((device.mobile / deviceTotal) * 100)}%</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Escritorio {Math.round((device.desktop / deviceTotal) * 100)}%</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Tablet {Math.round((device.tablet / deviceTotal) * 100)}%</span>
               </div>
@@ -3997,14 +3997,14 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
               <div className="flex h-3 rounded-md overflow-hidden">
                 <div className="bg-emerald-500" style={{ width: `${(channels.organic / channelsTotal) * 100}%` }} />
-                <div className="bg-[#18181B]" style={{ width: `${(channels.paid / channelsTotal) * 100}%` }} />
+                <div className="bg-[#228449]" style={{ width: `${(channels.paid / channelsTotal) * 100}%` }} />
                 <div className="bg-neutral-400" style={{ width: `${(channels.direct / channelsTotal) * 100}%` }} />
                 <div className="bg-amber-500" style={{ width: `${(channels.referral / channelsTotal) * 100}%` }} />
                 <div className="bg-purple-500" style={{ width: `${(channels.ai / channelsTotal) * 100}%` }} />
               </div>
               <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
                 <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Organico {channels.organic.toLocaleString("es-MX")}</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-[#18181B] mr-1.5" />Pago {channels.paid.toLocaleString("es-MX")}</span>
+                <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Pago {channels.paid.toLocaleString("es-MX")}</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-neutral-400 mr-1.5" />Directo {channels.direct.toLocaleString("es-MX")}</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Referencia {channels.referral.toLocaleString("es-MX")}</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1.5" />IA {channels.ai.toLocaleString("es-MX")}</span>
@@ -4037,7 +4037,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                     key={key}
                     onClick={() => setSalesBreakdown(key)}
                     className={`px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
-                      salesBreakdown === key ? "bg-neutral-900 text-white font-medium" : "text-neutral-500 hover:bg-neutral-100"
+                      salesBreakdown === key ? "bg-[#228449] text-white font-medium" : "text-neutral-500 hover:bg-neutral-100"
                     }`}
                   >
                     {SALES_BREAKDOWN_LABELS[key].tab}
@@ -4287,7 +4287,7 @@ function GaSection({ project }: { project: ProjectDTO }) {
               <select
                 value={propertyId}
                 onChange={(e) => setPropertyId(e.target.value)}
-                className="bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#18181B] transition-colors w-64"
+                className="bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors w-64"
               >
                 {properties.map((p) => (
                   <option key={p.propertyId} value={p.propertyId}>
@@ -4304,7 +4304,7 @@ function GaSection({ project }: { project: ProjectDTO }) {
           <button
             type="submit"
             disabled={savingProperty || !propertyId}
-            className="text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5"
+            className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5"
           >
             Guardar
           </button>
@@ -4405,7 +4405,7 @@ function ShareLinkSection({ project }: { project: ProjectDTO }) {
         <button
           onClick={handleEnable}
           disabled={loading}
-          className="mt-3 text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3.5 py-2 transition-colors"
+          className="mt-3 text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3.5 py-2 transition-colors"
         >
           {loading ? "Generando..." : "Generar link publico"}
         </button>
@@ -4469,7 +4469,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
         <select
           value={locationCode}
           onChange={(e) => setLocationCode(e.target.value)}
-          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         >
           {LOCATIONS.map((loc) => (
             <option key={loc.code} value={loc.code}>
@@ -4483,7 +4483,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
         <select
           value={languageCode}
           onChange={(e) => setLanguageCode(e.target.value)}
-          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang.code} value={lang.code}>
@@ -4496,7 +4496,7 @@ function LocationSection({ project }: { project: ProjectDTO }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3 py-2"
+          className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-2"
         >
           {saving ? "Guardando..." : "Guardar"}
         </button>
@@ -4771,7 +4771,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
               target="_blank"
               rel="noopener noreferrer"
               title={`Abrir ${competitor.domain}`}
-              className="text-neutral-400 hover:text-[#18181B] transition-colors"
+              className="text-neutral-400 hover:text-[#228449] transition-colors"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -4851,7 +4851,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
           <div className="flex items-center justify-between flex-wrap gap-2">
             <button
               onClick={() => setShowKeywords((v) => !v)}
-              className="text-xs text-neutral-500 hover:text-[#18181B] transition-colors"
+              className="text-xs text-neutral-500 hover:text-[#228449] transition-colors"
             >
               {showKeywords ? "Ocultar" : "Ver"} keywords posicionadas ({rankedKeywords.length}) {showKeywords ? "▲" : "▼"}
             </button>
@@ -4907,7 +4907,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
                             href={k.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-neutral-400 hover:text-[#18181B] hover:underline truncate block"
+                            className="text-neutral-400 hover:text-[#228449] hover:underline truncate block"
                           >
                             {k.url.replace(/^https?:\/\//, "")}
                           </a>
@@ -4963,7 +4963,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
                           href={p.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-neutral-700 hover:text-[#18181B] hover:underline truncate block"
+                          className="text-neutral-700 hover:text-[#228449] hover:underline truncate block"
                         >
                           {p.url.replace(/^https?:\/\//, "")}
                         </a>
@@ -5166,7 +5166,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
               key={key}
               onClick={() => setXMetric(key)}
               className={`px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
-                xMetric === key ? "bg-neutral-900 text-white font-medium" : "text-neutral-500 hover:bg-neutral-100"
+                xMetric === key ? "bg-[#228449] text-white font-medium" : "text-neutral-500 hover:bg-neutral-100"
               }`}
             >
               {X_METRICS[key].shortLabel}
@@ -5198,7 +5198,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
                 className={
                   active
                     ? p.isOwn
-                      ? "text-[#18181B] font-medium"
+                      ? "text-[#228449] font-medium"
                       : "text-neutral-600"
                     : "text-neutral-400"
                 }
@@ -5245,7 +5245,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
                         className="inline-block w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: colorFor(p.domain) }}
                       />
-                      <span className={p.isOwn ? "text-[#18181B] font-medium" : "text-neutral-700"}>
+                      <span className={p.isOwn ? "text-[#228449] font-medium" : "text-neutral-700"}>
                         {p.domain}
                         {p.isOwn ? " (tu)" : ""}
                       </span>
@@ -5378,7 +5378,7 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                             : new Set(suggestions.map((s) => s.domain))
                         )
                       }
-                      className="w-3.5 h-3.5 accent-[#18181B] cursor-pointer"
+                      className="w-3.5 h-3.5 accent-[#228449] cursor-pointer"
                     />
                   </th>
                   <th className="text-left font-normal px-2 py-1.5">Dominio</th>
@@ -5399,7 +5399,7 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                         type="checkbox"
                         checked={checked.has(s.domain)}
                         onChange={() => toggle(s.domain)}
-                        className="w-3.5 h-3.5 accent-[#18181B] cursor-pointer"
+                        className="w-3.5 h-3.5 accent-[#228449] cursor-pointer"
                       />
                     </td>
                     <td className="px-2 py-1.5 text-neutral-700">
@@ -5411,7 +5411,7 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
                           title={`Abrir ${s.domain}`}
-                          className="text-neutral-400 hover:text-[#18181B] transition-colors"
+                          className="text-neutral-400 hover:text-[#228449] transition-colors"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -5439,7 +5439,7 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
           <button
             onClick={handleAddSelected}
             disabled={checked.size === 0 || adding}
-            className="self-start text-xs bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-3.5 py-2 transition-colors whitespace-nowrap"
+            className="self-start text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3.5 py-2 transition-colors whitespace-nowrap"
           >
             {adding
               ? `Agregando ${addProgress?.done ?? 0}/${addProgress?.total ?? 0}...`
@@ -5460,9 +5460,9 @@ function GapPositionLink({ cell, own }: { cell: GapPositionCell; own?: boolean }
   if (cell.position == null) return <span className="text-neutral-300">—</span>;
   const label = `#${cell.position}`;
   const className = own
-    ? "font-medium text-[#18181B] hover:underline"
-    : "text-neutral-600 hover:text-[#18181B] hover:underline";
-  if (!cell.url) return <span className={own ? "font-medium text-[#18181B]" : "text-neutral-600"}>{label}</span>;
+    ? "font-medium text-[#228449] hover:underline"
+    : "text-neutral-600 hover:text-[#228449] hover:underline";
+  if (!cell.url) return <span className={own ? "font-medium text-[#228449]" : "text-neutral-600"}>{label}</span>;
   return (
     <a href={cell.url} target="_blank" rel="noopener noreferrer" className={className}>
       {label}
@@ -5607,7 +5607,7 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
                     />
                   </span>
                 </th>
-                <th className="text-right px-2 py-1.5 font-normal text-[#18181B] bg-neutral-50 whitespace-nowrap">
+                <th className="text-right px-2 py-1.5 font-normal text-[#228449] bg-neutral-50 whitespace-nowrap">
                   <span className="inline-flex justify-end w-full">
                     <SortHeader
                       label="Tu"
@@ -5689,12 +5689,12 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
           value={domain}
           onChange={(e) => setDomain(normalizeDomain(e.target.value))}
           placeholder="competidor.com o su tienda Shopify"
-          className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+          className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         />
         <button
           type="submit"
           disabled={saving || !domain}
-          className="text-sm bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors"
+          className="text-sm bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors"
         >
           {saving ? "Agregando..." : "Agregar"}
         </button>
@@ -5759,7 +5759,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
           onChange={(e) => setText(e.target.value)}
           placeholder="ej. mobiliario para hoteles"
           required
-          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
         />
       </div>
 
@@ -5769,7 +5769,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
           <select
             value={engine}
             onChange={(e) => setEngine(e.target.value)}
-            className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+            className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
           >
             <option value="google">Google</option>
             <option value="bing">Bing</option>
@@ -5781,7 +5781,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
           <select
             value={device}
             onChange={(e) => setDevice(e.target.value)}
-            className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+            className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
           >
             <option value="desktop">Escritorio</option>
             <option value="mobile">Móvil</option>
@@ -5791,7 +5791,7 @@ function AddKeywordForm({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={saving}
-          className="bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
+          className="bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
         >
           {saving ? "Agregando..." : "Agregar"}
         </button>
@@ -5841,7 +5841,7 @@ function AppResultRow({
           href={app.url ?? undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-neutral-900 truncate hover:text-[#18181B] hover:underline block"
+          className="text-sm text-neutral-900 truncate hover:text-[#228449] hover:underline block"
         >
           {app.title}
         </a>
@@ -5941,13 +5941,13 @@ function AppsSection({ project }: { project: ProjectDTO }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={project.name}
-              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#18181B] transition-colors"
+              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
             />
           </div>
           <button
             type="submit"
             disabled={loading || !query}
-            className="bg-[#18181B] hover:bg-[#000000] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
+            className="bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
           >
             {loading ? "Buscando..." : "Buscar apps"}
           </button>

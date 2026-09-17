@@ -1,8 +1,7 @@
 import type { Config } from "tailwindcss";
 
-// Material Design 3 color roles, but tuned toward a Linear/Vercel-style
-// "monochrome + one carbon accent" look: near-black (#18181B) as primary
-// instead of Google blue, cool neutral grays, white surfaces, sharper
+// Material Design 3 color roles, tuned to the brand green (#228449) from
+// the app logo as primary, cool neutral grays, white surfaces, sharper
 // (near-rectangular) corners.
 // https://m3.material.io/styles/color/roles
 const config: Config = {
@@ -19,11 +18,11 @@ const config: Config = {
 
         // M3 color roles
         primary: {
-          DEFAULT: "#18181B",
-          container: "#F4F4F5",
+          DEFAULT: "#228449",
+          container: "#E6F4EC",
         },
         "on-primary": "#FFFFFF",
-        "on-primary-container": "#18181B",
+        "on-primary-container": "#155D34",
         secondary: {
           DEFAULT: "#5F6368",
           container: "#E8EAED",

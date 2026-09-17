@@ -36,8 +36,8 @@ export const X_METRICS: Record<
 // Shared across the checkbox legend and the chart dots so a domain always
 // gets the same color everywhere in the Competencia tab.
 export const COMPETITOR_COLORS = [
+  "#228449",
   "#1A73E8",
-  "#059669",
   "#d97706",
   "#7c3aed",
   "#db2777",
