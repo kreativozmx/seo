@@ -106,6 +106,7 @@ export interface ProjectDTO {
   gaSalesByDeviceJson: string | null;
   gaOrdersByDateJson: string | null;
   gaTopProductsJson: string | null;
+  gaTopAddToCartProductsJson: string | null;
   gaAnalyticsUpdatedAt: string | null;
   gaAiTrafficSessions28d: number | null;
   gaAiTrafficBySourceJson: string | null;

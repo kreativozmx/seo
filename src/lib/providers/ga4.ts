@@ -288,6 +288,7 @@ export interface Ga4Analytics {
   salesByDevice: SalesBreakdownRow[];
   ordersByDate: { date: string; transactions: number; revenue: number }[];
   topProducts: { name: string; unitsSold: number; revenue: number }[];
+  topAddToCartProducts: { name: string; unitsAddedToCart: number }[];
 }
 
 export interface SalesBreakdownRow {
@@ -327,6 +328,7 @@ export async function fetchGa4Analytics(
     deviceSalesRes,
     ordersRes,
     productsRes,
+    addToCartRes,
   ] = await Promise.all([
       analyticsData.properties.runReport({
         property,
@@ -488,6 +490,19 @@ export async function fetchGa4Analytics(
           limit: "10",
         },
       }),
+      // Most-added-to-cart products — shows purchase intent even for items
+      // that don't convert, unlike topProducts (which only counts completed
+      // purchases).
+      analyticsData.properties.runReport({
+        property,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: "itemName" }],
+          metrics: [{ name: "itemsAddedToCart" }],
+          orderBys: [{ metric: { metricName: "itemsAddedToCart" }, desc: true }],
+          limit: "10",
+        },
+      }),
     ]);
 
   const overviewValues = overviewRes.data.rows?.[0]?.metricValues ?? [];
@@ -571,6 +586,11 @@ export async function fetchGa4Analytics(
     revenue: Number(row.metricValues?.[1]?.value ?? 0),
   }));
 
+  const topAddToCartProducts = (addToCartRes.data.rows ?? []).map((row) => ({
+    name: row.dimensionValues?.[0]?.value ?? "",
+    unitsAddedToCart: Number(row.metricValues?.[0]?.value ?? 0),
+  }));
+
   return {
     revenue,
     transactions,
@@ -591,5 +611,6 @@ export async function fetchGa4Analytics(
     salesByDevice,
     ordersByDate,
     topProducts,
+    topAddToCartProducts,
   };
 }

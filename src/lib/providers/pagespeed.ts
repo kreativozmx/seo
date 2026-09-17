@@ -227,10 +227,15 @@ function extractIssues(audits: Record<string, LighthouseAudit>): PageSpeedIssue[
   return items.sort((a, b) => (a.score ?? 1) - (b.score ?? 1)).slice(0, 10);
 }
 
-export async function fetchPageSpeed(
-  url: string,
-  strategy: "mobile" | "desktop" = "mobile"
-): Promise<PageSpeedResult> {
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Google's Lighthouse runner behind this endpoint fails transiently fairly
+// often ("Lighthouse returned error: Something went wrong") even for sites
+// that audit fine a moment later — worth one retry before surfacing it as a
+// real error to the merchant.
+async function runPagespeed(url: string, strategy: "mobile" | "desktop") {
   const params = new URLSearchParams({
     url,
     strategy,
@@ -240,13 +245,26 @@ export async function fetchPageSpeed(
     params.set("key", process.env.GOOGLE_API_KEY);
   }
 
-  const res = await fetch(`${BASE_URL}?${params.toString()}`);
-  if (!res.ok) {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(`${BASE_URL}?${params.toString()}`);
+    if (res.ok) return res.json();
     const text = await res.text();
-    throw new Error(`PageSpeed Insights request failed (${res.status}): ${text}`);
+    lastError = new Error(`PageSpeed Insights request failed (${res.status}): ${text}`);
+    if (res.status >= 500 && attempt === 0) {
+      await sleep(2000);
+      continue;
+    }
+    throw lastError;
   }
+  throw lastError;
+}
 
-  const json = await res.json();
+export async function fetchPageSpeed(
+  url: string,
+  strategy: "mobile" | "desktop" = "mobile"
+): Promise<PageSpeedResult> {
+  const json = await runPagespeed(url, strategy);
 
   const performanceScore = json?.lighthouseResult?.categories?.performance?.score;
   const audits = json?.lighthouseResult?.audits ?? {};

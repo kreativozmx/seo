@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
@@ -101,6 +101,24 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
       {hint && <p className="text-[14px] text-neutral-400 mt-1">{hint}</p>}
     </div>
   );
+}
+
+// Lets a long-running "Analizar"/"Actualizar" action (PageSpeed, ecommerce
+// catalog scrape, competitor traffic overview, etc.) report progress from a
+// deep child component up to a status pill that lives in the top bar —
+// which never unmounts — so the indicator (and the in-flight fetch itself)
+// survives the user switching tabs instead of forcing them to sit and wait
+// on that one tab.
+interface SyncStatusContextValue {
+  begin: (key: string, label: string) => void;
+  end: (key: string) => void;
+}
+const SyncStatusContext = createContext<SyncStatusContextValue>({
+  begin: () => {},
+  end: () => {},
+});
+function useSyncStatus() {
+  return useContext(SyncStatusContext);
 }
 
 const NAV_ITEMS = [
@@ -677,6 +695,24 @@ export default function ProjectDashboard({
   const [activeTab, setActiveTab] = useState<NavId>("panel");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(new Set());
 
+  // Lives here (not inside the section that starts the sync) specifically
+  // so it survives the user switching tabs — see SyncStatusContext above.
+  const [activeSyncs, setActiveSyncs] = useState<Record<string, string>>({});
+  const syncStatus = useMemo<SyncStatusContextValue>(
+    () => ({
+      begin: (key, label) => setActiveSyncs((prev) => ({ ...prev, [key]: label })),
+      end: (key) =>
+        setActiveSyncs((prev) => {
+          if (!(key in prev)) return prev;
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        }),
+    }),
+    []
+  );
+  const activeSyncLabels = Object.values(activeSyncs);
+
   function toggleGroup(gi: number) {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
@@ -837,9 +873,12 @@ export default function ProjectDashboard({
   }
 
   return (
+    <SyncStatusContext.Provider value={syncStatus}>
     <div className="min-h-screen bg-[#F4F5F7] flex flex-col">
-      {/* Global bar — mirrors Ahrefs' dark top-level nav strip. */}
-      <div className="h-12 shrink-0 bg-[#14171C] flex items-center justify-between px-3 sm:px-4 sticky top-0 z-30">
+      {/* Global bar — mirrors Ahrefs' dark top-level nav strip. Never
+          unmounts, so the sync pill keeps showing (and the underlying
+          fetch keeps running) no matter which tab the user switches to. */}
+      <div className="h-12 shrink-0 bg-[#14171C] flex items-center justify-between px-3 sm:px-4 sticky top-0 z-30 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" width={22} height={22} className="shrink-0 rounded" />
@@ -847,18 +886,33 @@ export default function ProjectDashboard({
             Shopify Audit
           </span>
         </div>
-        {readOnly ? (
-          <span className="text-[11px] uppercase tracking-wide bg-white/10 text-slate-300 rounded-md px-2.5 py-1 shrink-0">
-            Vista de solo lectura
-          </span>
-        ) : (
-          <a
-            href="/api/logout"
-            className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
-          >
-            Cerrar sesión
-          </a>
-        )}
+        <div className="flex items-center gap-3 min-w-0">
+          {activeSyncLabels.length > 0 && (
+            <span
+              title={activeSyncLabels.join(", ")}
+              className="flex items-center gap-2 text-[11px] text-slate-300 bg-white/5 border border-white/10 rounded-md px-2.5 py-1 min-w-0"
+            >
+              <span className="w-3 h-3 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
+              <span className="truncate max-w-[160px] sm:max-w-[320px]">
+                {activeSyncLabels.length === 1
+                  ? activeSyncLabels[0]
+                  : `Sincronizando ${activeSyncLabels.length}: ${activeSyncLabels.join(", ")}`}
+              </span>
+            </span>
+          )}
+          {readOnly ? (
+            <span className="text-[11px] uppercase tracking-wide bg-white/10 text-slate-300 rounded-md px-2.5 py-1 shrink-0">
+              Vista de solo lectura
+            </span>
+          ) : (
+            <a
+              href="/api/logout"
+              className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
+            >
+              Cerrar sesión
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-1 min-h-0 md:flex">
@@ -1309,6 +1363,7 @@ export default function ProjectDashboard({
         </div>
       </div>
     </div>
+    </SyncStatusContext.Provider>
   );
 }
 
@@ -1353,6 +1408,7 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const sync = useSyncStatus();
   const autoRunTriggered = useRef(false);
 
   const hasResult = project.techCheckedAt != null;
@@ -1370,6 +1426,7 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
     setLoading(true);
     setError(null);
     startProgress();
+    sync.begin("tech", "Detectando tecnologias");
     try {
       const res = await fetch(`/api/projects/${project.id}/tech/refresh`, {
         method: "POST",
@@ -1382,6 +1439,7 @@ function TechDetectSection({ project }: { project: ProjectDTO }) {
       setError(err instanceof Error ? err.message : "Error al analizar");
     } finally {
       setTimeout(() => setLoading(false), 300);
+      sync.end("tech");
     }
   }
 
@@ -1836,6 +1894,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const sync = useSyncStatus();
 
   const connected = Boolean(project.gaConnectedAt);
   const hasData = project.gaAnalyticsUpdatedAt != null;
@@ -1844,6 +1903,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
     setRefreshing(true);
     setError(null);
     startProgress();
+    sync.begin("ga", "Actualizando Google Analytics");
     try {
       const res = await fetch(`/api/projects/${project.id}/ga/refresh-stats`, {
         method: "POST",
@@ -1856,6 +1916,7 @@ function AiTrafficFromAnalytics({ project }: { project: ProjectDTO }) {
       setError(err instanceof Error ? err.message : "Error al actualizar");
     } finally {
       setTimeout(() => setRefreshing(false), 300);
+      sync.end("ga");
     }
   }
 
@@ -2499,6 +2560,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
   const [error, setError] = useState<string | null>(null);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
   const [resolvedIssueIds, setResolvedIssueIds] = useState<Set<string>>(new Set());
+  const sync = useSyncStatus();
 
   const hasResult = project.psiUpdatedAt != null;
   const verdict = overallVerdict(project.psiPerformanceScore);
@@ -2518,6 +2580,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
     setLoading(true);
     setError(null);
     startProgress();
+    sync.begin("pagespeed", "Analizando velocidad");
     try {
       const res = await fetch(`/api/projects/${project.id}/pagespeed/refresh`, {
         method: "POST",
@@ -2530,6 +2593,7 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
       setError(err instanceof Error ? err.message : "Error al analizar");
     } finally {
       setTimeout(() => setLoading(false), 300);
+      sync.end("pagespeed");
     }
   }
 
@@ -2733,7 +2797,7 @@ function YoutubeVideoRow({
 
   return (
     <div className="rounded-lg overflow-hidden">
-      <div className="flex items-center gap-3 px-1.5 py-2 hover:bg-white transition-colors">
+      <div className="flex items-center gap-3 px-1.5 py-2 hover:bg-neutral-50 transition-colors">
         <a
           href={`https://www.youtube.com/watch?v=${video.videoId}`}
           target="_blank"
@@ -3392,7 +3456,7 @@ function AuditChecklistRow({
   return (
     <label
       className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-        auto ? "cursor-default" : "cursor-pointer hover:bg-white"
+        auto ? "cursor-default" : "cursor-pointer hover:bg-neutral-50"
       }`}
     >
       <input
@@ -3516,6 +3580,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const sync = useSyncStatus();
 
   const hasResult = project.ecommerceCheckedAt != null;
   const topSelling: { title: string; handle: string }[] = project.ecommerceTopSellingJson
@@ -3526,6 +3591,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
     setLoading(true);
     setError(null);
     startProgress();
+    sync.begin("ecommerce", "Analizando catalogo");
     try {
       const res = await fetch(`/api/projects/${project.id}/ecommerce/refresh`, {
         method: "POST",
@@ -3538,6 +3604,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
       setError(err instanceof Error ? err.message : "Error al analizar");
     } finally {
       setTimeout(() => setLoading(false), 300);
+      sync.end("ecommerce");
     }
   }
 
@@ -3614,13 +3681,13 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
               label="Rango de precios"
               value={
                 project.ecommercePriceMin != null && project.ecommercePriceMax != null
-                  ? `${project.ecommercePriceMin.toFixed(0)} - ${project.ecommercePriceMax.toFixed(0)}`
+                  ? `${formatMoney(project.ecommercePriceMin)} - ${formatMoney(project.ecommercePriceMax)}`
                   : "—"
               }
             />
             <StatCard
               label="Precio promedio"
-              value={project.ecommerceAvgPrice != null ? project.ecommerceAvgPrice.toFixed(0) : "—"}
+              value={project.ecommerceAvgPrice != null ? formatMoney(project.ecommerceAvgPrice) : "—"}
             />
             {project.ecommerceNewestProductAt && (
               <StatCard
@@ -3694,7 +3761,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 href={`https://${project.domain}/products/${p.handle}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
               >
                 <span className="text-neutral-400 text-xs shrink-0 w-4">{i + 1}.</span>
                 <p className="text-sm text-neutral-800 truncate">{p.title}</p>
@@ -3732,6 +3799,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [salesBreakdown, setSalesBreakdown] = useState<SalesBreakdownKey>("channel");
+  const sync = useSyncStatus();
 
   const connected = Boolean(project.gaConnectedAt);
   const hasData = project.gaAnalyticsUpdatedAt != null;
@@ -3739,6 +3807,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
   async function handleRefresh() {
     setRefreshing(true);
     setError(null);
+    sync.begin("ga", "Actualizando Google Analytics");
     try {
       const res = await fetch(`/api/projects/${project.id}/ga/refresh-stats`, {
         method: "POST",
@@ -3750,6 +3819,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
       setError(err instanceof Error ? err.message : "Error al actualizar");
     } finally {
       setRefreshing(false);
+      sync.end("ga");
     }
   }
 
@@ -3813,6 +3883,8 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
     project.gaOrdersByDateJson ? JSON.parse(project.gaOrdersByDateJson) : [];
   const topProducts: { name: string; unitsSold: number; revenue: number }[] =
     project.gaTopProductsJson ? JSON.parse(project.gaTopProductsJson) : [];
+  const topAddToCartProducts: { name: string; unitsAddedToCart: number }[] =
+    project.gaTopAddToCartProductsJson ? JSON.parse(project.gaTopAddToCartProductsJson) : [];
 
   const channels = {
     organic: project.gaSessionsOrganic28d ?? 0,
@@ -4125,7 +4197,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
               <p className="text-sm font-medium text-neutral-900 mb-2">Campañas (UTM)</p>
               {topCampaigns.length === 0 ? (
@@ -4157,6 +4229,24 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                         {p.unitsSold} uds ·{" "}
                         {p.revenue.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
                       </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-2">Productos mas agregados al carrito</p>
+              {topAddToCartProducts.length === 0 ? (
+                <p className="text-xs text-neutral-400">
+                  Sin datos — necesita el seguimiento de ecommerce de GA4 activado.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {topAddToCartProducts.map((p) => (
+                    <div key={p.name} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-xs">
+                      <span className="text-neutral-700 truncate">{p.name}</span>
+                      <span className="text-neutral-400 shrink-0">{p.unitsAddedToCart} uds</span>
                     </div>
                   ))}
                 </div>
@@ -4646,6 +4736,7 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
   const [refreshing, setRefreshing] = useState(false);
   const [removing, setRemoving] = useState(false);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const sync = useSyncStatus();
   const [showKeywords, setShowKeywords] = useState(false);
   const [kwViewMode, setKwViewMode] = useState<"keywords" | "pages">("keywords");
   const [kwSortBy, setKwSortBy] = useState<"keyword" | "volume" | "position">("position");
@@ -4741,12 +4832,14 @@ function CompetitorCard({ competitor }: { competitor: ProjectDTO["competitors"][
   async function handleRefresh() {
     setRefreshing(true);
     startProgress();
+    sync.begin(`competitor-${competitor.id}`, `Actualizando ${competitor.domain}`);
     try {
       await fetch(`/api/competitors/${competitor.id}/refresh`, { method: "POST" });
       finishProgress();
       router.refresh();
     } finally {
       setTimeout(() => setRefreshing(false), 300);
+      sync.end(`competitor-${competitor.id}`);
     }
   }
 
@@ -5024,6 +5117,7 @@ const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
 function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [refreshingOwn, setRefreshingOwn] = useState(false);
+  const sync = useSyncStatus();
 
   const competitorsWithData = project.competitors.filter(
     (c) => c.organicTrafficEstimate != null || c.trafficValueEstimate != null
@@ -5047,11 +5141,13 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
 
   async function handleRefreshOwn() {
     setRefreshingOwn(true);
+    sync.begin("own-traffic", "Analizando tu dominio");
     try {
       await fetch(`/api/projects/${project.id}/traffic-overview/refresh`, { method: "POST" });
       router.refresh();
     } finally {
       setRefreshingOwn(false);
+      sync.end("own-traffic");
     }
   }
 

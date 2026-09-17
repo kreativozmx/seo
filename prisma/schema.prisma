@@ -87,6 +87,7 @@ model Project {
   gaSalesByDeviceJson      String? // same shape, by device category
   gaOrdersByDateJson    String? // cached array of {date, transactions, revenue}
   gaTopProductsJson     String? // cached array of {name, unitsSold, revenue}
+  gaTopAddToCartProductsJson String? // cached array of {name, unitsAddedToCart}
   gaAiTrafficSessions28d  Int?
   gaAiTrafficBySourceJson String? // cached array of {label, sessions} — real AI-referred visits (ChatGPT, Perplexity, etc. + UTM tags)
   gaAiLandingPagesJson    String? // cached array of {path, sessions} — pages AI traffic actually lands on

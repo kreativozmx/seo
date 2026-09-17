@@ -70,6 +70,7 @@ export async function POST(
         gaSalesByDeviceJson: JSON.stringify(analytics.salesByDevice),
         gaOrdersByDateJson: JSON.stringify(analytics.ordersByDate),
         gaTopProductsJson: JSON.stringify(analytics.topProducts),
+        gaTopAddToCartProductsJson: JSON.stringify(analytics.topAddToCartProducts),
         gaAnalyticsUpdatedAt: new Date(),
         gaAiTrafficSessions28d: aiTraffic.totalSessions,
         gaAiTrafficBySourceJson: JSON.stringify(aiTraffic.bySource),
