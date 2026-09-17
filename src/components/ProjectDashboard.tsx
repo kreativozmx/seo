@@ -8,6 +8,7 @@ import { ConfirmButton } from "@/components/ConfirmButton";
 import { ProgressBar } from "@/components/ProgressBar";
 import OrdersChart from "@/components/OrdersChart";
 import SalesBreakdownChart from "@/components/SalesBreakdownChart";
+import OrganicTrafficChart from "@/components/OrganicTrafficChart";
 import CompetitorScatterChart, {
   CompetitorPoint,
   XMetricKey,
@@ -99,6 +100,34 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
       </p>
       <p className="text-xl font-semibold text-neutral-900 mt-1">{value}</p>
       {hint && <p className="text-[14px] text-neutral-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+// Ahrefs-style overview card: a titled panel with a small grid of labeled
+// stats inside, several of these sitting side by side in the Panel tab.
+function OverviewPanel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+      <p className="text-sm font-medium text-neutral-900 mb-3">{title}</p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</div>
+    </div>
+  );
+}
+
+function OverviewStat({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[13px] text-neutral-400">{label}</p>
+      <p className={`text-lg font-semibold mt-0.5 ${valueClassName ?? "text-neutral-900"}`}>{value}</p>
     </div>
   );
 }
@@ -1017,15 +1046,70 @@ export default function ProjectDashboard({
           <fieldset disabled={readOnly} className="flex-1 min-w-0 border-0 m-0 p-0 px-4 sm:px-6 lg:px-8 py-5 max-w-8xl mx-auto w-full">
           {activeTab === "panel" && (
             <div className="flex flex-col gap-5">
-              <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard label="Keywords" value={String(stats.trackedKeywords)} />
-                <StatCard
-                  label="Posicion prom."
-                  value={stats.avgPosition != null ? stats.avgPosition.toFixed(1) : "—"}
-                />
-                <StatCard label="En Top 3" value={String(stats.top3)} />
-                <StatCard label="En Top 10" value={String(stats.top10)} />
+              <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <OverviewPanel title="Rankings">
+                  <OverviewStat label="Keywords rastreadas" value={String(stats.trackedKeywords)} />
+                  <OverviewStat
+                    label="Posicion prom."
+                    value={stats.avgPosition != null ? stats.avgPosition.toFixed(1) : "—"}
+                  />
+                  <OverviewStat label="En Top 3" value={String(stats.top3)} valueClassName="text-[#155D34]" />
+                  <OverviewStat label="En Top 10" value={String(stats.top10)} valueClassName="text-[#155D34]" />
+                </OverviewPanel>
+
+                <OverviewPanel title="Search Console (28d)">
+                  {project.gscSiteUrl ? (
+                    <>
+                      <OverviewStat label="Clics" value={(project.gscClicks28d ?? 0).toLocaleString("es-MX")} />
+                      <OverviewStat
+                        label="Impresiones"
+                        value={(project.gscImpressions28d ?? 0).toLocaleString("es-MX")}
+                      />
+                      <OverviewStat
+                        label="CTR"
+                        value={
+                          project.gscImpressions28d
+                            ? `${(((project.gscClicks28d ?? 0) / project.gscImpressions28d) * 100).toFixed(1)}%`
+                            : "—"
+                        }
+                      />
+                      <OverviewStat
+                        label="Posicion prom."
+                        value={project.gscAvgPosition28d != null ? project.gscAvgPosition28d.toFixed(1) : "—"}
+                      />
+                    </>
+                  ) : (
+                    <p className="text-xs text-neutral-400 col-span-2">
+                      Conecta Search Console en Conexiones para ver clics e impresiones reales.
+                    </p>
+                  )}
+                </OverviewPanel>
+
+                <OverviewPanel title="Dominio (estimado)">
+                  {project.domainTrafficCheckedAt ? (
+                    <>
+                      <OverviewStat
+                        label="Keywords organicas"
+                        value={(project.domainOrganicKeywords ?? 0).toLocaleString("es-MX")}
+                      />
+                      <OverviewStat
+                        label="Trafico organico"
+                        value={(project.domainOrganicTrafficEstimate ?? 0).toLocaleString("es-MX")}
+                      />
+                      <OverviewStat
+                        label="Valor est."
+                        value={`$${(project.domainTrafficValueEstimate ?? 0).toLocaleString("es-MX")}`}
+                      />
+                    </>
+                  ) : (
+                    <p className="text-xs text-neutral-400 col-span-2">
+                      Ve a Competencia y usa &ldquo;Analizar mi dominio&rdquo; para ver el trafico organico estimado.
+                    </p>
+                  )}
+                </OverviewPanel>
               </section>
+
+              {project.gscSiteUrl && <OrganicTrafficChart projectId={project.id} />}
 
               <section>
                 <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">

@@ -215,6 +215,69 @@ export async function fetchQueriesForPages(
   return result;
 }
 
+export interface GscHistoryPoint {
+  date: string; // YYYY-MM-DD
+  clicks: number;
+  impressions: number;
+  position: number; // 0 when there's no data that day
+}
+
+// Real day-by-day site totals (no query/page dimension) straight from GSC —
+// this is actual historical data Google already has, up to ~16 months back,
+// so the trend chart doesn't need us to start collecting our own snapshots
+// from scratch. Days with literally zero impressions are omitted by the
+// API, so we fill those gaps with zeros for a continuous line.
+export async function fetchSiteHistory(
+  auth: OAuth2Client,
+  siteUrl: string,
+  days = 90
+): Promise<GscHistoryPoint[]> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+
+  const end = new Date();
+  end.setDate(end.getDate() - 2);
+  const start = new Date(end);
+  start.setDate(start.getDate() - days);
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      dimensions: ["date"],
+      rowLimit: 25000,
+    },
+  });
+
+  const byDate = new Map<string, { clicks: number; impressions: number; position: number }>();
+  for (const row of res.data.rows ?? []) {
+    const date = row.keys?.[0] ?? "";
+    if (!date) continue;
+    byDate.set(date, {
+      clicks: row.clicks ?? 0,
+      impressions: row.impressions ?? 0,
+      position: row.position ?? 0,
+    });
+  }
+
+  const points: GscHistoryPoint[] = [];
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    const key = fmt(cursor);
+    const row = byDate.get(key);
+    points.push({
+      date: key,
+      clicks: row?.clicks ?? 0,
+      impressions: row?.impressions ?? 0,
+      position: row?.position ?? 0,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return points;
+}
+
 export interface GscSiteSummary {
   clicks: number;
   impressions: number;

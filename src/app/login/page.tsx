@@ -23,7 +23,7 @@ export default function LoginPage() {
           </p>
           <ul className="flex flex-col gap-3 text-sm text-neutral-600">
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center text-[11px] font-semibold">
+              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-[#E6F4EC] text-[#228449] flex items-center justify-center text-[11px] font-semibold">
                 ✓
               </span>
               Rastrea en qué posición aparece tu tienda para las palabras
@@ -31,7 +31,7 @@ export default function LoginPage() {
               tu competencia.
             </li>
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center text-[11px] font-semibold">
+              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-[#E6F4EC] text-[#228449] flex items-center justify-center text-[11px] font-semibold">
                 ✓
               </span>
               Una auditoría de 50 puntos hecha para tiendas Shopify —
@@ -39,14 +39,14 @@ export default function LoginPage() {
               cumple marcado automáticamente.
             </li>
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center text-[11px] font-semibold">
+              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-[#E6F4EC] text-[#228449] flex items-center justify-center text-[11px] font-semibold">
                 ✓
               </span>
               Conecta Search Console, Analytics y tu Admin de Shopify para
               ver tráfico y ventas reales, no solo estimaciones.
             </li>
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center text-[11px] font-semibold">
+              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-[#E6F4EC] text-[#228449] flex items-center justify-center text-[11px] font-semibold">
                 ✓
               </span>
               Comparte el avance con tu equipo o tu cliente con un link de

@@ -54,7 +54,7 @@ export default function SalesBreakdownChart({ data }: { data: SalesBreakdownPoin
           contentStyle={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12 }}
           formatter={(value) => [`$${Number(value).toLocaleString("es-MX")}`, "Ventas"]}
         />
-        <Bar dataKey="revenue" fill="#1A73E8" radius={[0, 4, 4, 0]} maxBarSize={18} />
+        <Bar dataKey="revenue" fill="#228449" radius={[0, 4, 4, 0]} maxBarSize={18} />
       </BarChart>
     </ResponsiveContainer>
   );

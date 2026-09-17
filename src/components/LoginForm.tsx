@@ -46,7 +46,7 @@ export default function LoginForm() {
           autoFocus
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+          className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
           placeholder="tucorreo@ejemplo.com"
         />
       </div>
@@ -59,7 +59,7 @@ export default function LoginForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 pr-16 text-sm outline-none focus:border-[#1A73E8] transition-colors"
+            className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 pr-16 text-sm outline-none focus:border-[#228449] transition-colors"
             placeholder="••••••••"
           />
           <button
@@ -77,7 +77,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="mt-1 bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2.5 text-sm transition-colors"
+        className="mt-1 bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-full px-4 py-2.5 text-sm transition-colors"
       >
         {loading ? "Entrando..." : "Iniciar sesión"}
       </button>

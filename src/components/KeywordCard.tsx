@@ -182,7 +182,7 @@ export function KeywordListItem({
       <tr
         onClick={onSelect}
         className={`cursor-pointer transition-colors border-t border-neutral-100 first:border-t-0 ${
-          selected ? "bg-blue-50" : "hover:bg-neutral-50"
+          selected ? "bg-[#E6F4EC]" : "hover:bg-neutral-50"
         }`}
       >
         <td className="pl-3 pr-2 py-2 w-8">
@@ -191,7 +191,7 @@ export function KeywordListItem({
             checked={checked}
             onClick={(e) => e.stopPropagation()}
             onChange={onToggleChecked}
-            className="shrink-0 w-4 h-4 accent-[#1A73E8] cursor-pointer"
+            className="shrink-0 w-4 h-4 accent-[#228449] cursor-pointer"
           />
         </td>
         <td className="px-2 py-2 min-w-0">
@@ -203,7 +203,7 @@ export function KeywordListItem({
             {keyword.source === "planning" && (
               <span
                 title="Agregada desde Planificacion"
-                className="text-[13px] uppercase tracking-wide bg-blue-50 text-[#1A73E8] rounded px-1.5 py-0.5 shrink-0"
+                className="text-[13px] uppercase tracking-wide bg-[#E6F4EC] text-[#228449] rounded px-1.5 py-0.5 shrink-0"
               >
                 Planificacion
               </span>
@@ -211,7 +211,7 @@ export function KeywordListItem({
             {keyword.source === "gsc" && (
               <span
                 title="Importada desde Google Search Console"
-                className="text-[13px] uppercase tracking-wide bg-blue-50 text-blue-600 rounded px-1.5 py-0.5 shrink-0"
+                className="text-[13px] uppercase tracking-wide bg-[#E6F4EC] text-blue-600 rounded px-1.5 py-0.5 shrink-0"
               >
                 GSC
               </span>
@@ -234,7 +234,7 @@ export function KeywordListItem({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-neutral-400 hover:text-[#1A73E8] hover:underline truncate block"
+              className="text-xs text-neutral-400 hover:text-[#228449] hover:underline truncate block"
             >
               {ownLatest.url.replace(/^https?:\/\//, "")}
             </a>
@@ -260,8 +260,8 @@ export function KeywordListItem({
                 title="Ver mi URL posicionada y quien esta mejor posicionado que yo"
                 className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors shrink-0 ${
                   showCompare
-                    ? "text-[#1A73E8] bg-blue-50"
-                    : "text-neutral-400 hover:text-[#1A73E8] hover:bg-blue-50"
+                    ? "text-[#228449] bg-[#E6F4EC]"
+                    : "text-neutral-400 hover:text-[#228449] hover:bg-[#E6F4EC]"
                 }`}
               >
                 <CompareIcon />
@@ -287,7 +287,7 @@ export function KeywordListItem({
                     href={ownLatest.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-neutral-600 hover:text-[#1A73E8] hover:underline truncate block"
+                    className="text-xs text-neutral-600 hover:text-[#228449] hover:underline truncate block"
                   >
                     {ownLatest.url}
                   </a>
@@ -322,7 +322,7 @@ export function KeywordListItem({
                           <span className="font-semibold text-neutral-700 shrink-0">#{c.position}</span>
                           <span className="text-neutral-600 shrink-0">{c.domain}</span>
                           {c.isCompetitor && (
-                            <span className="text-[12px] uppercase tracking-wide bg-blue-50 text-[#1A73E8] rounded px-1 py-0.5 shrink-0">
+                            <span className="text-[12px] uppercase tracking-wide bg-[#E6F4EC] text-[#228449] rounded px-1 py-0.5 shrink-0">
                               Competidor
                             </span>
                           )}
@@ -331,7 +331,7 @@ export function KeywordListItem({
                               href={c.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-neutral-400 hover:text-[#1A73E8] hover:underline truncate"
+                              className="text-neutral-400 hover:text-[#228449] hover:underline truncate"
                             >
                               {c.url}
                             </a>
@@ -464,7 +464,7 @@ export function KeywordDetailCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   title={r.url}
-                  className="block text-[14px] text-neutral-400 hover:text-[#1A73E8] truncate mt-0.5"
+                  className="block text-[14px] text-neutral-400 hover:text-[#228449] truncate mt-0.5"
                 >
                   {r.url}
                 </a>
@@ -481,7 +481,7 @@ export function KeywordDetailCard({
             onClick={() => setChartPeriod(opt.value)}
             className={`text-[14px] rounded-full px-2.5 py-1 transition-colors ${
               chartPeriod === opt.value
-                ? "bg-[#1A73E8] text-white font-medium"
+                ? "bg-[#228449] text-white font-medium"
                 : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
             }`}
           >
@@ -698,7 +698,7 @@ export function ManualEntryForm({
       <button
         type="submit"
         disabled={saving}
-        className="text-xs bg-[#1A73E8] hover:bg-[#1557B0] disabled:opacity-50 text-white font-medium rounded px-3 py-1.5"
+        className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded px-3 py-1.5"
       >
         {saving ? "Guardando..." : "Guardar"}
       </button>

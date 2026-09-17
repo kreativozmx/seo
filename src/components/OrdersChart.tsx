@@ -41,7 +41,7 @@ export default function OrdersChart({
           contentStyle={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12 }}
           formatter={(value) => [value, "Pedidos"]}
         />
-        <Bar dataKey="transactions" name="Pedidos" fill="#1A73E8" radius={[3, 3, 0, 0]} />
+        <Bar dataKey="transactions" name="Pedidos" fill="#228449" radius={[3, 3, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

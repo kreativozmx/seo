@@ -13,7 +13,7 @@ import {
 import { RankingDTO } from "@/lib/types";
 
 const COLORS = [
-  "#1A73E8",
+  "#228449",
   "#2563eb",
   "#059669",
   "#d97706",
