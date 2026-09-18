@@ -34,10 +34,17 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
   const [emailSaved, setEmailSaved] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  const selectedSections = new Set<WeeklyEmailSectionKey>(
-    project.weeklyEmailSectionsJson
-      ? (JSON.parse(project.weeklyEmailSectionsJson) as WeeklyEmailSectionKey[])
-      : [...WEEKLY_EMAIL_SECTIONS]
+  // Optimistic UI state: the parent checkbox and section checkboxes flip
+  // instantly on click instead of waiting for the save request + a full
+  // router.refresh() round-trip, which was the source of the perceived lag.
+  const [enabled, setEnabled] = useState(project.weeklyEmailEnabled);
+  const [selectedSections, setSelectedSections] = useState<Set<WeeklyEmailSectionKey>>(
+    () =>
+      new Set<WeeklyEmailSectionKey>(
+        project.weeklyEmailSectionsJson
+          ? (JSON.parse(project.weeklyEmailSectionsJson) as WeeklyEmailSectionKey[])
+          : [...WEEKLY_EMAIL_SECTIONS]
+      )
   );
 
   async function handleSaveEmail() {
@@ -62,36 +69,31 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
     }
   }
 
-  async function handleToggle() {
-    setSaving(true);
+  function handleToggle() {
+    const next = !enabled;
+    setEnabled(next);
     setTestResult(null);
-    try {
-      await fetch(`/api/projects/${project.id}/weekly-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !project.weeklyEmailEnabled }),
-      });
-      router.refresh();
-    } finally {
-      setSaving(false);
-    }
+    fetch(`/api/projects/${project.id}/weekly-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: next }),
+    })
+      .then(() => router.refresh())
+      .catch(() => setEnabled(!next));
   }
 
-  async function handleSectionToggle(key: WeeklyEmailSectionKey) {
+  function handleSectionToggle(key: WeeklyEmailSectionKey) {
     const next = new Set(selectedSections);
     if (next.has(key)) next.delete(key);
     else next.add(key);
-    setSaving(true);
-    try {
-      await fetch(`/api/projects/${project.id}/weekly-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sections: Array.from(next) }),
-      });
-      router.refresh();
-    } finally {
-      setSaving(false);
-    }
+    setSelectedSections(next);
+    fetch(`/api/projects/${project.id}/weekly-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sections: Array.from(next) }),
+    })
+      .then(() => router.refresh())
+      .catch(() => setSelectedSections(selectedSections));
   }
 
   async function handleTest() {
@@ -115,9 +117,8 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
       <label className="flex items-start gap-3 cursor-pointer">
         <input
           type="checkbox"
-          checked={project.weeklyEmailEnabled}
+          checked={enabled}
           onChange={handleToggle}
-          disabled={saving}
           className="mt-0.5 w-4 h-4 accent-[#228449] cursor-pointer shrink-0"
         />
         <div>
@@ -129,7 +130,7 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
         </div>
       </label>
 
-      {project.weeklyEmailEnabled && (
+      {enabled && (
         <div className="mt-3 pl-7 flex flex-col gap-3">
           <div>
             <p className="text-xs font-medium text-neutral-700 mb-1">Enviar a</p>
@@ -166,7 +167,6 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
                   type="checkbox"
                   checked={selectedSections.has(key)}
                   onChange={() => handleSectionToggle(key)}
-                  disabled={saving}
                   className="mt-0.5 w-3.5 h-3.5 accent-[#228449] cursor-pointer shrink-0"
                 />
                 <span>
