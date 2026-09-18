@@ -4374,43 +4374,47 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
             </div>
           )}
 
-          {deviceTotal > 0 && (
-            <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
-              <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
-              <SharePieChart
-                data={[
-                  { label: "Movil", value: device.mobile, color: "#228449" },
-                  { label: "Escritorio", value: device.desktop, color: "#10b981" },
-                  { label: "Tablet", value: device.tablet, color: "#f59e0b" },
-                ]}
-              />
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
-                <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Movil {Math.round((device.mobile / deviceTotal) * 100)}%</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Escritorio {Math.round((device.desktop / deviceTotal) * 100)}%</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Tablet {Math.round((device.tablet / deviceTotal) * 100)}%</span>
-              </div>
-            </div>
-          )}
+          {(deviceTotal > 0 || channelsTotal > 0) && (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {deviceTotal > 0 && (
+                <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+                  <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
+                  <SharePieChart
+                    data={[
+                      { label: "Movil", value: device.mobile, color: "#228449" },
+                      { label: "Escritorio", value: device.desktop, color: "#10b981" },
+                      { label: "Tablet", value: device.tablet, color: "#f59e0b" },
+                    ]}
+                  />
+                  <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Movil {Math.round((device.mobile / deviceTotal) * 100)}%</span>
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Escritorio {Math.round((device.desktop / deviceTotal) * 100)}%</span>
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Tablet {Math.round((device.tablet / deviceTotal) * 100)}%</span>
+                  </div>
+                </div>
+              )}
 
-          {channelsTotal > 0 && (
-            <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
-              <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
-              <SharePieChart
-                data={[
-                  { label: "Organico", value: channels.organic, color: "#10b981" },
-                  { label: "Pago", value: channels.paid, color: "#228449" },
-                  { label: "Directo", value: channels.direct, color: "#a3a3a3" },
-                  { label: "Referencia", value: channels.referral, color: "#f59e0b" },
-                  { label: "IA", value: channels.ai, color: "#a855f7" },
-                ]}
-              />
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
-                <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Organico {channels.organic.toLocaleString("es-MX")}</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Pago {channels.paid.toLocaleString("es-MX")}</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-neutral-400 mr-1.5" />Directo {channels.direct.toLocaleString("es-MX")}</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Referencia {channels.referral.toLocaleString("es-MX")}</span>
-                <span><span className="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1.5" />IA {channels.ai.toLocaleString("es-MX")}</span>
-              </div>
+              {channelsTotal > 0 && (
+                <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+                  <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
+                  <SharePieChart
+                    data={[
+                      { label: "Organico", value: channels.organic, color: "#10b981" },
+                      { label: "Pago", value: channels.paid, color: "#228449" },
+                      { label: "Directo", value: channels.direct, color: "#a3a3a3" },
+                      { label: "Referencia", value: channels.referral, color: "#f59e0b" },
+                      { label: "IA", value: channels.ai, color: "#a855f7" },
+                    ]}
+                  />
+                  <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Organico {channels.organic.toLocaleString("es-MX")}</span>
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Pago {channels.paid.toLocaleString("es-MX")}</span>
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-neutral-400 mr-1.5" />Directo {channels.direct.toLocaleString("es-MX")}</span>
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5" />Referencia {channels.referral.toLocaleString("es-MX")}</span>
+                    <span><span className="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1.5" />IA {channels.ai.toLocaleString("es-MX")}</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
