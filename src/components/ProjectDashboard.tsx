@@ -165,7 +165,7 @@ const NAV_ITEMS = [
   { id: "monitoreo", label: "Monitoreo" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
-  { id: "notificaciones", label: "Notificaciones", comingSoon: true },
+  { id: "notificaciones", label: "Notificaciones" },
   { id: "conexiones", label: "Conexiones" },
   { id: "configuracion", label: "Ajustes" },
 ] as const;
@@ -1378,12 +1378,6 @@ export default function ProjectDashboard({
                 </h2>
                 <ShareLinkSection project={project} />
               </div>
-              <div>
-                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-                  Notificaciones por correo
-                </h2>
-                <WeeklyEmailSection project={project} />
-              </div>
             </section>
           )}
 
@@ -1633,10 +1627,10 @@ export default function ProjectDashboard({
 
           {activeTab === "notificaciones" && (
             <section>
-              <ComingSoonSection
-                title="Notificaciones"
-                description="Recibe un WhatsApp con un resumen de tus cambios de posiciones — por ejemplo, las 10 keywords que mas subieron esta semana. Muy pronto."
-              />
+              <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                Resumen semanal por correo
+              </h2>
+              <WeeklyEmailSection project={project} />
             </section>
           )}
         </fieldset>
@@ -4891,11 +4885,38 @@ function GaSection({ project }: { project: ProjectDTO }) {
   );
 }
 
+const WEEKLY_EMAIL_SECTIONS = ["positions", "traffic", "keywords", "pages"] as const;
+type WeeklyEmailSectionKey = (typeof WEEKLY_EMAIL_SECTIONS)[number];
+const WEEKLY_EMAIL_SECTION_LABELS: Record<WeeklyEmailSectionKey, { label: string; hint: string }> = {
+  positions: {
+    label: "Resumen de posiciones",
+    hint: "Posicion promedio, Top 3, Top 10 y las keywords que mas se movieron — de tu propio rastreo.",
+  },
+  traffic: {
+    label: "Trafico (Search Console)",
+    hint: "Clics e impresiones de esta semana vs. la anterior, datos reales de GSC.",
+  },
+  keywords: {
+    label: "Keywords principales",
+    hint: "Tus keywords con mas clics en GSC esta semana, con su posicion y cambio.",
+  },
+  pages: {
+    label: "Paginas de destino principales",
+    hint: "Tus paginas con mas clics en GSC esta semana, con su cambio.",
+  },
+};
+
 function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+
+  const selectedSections = new Set<WeeklyEmailSectionKey>(
+    project.weeklyEmailSectionsJson
+      ? (JSON.parse(project.weeklyEmailSectionsJson) as WeeklyEmailSectionKey[])
+      : [...WEEKLY_EMAIL_SECTIONS]
+  );
 
   async function handleToggle() {
     setSaving(true);
@@ -4905,6 +4926,23 @@ function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !project.weeklyEmailEnabled }),
+      });
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSectionToggle(key: WeeklyEmailSectionKey) {
+    const next = new Set(selectedSections);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setSaving(true);
+    try {
+      await fetch(`/api/projects/${project.id}/weekly-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sections: Array.from(next) }),
       });
       router.refresh();
     } finally {
@@ -4941,15 +4979,35 @@ function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
         <div>
           <p className="text-sm text-neutral-800 font-medium">Resumen semanal por correo</p>
           <p className="text-xs text-neutral-500 mt-0.5">
-            Cada lunes recibes un correo con la posicion promedio, cuantas keywords estan en
-            Top 3/Top 10 (y como cambiaron vs. la semana pasada), clics de Search Console y las
-            keywords que mas se movieron.
+            Cada lunes recibes un correo con datos reales de tu propio rastreo y de Search
+            Console — no usa creditos de DataForSEO. Elige abajo que secciones incluir.
           </p>
         </div>
       </label>
 
       {project.weeklyEmailEnabled && (
-        <div className="mt-3 pl-7 flex flex-col gap-2">
+        <div className="mt-3 pl-7 flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            {WEEKLY_EMAIL_SECTIONS.map((key) => (
+              <label
+                key={key}
+                className="flex items-start gap-2 text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 cursor-pointer hover:border-neutral-300 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedSections.has(key)}
+                  onChange={() => handleSectionToggle(key)}
+                  disabled={saving}
+                  className="mt-0.5 w-3.5 h-3.5 accent-[#228449] cursor-pointer shrink-0"
+                />
+                <span>
+                  <span className="text-neutral-800 font-medium block">{WEEKLY_EMAIL_SECTION_LABELS[key].label}</span>
+                  <span className="text-neutral-500">{WEEKLY_EMAIL_SECTION_LABELS[key].hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+
           <p className="text-xs text-neutral-400">
             {project.weeklyEmailLastSentAt
               ? `Ultimo enviado: ${new Date(project.weeklyEmailLastSentAt).toLocaleString("es-MX", {

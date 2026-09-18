@@ -112,6 +112,7 @@ export interface ProjectDTO {
   brokenLinksCheckedAt: string | null;
   weeklyEmailEnabled: boolean;
   weeklyEmailLastSentAt: string | null;
+  weeklyEmailSectionsJson: string | null;
   gaAnalyticsUpdatedAt: string | null;
   gaAiTrafficSessions28d: number | null;
   gaAiTrafficBySourceJson: string | null;

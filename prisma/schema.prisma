@@ -93,6 +93,7 @@ model Project {
   brokenLinksCheckedAt  DateTime?
   weeklyEmailEnabled    Boolean   @default(false)
   weeklyEmailLastSentAt DateTime?
+  weeklyEmailSectionsJson String? // cached array of section keys to include — null means "all" (positions, traffic, keywords, pages)
   gaAiTrafficSessions28d  Int?
   gaAiTrafficBySourceJson String? // cached array of {label, sessions} — real AI-referred visits (ChatGPT, Perplexity, etc. + UTM tags)
   gaAiLandingPagesJson    String? // cached array of {path, sessions} — pages AI traffic actually lands on

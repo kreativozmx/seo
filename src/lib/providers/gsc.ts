@@ -317,3 +317,67 @@ export async function fetchSiteSummary(
     avgPosition: row?.position ?? 0,
   };
 }
+
+// Real GSC data for an explicit date range (not "last N days from today")
+// so the weekly email can fetch this-week and last-week separately and
+// diff them per query/page — no DataForSEO credits involved, this is all
+// data Search Console already has for free.
+export async function fetchQueriesForRange(
+  auth: OAuth2Client,
+  siteUrl: string,
+  startDate: string,
+  endDate: string,
+  rowLimit = 250
+): Promise<GscQueryRow[]> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate,
+      endDate,
+      dimensions: ["query"],
+      rowLimit,
+    },
+  });
+  return (res.data.rows ?? [])
+    .map((row) => ({
+      query: row.keys?.[0] ?? "",
+      position: row.position ?? 0,
+      clicks: row.clicks ?? 0,
+      impressions: row.impressions ?? 0,
+      ctr: row.ctr ?? 0,
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
+}
+
+export interface GscPageRow {
+  page: string;
+  clicks: number;
+  impressions: number;
+}
+
+export async function fetchPagesForRange(
+  auth: OAuth2Client,
+  siteUrl: string,
+  startDate: string,
+  endDate: string,
+  rowLimit = 250
+): Promise<GscPageRow[]> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+  const res = await searchconsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      startDate,
+      endDate,
+      dimensions: ["page"],
+      rowLimit,
+    },
+  });
+  return (res.data.rows ?? [])
+    .map((row) => ({
+      page: row.keys?.[0] ?? "",
+      clicks: row.clicks ?? 0,
+      impressions: row.impressions ?? 0,
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
+}
