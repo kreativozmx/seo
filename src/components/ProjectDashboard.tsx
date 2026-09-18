@@ -5463,6 +5463,43 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
 
   const visiblePoints = points.filter((p) => visibleDomains.has(p.domain));
 
+  // "Tu proximo competidor a vencer" — of the competitors currently ahead
+  // of you on organic traffic, the CLOSEST one (smallest traffic gap) is
+  // the most realistic next target, rather than whoever's biggest overall.
+  const ownTraffic = project.domainOrganicTrafficEstimate ?? 0;
+  const nextCompetitor = ownHasData
+    ? competitorsWithData
+        .filter((c) => (c.organicTrafficEstimate ?? 0) > ownTraffic)
+        .sort((a, b) => (a.organicTrafficEstimate ?? 0) - (b.organicTrafficEstimate ?? 0))[0]
+    : null;
+
+  type RankedKw = { keyword: string; position: number | null; searchVolume: number | null; url: string | null };
+  const ownRankedKeywords: RankedKw[] = project.domainRankedKeywordsJson
+    ? JSON.parse(project.domainRankedKeywordsJson)
+    : [];
+  const nextCompetitorKeywords: RankedKw[] = nextCompetitor?.rankedKeywordsJson
+    ? JSON.parse(nextCompetitor.rankedKeywordsJson)
+    : [];
+
+  const ownPositionByKeyword = new Map<string, number | null>();
+  for (const k of ownRankedKeywords) {
+    ownPositionByKeyword.set(k.keyword.toLowerCase(), k.position);
+  }
+
+  const beatTasks = nextCompetitor
+    ? nextCompetitorKeywords
+        .filter((k) => k.position != null && k.position <= 20)
+        .map((k) => ({
+          keyword: k.keyword,
+          searchVolume: k.searchVolume,
+          competitorPosition: k.position as number,
+          ownPosition: ownPositionByKeyword.get(k.keyword.toLowerCase()) ?? null,
+        }))
+        .filter((t) => t.ownPosition == null || t.ownPosition > t.competitorPosition)
+        .sort((a, b) => (b.searchVolume ?? 0) - (a.searchVolume ?? 0))
+        .slice(0, 6)
+    : [];
+
   if (!ownHasData && competitorsWithData.length === 0) {
     return (
       <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
@@ -5491,6 +5528,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
   }
 
   return (
+    <>
     <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <div>
@@ -5726,6 +5764,111 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         </table>
       </div>
     </div>
+
+    {nextCompetitor && (
+      <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+        <p className="text-sm font-medium text-neutral-900">Tu proximo competidor a vencer</p>
+        <p className="text-neutral-500 text-xs mt-0.5 mb-3">
+          De los competidores que te ganan en trafico organico,{" "}
+          <strong className="text-neutral-700">{nextCompetitor.domain}</strong> es el mas
+          cercano a ti — el objetivo mas realista para superar primero.
+        </p>
+
+        <div className="overflow-x-auto mb-4">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-neutral-400 border-b border-neutral-200">
+                <th className="text-left font-normal px-2 py-1.5"></th>
+                <th className="text-right font-normal px-2 py-1.5 text-[#228449]">Tu ({project.domain})</th>
+                <th className="text-right font-normal px-2 py-1.5 text-neutral-700">{nextCompetitor.domain}</th>
+                <th className="text-right font-normal px-2 py-1.5">Brecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-neutral-100">
+                <td className="px-2 py-1.5 text-neutral-500">Keywords organicas</td>
+                <td className="px-2 py-1.5 text-right text-neutral-700">
+                  {(project.domainOrganicKeywords ?? 0).toLocaleString("es-MX")}
+                </td>
+                <td className="px-2 py-1.5 text-right text-neutral-700">
+                  {(nextCompetitor.organicKeywords ?? 0).toLocaleString("es-MX")}
+                </td>
+                <td className="px-2 py-1.5 text-right text-red-600">
+                  +{Math.max(0, (nextCompetitor.organicKeywords ?? 0) - (project.domainOrganicKeywords ?? 0)).toLocaleString("es-MX")}
+                </td>
+              </tr>
+              <tr className="border-t border-neutral-100">
+                <td className="px-2 py-1.5 text-neutral-500">Trafico organico est./mes</td>
+                <td className="px-2 py-1.5 text-right text-neutral-700">
+                  {ownTraffic.toLocaleString("es-MX")}
+                </td>
+                <td className="px-2 py-1.5 text-right text-neutral-700">
+                  {(nextCompetitor.organicTrafficEstimate ?? 0).toLocaleString("es-MX")}
+                </td>
+                <td className="px-2 py-1.5 text-right text-red-600">
+                  +{Math.max(0, (nextCompetitor.organicTrafficEstimate ?? 0) - ownTraffic).toLocaleString("es-MX")}
+                </td>
+              </tr>
+              <tr className="border-t border-neutral-100">
+                <td className="px-2 py-1.5 text-neutral-500">Valor del trafico est./mes</td>
+                <td className="px-2 py-1.5 text-right text-neutral-700">
+                  ${(project.domainTrafficValueEstimate ?? 0).toLocaleString("es-MX")}
+                </td>
+                <td className="px-2 py-1.5 text-right text-neutral-700">
+                  ${(nextCompetitor.trafficValueEstimate ?? 0).toLocaleString("es-MX")}
+                </td>
+                <td className="px-2 py-1.5 text-right text-red-600">
+                  +${Math.max(0, (nextCompetitor.trafficValueEstimate ?? 0) - (project.domainTrafficValueEstimate ?? 0)).toLocaleString("es-MX")}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-[13px] font-medium text-neutral-700 mb-2">
+          Tareas para ganarle keywords a {nextCompetitor.domain}
+        </p>
+        {!nextCompetitor.rankedKeywordsJson ? (
+          <p className="text-xs text-neutral-400">
+            Todavia no tenemos las keywords posicionadas de {nextCompetitor.domain} — ve a su
+            tarjeta de competidor mas abajo y dale &quot;Actualizar&quot; para generar esta lista.
+          </p>
+        ) : beatTasks.length === 0 ? (
+          <p className="text-xs text-neutral-400">
+            No encontramos oportunidades claras en sus keywords top — probablemente ya vas parejo
+            o mejor que {nextCompetitor.domain} en las keywords que mas le importan.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {beatTasks.map((t) => (
+              <li
+                key={t.keyword}
+                className="flex items-start gap-2 text-xs bg-white border border-neutral-200 rounded-lg px-3 py-2"
+              >
+                <span className="text-amber-500 shrink-0 mt-0.5">☐</span>
+                <span className="text-neutral-700">
+                  {t.ownPosition == null ? (
+                    <>
+                      Crea o mejora contenido para <strong>&quot;{t.keyword}&quot;</strong>
+                      {t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : ""} — {nextCompetitor.domain} esta en el puesto{" "}
+                      <strong>#{t.competitorPosition}</strong> y tu no apareces en el top 100.
+                    </>
+                  ) : (
+                    <>
+                      Mejora tu posicion en <strong>&quot;{t.keyword}&quot;</strong>
+                      {t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : ""} — estas en el puesto{" "}
+                      <strong>#{t.ownPosition}</strong>, {nextCompetitor.domain} esta en el{" "}
+                      <strong>#{t.competitorPosition}</strong>.
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )}
+    </>
   );
 }
 
