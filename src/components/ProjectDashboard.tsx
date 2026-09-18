@@ -3759,7 +3759,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 {topVendors.map((v) => (
                   <a
                     key={v.name}
-                    href={`https://${project.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                    href={`https://${project.domain}/collections/all?filter.p.vendor=${encodeURIComponent(v.name)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-center justify-between gap-2 text-xs transition-colors"
@@ -3778,7 +3778,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 {topTypes.map((v) => (
                   <a
                     key={v.name}
-                    href={`https://${project.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                    href={`https://${project.domain}/collections/all?filter.p.product_type=${encodeURIComponent(v.name)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-center justify-between gap-2 text-xs transition-colors"
@@ -3797,7 +3797,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
                 {topTags.map((v) => (
                   <a
                     key={v.name}
-                    href={`https://${project.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                    href={`https://${project.domain}/collections/all?filter.p.tag=${encodeURIComponent(v.name)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[14px] bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
@@ -4749,7 +4749,7 @@ function CompetitorShopifyDetails({
             {vendors.map((v) => (
               <a
                 key={v.name}
-                href={`https://${competitor.domain}/search?q=${encodeURIComponent(v.name)}&type=product`}
+                href={`https://${competitor.domain}/collections/all?filter.p.vendor=${encodeURIComponent(v.name)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
@@ -4768,7 +4768,7 @@ function CompetitorShopifyDetails({
             {types.map((t) => (
               <a
                 key={t.name}
-                href={`https://${competitor.domain}/search?q=${encodeURIComponent(t.name)}&type=product`}
+                href={`https://${competitor.domain}/collections/all?filter.p.product_type=${encodeURIComponent(t.name)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
@@ -4787,7 +4787,7 @@ function CompetitorShopifyDetails({
             {tags.map((t) => (
               <a
                 key={t.name}
-                href={`https://${competitor.domain}/search?q=${encodeURIComponent(t.name)}&type=product`}
+                href={`https://${competitor.domain}/collections/all?filter.p.tag=${encodeURIComponent(t.name)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white border border-neutral-200 hover:border-[#228449] hover:text-[#228449] rounded-md px-2 py-0.5 text-neutral-600 transition-colors"
