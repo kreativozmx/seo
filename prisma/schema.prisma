@@ -30,16 +30,16 @@ model Project {
 
   // Cached GSC summary (last 28 days), refreshed on demand so the dashboard
   // doesn't have to call the API on every page load.
-  gscClicks28d       Int?
-  gscImpressions28d  Int?
-  gscAvgPosition28d  Float?
-  gscStatsUpdatedAt  DateTime?
+  gscClicks28d      Int?
+  gscImpressions28d Int?
+  gscAvgPosition28d Float?
+  gscStatsUpdatedAt DateTime?
 
   // Cached PageSpeed Insights (mobile) for the project's homepage.
   psiPerformanceScore Int?
   psiLcpMs            Int?
   psiCls              Float?
-  psiInpMs             Int?
+  psiInpMs            Int?
   psiFieldDataSource  String? // "field" (real CrUX data) or "lab" (simulated)
   psiIssuesJson       String? // cached array of {id, title, description, displayValue, score}
   psiUpdatedAt        DateTime?
@@ -50,56 +50,56 @@ model Project {
   gaConnectedAt  DateTime?
 
   // Cached GA4 summary (last 28 days)
-  gaSessions28d     Int?
-  gaUsers28d        Int?
-  gaConversions28d  Int?
-  gaStatsUpdatedAt  DateTime?
+  gaSessions28d    Int?
+  gaUsers28d       Int?
+  gaConversions28d Int?
+  gaStatsUpdatedAt DateTime?
 
   // GA4 traffic-channel breakdown (last 28 days) — real sessions by
   // channel, including an "AI referral" bucket (chatgpt.com, perplexity.ai,
   // gemini.google.com, etc.) pulled out of GA4's normal Referral channel.
-  gaSessionsOrganic28d Int?
-  gaSessionsPaid28d    Int?
-  gaSessionsDirect28d  Int?
+  gaSessionsOrganic28d  Int?
+  gaSessionsPaid28d     Int?
+  gaSessionsDirect28d   Int?
   gaSessionsReferral28d Int?
-  gaSessionsAi28d      Int?
-  gaChannelsUpdatedAt  DateTime?
+  gaSessionsAi28d       Int?
+  gaChannelsUpdatedAt   DateTime?
 
   // Merchant-facing GA4 analytics (Analiticas tab) — revenue/orders (only
   // populated if the store has GA4 ecommerce tracking wired up), top pages,
   // top countries, device mix.
-  gaRevenue28d          Float?
-  gaTransactions28d     Int?
-  gaAvgOrderValue28d    Float?
-  gaNewUsers28d         Int?
-  gaEngagementRate28d   Float?
-  gaAvgSessionSec28d    Int?
-  gaTopPagesJson        String? // cached array of {path, views}
-  gaTopCountriesJson    String? // cached array of {country, sessions}
-  gaDeviceBreakdownJson String? // cached {mobile, desktop, tablet}
-  gaTopCampaignsJson    String? // cached array of {source, sessions} — source/medium + UTM campaign
-  gaTopSourcesJson      String? // cached array of {name, sessions} — source alone
-  gaTopMediumsJson      String? // cached array of {name, sessions} — medium alone
-  gaSalesByChannelJson     String? // cached array of {label, revenue, transactions, sessions} — GA4's UTM-derived channel grouping
-  gaSalesBySourceJson      String? // same shape, by sessionSource
-  gaSalesByMediumJson      String? // same shape, by sessionMedium
-  gaSalesByLandingPageJson String? // same shape, by landing page — closest proxy to "organic keyword" GA4 exposes
-  gaSalesByDeviceJson      String? // same shape, by device category
-  gaOrdersByDateJson    String? // cached array of {date, transactions, revenue}
-  gaTopProductsJson     String? // cached array of {name, unitsSold, revenue}
+  gaRevenue28d               Float?
+  gaTransactions28d          Int?
+  gaAvgOrderValue28d         Float?
+  gaNewUsers28d              Int?
+  gaEngagementRate28d        Float?
+  gaAvgSessionSec28d         Int?
+  gaTopPagesJson             String? // cached array of {path, views}
+  gaTopCountriesJson         String? // cached array of {country, sessions}
+  gaDeviceBreakdownJson      String? // cached {mobile, desktop, tablet}
+  gaTopCampaignsJson         String? // cached array of {source, sessions} — source/medium + UTM campaign
+  gaTopSourcesJson           String? // cached array of {name, sessions} — source alone
+  gaTopMediumsJson           String? // cached array of {name, sessions} — medium alone
+  gaSalesByChannelJson       String? // cached array of {label, revenue, transactions, sessions} — GA4's UTM-derived channel grouping
+  gaSalesBySourceJson        String? // same shape, by sessionSource
+  gaSalesByMediumJson        String? // same shape, by sessionMedium
+  gaSalesByLandingPageJson   String? // same shape, by landing page — closest proxy to "organic keyword" GA4 exposes
+  gaSalesByDeviceJson        String? // same shape, by device category
+  gaOrdersByDateJson         String? // cached array of {date, transactions, revenue}
+  gaTopProductsJson          String? // cached array of {name, unitsSold, revenue}
   gaTopAddToCartProductsJson String? // cached array of {name, unitsAddedToCart}
-  brokenLinksJson       String? // cached array of {url, path, status} — 404s (and other errors) found on the last sitemap crawl
-  brokenLinksChecked    Int? // how many sitemap URLs were actually checked (may be less than the full sitemap if capped)
-  brokenLinksCheckedAt  DateTime?
-  weeklyEmailEnabled    Boolean   @default(false)
-  weeklyEmailTo         String? // recipient override — falls back to AUTH_EMAIL when null
-  weeklyEmailLastSentAt DateTime?
-  weeklyEmailSectionsJson String? // cached array of section keys to include — null means "all" (positions, traffic, keywords, pages)
-  gaAiTrafficSessions28d  Int?
-  gaAiTrafficBySourceJson String? // cached array of {label, sessions} — real AI-referred visits (ChatGPT, Perplexity, etc. + UTM tags)
-  gaAiLandingPagesJson    String? // cached array of {path, sessions} — pages AI traffic actually lands on
-  aiQueryCrossRefJson     String? // cached array of {path, queries:[{query,impressions,clicks,position}]} — real GSC queries for those AI landing pages
-  aiQueryCrossRefUpdatedAt DateTime?
+  brokenLinksJson            String? // cached array of {url, path, status} — 404s (and other errors) found on the last sitemap crawl
+  brokenLinksChecked         Int? // how many sitemap URLs were actually checked (may be less than the full sitemap if capped)
+  brokenLinksCheckedAt       DateTime?
+  weeklyEmailEnabled         Boolean   @default(false)
+  weeklyEmailTo              String? // recipient override — falls back to AUTH_EMAIL when null
+  weeklyEmailLastSentAt      DateTime?
+  weeklyEmailSectionsJson    String? // cached array of section keys to include — null means "all" (positions, traffic, keywords, pages)
+  gaAiTrafficSessions28d     Int?
+  gaAiTrafficBySourceJson    String? // cached array of {label, sessions} — real AI-referred visits (ChatGPT, Perplexity, etc. + UTM tags)
+  gaAiLandingPagesJson       String? // cached array of {path, sessions} — pages AI traffic actually lands on
+  aiQueryCrossRefJson        String? // cached array of {path, queries:[{query,impressions,clicks,position}]} — real GSC queries for those AI landing pages
+  aiQueryCrossRefUpdatedAt   DateTime?
 
   // Estrategia > Contenidos: 12 blog title ideas generated from real GSC
   // queries of the last 7 days, aimed at helping the domain rank.
@@ -110,14 +110,14 @@ model Project {
   // Shopify Admin API (own store only) — one-click OAuth install, not a
   // manually-created access token. Sales data is private and no public
   // API exposes it for anyone else's store, including competitors.
-  shopifyShopDomain    String? // resolved xxx.myshopify.com
-  shopifyAccessToken   String?
-  shopifyRefreshToken  String? // present for expiring offline tokens; used to silently renew shopifyAccessToken
+  shopifyShopDomain     String? // resolved xxx.myshopify.com
+  shopifyAccessToken    String?
+  shopifyRefreshToken   String? // present for expiring offline tokens; used to silently renew shopifyAccessToken
   shopifyTokenExpiresAt DateTime? // null = old-style non-expiring token
-  shopifyConnectedAt   DateTime?
-  shopifyOrders28d     Int?
-  shopifySales28d      Float?
-  shopifyCurrency      String?
+  shopifyConnectedAt    DateTime?
+  shopifyOrders28d      Int?
+  shopifySales28d       Float?
+  shopifyCurrency       String?
   shopifySalesUpdatedAt DateTime?
 
   // Google Business Profile connection. Note: the Business Profile APIs
@@ -148,42 +148,42 @@ model Project {
   safeBrowsingCheckedAt DateTime?
 
   // YouTube channel (SEO Youtube tab) — free, API-key only (YouTube Data API v3).
-  youtubeChannelId        String?
-  youtubeChannelTitle     String?
-  youtubeDescription      String?
-  youtubeCountry          String?
+  youtubeChannelId          String?
+  youtubeChannelTitle       String?
+  youtubeDescription        String?
+  youtubeCountry            String?
   youtubeChannelPublishedAt DateTime?
-  youtubeThumbnailUrl     String?
-  youtubeSubscribers      Int?
-  youtubeViews            Int?
-  youtubeVideoCount       Int?
-  youtubeRecentVideosJson String? // cached array of recent videos
-  youtubeUpdatedAt        DateTime?
+  youtubeThumbnailUrl       String?
+  youtubeSubscribers        Int?
+  youtubeViews              Int?
+  youtubeVideoCount         Int?
+  youtubeRecentVideosJson   String? // cached array of recent videos
+  youtubeUpdatedAt          DateTime?
 
   // Ecommerce catalog audit (Ecommerce tab) — free, reads the store's
   // public product endpoints (Shopify /products.json or WooCommerce's
   // Store API), no credentials needed. Reuses the project's own domain.
-  ecommercePlatform          String? // "shopify" | "woocommerce" | null
-  ecommerceIsShopify         Boolean?
-  ecommerceProductCount      Int?
-  ecommerceProductCountIsMin Boolean? // true = hit Shopify's 1000-product API cap, real count may be higher
-  ecommerceCollectionCount   Int?
+  ecommercePlatform             String? // "shopify" | "woocommerce" | null
+  ecommerceIsShopify            Boolean?
+  ecommerceProductCount         Int?
+  ecommerceProductCountIsMin    Boolean? // true = hit Shopify's 1000-product API cap, real count may be higher
+  ecommerceCollectionCount      Int?
   ecommerceCollectionCountIsMin Boolean? // true = hit the 250-collection API cap, real count may be higher
-  ecommerceMissingDescCount  Int?
-  ecommerceMissingImageCount Int?
-  ecommerceMissingAltCount   Int?
-  ecommerceThinTitleCount    Int?
-  ecommerceFlaggedJson       String? // cached array of flagged products
-  ecommercePriceMin          Float?
-  ecommercePriceMax          Float?
-  ecommerceAvgPrice          Float?
-  ecommerceTotalVariants     Int?
-  ecommerceTopVendorsJson    String? // cached array of {name, count}
-  ecommerceTopTypesJson      String? // cached array of {name, count}
-  ecommerceTopTagsJson       String? // cached array of {name, count}
-  ecommerceTopSellingJson    String? // cached array of {title, handle} — Shopify only
-  ecommerceNewestProductAt   DateTime?
-  ecommerceCheckedAt         DateTime?
+  ecommerceMissingDescCount     Int?
+  ecommerceMissingImageCount    Int?
+  ecommerceMissingAltCount      Int?
+  ecommerceThinTitleCount       Int?
+  ecommerceFlaggedJson          String? // cached array of flagged products
+  ecommercePriceMin             Float?
+  ecommercePriceMax             Float?
+  ecommerceAvgPrice             Float?
+  ecommerceTotalVariants        Int?
+  ecommerceTopVendorsJson       String? // cached array of {name, count}
+  ecommerceTopTypesJson         String? // cached array of {name, count}
+  ecommerceTopTagsJson          String? // cached array of {name, count}
+  ecommerceTopSellingJson       String? // cached array of {title, handle} — Shopify only
+  ecommerceNewestProductAt      DateTime?
+  ecommerceCheckedAt            DateTime?
 
   // Technology detection (Panel) — Wappalyzer-style: reads the homepage
   // HTML/headers and matches known signatures. Free, no credentials.
@@ -210,24 +210,46 @@ model Project {
 
   // Apps iOS/Android (DataForSEO App Data API) — search results cached per
   // platform, plus which result (if any) the user marked as "their app".
-  appQuery              String? // last search term used
-  appsResultsJson        String? // cached { google: [...], apple: [...] }
-  appsCheckedAt          DateTime?
-  googlePlayAppId        String?
-  googlePlayAppTitle     String?
-  googlePlayAppIcon      String?
-  googlePlayAppRating    Float?
-  googlePlayAppReviews   Int?
-  googlePlayAppUrl       String?
-  appleAppId             String?
-  appleAppTitle          String?
-  appleAppIcon           String?
-  appleAppRating         Float?
-  appleAppReviews        Int?
-  appleAppUrl            String?
+  appQuery             String? // last search term used
+  appsResultsJson      String? // cached { google: [...], apple: [...] }
+  appsCheckedAt        DateTime?
+  googlePlayAppId      String?
+  googlePlayAppTitle   String?
+  googlePlayAppIcon    String?
+  googlePlayAppRating  Float?
+  googlePlayAppReviews Int?
+  googlePlayAppUrl     String?
+  appleAppId           String?
+  appleAppTitle        String?
+  appleAppIcon         String?
+  appleAppRating       Float?
+  appleAppReviews      Int?
+  appleAppUrl          String?
 
-  keywords    Keyword[]
-  competitors Competitor[]
+  keywords         Keyword[]
+  competitors      Competitor[]
+  trafficSnapshots TrafficSnapshot[]
+}
+
+// A timestamped copy of the DataForSEO traffic estimate (organic keywords/
+// traffic/value) for one domain — either the project's own domain or one of
+// its competitors, keyed by `domain` rather than a competitor FK so a
+// snapshot survives that competitor being removed later. Written as a
+// byproduct of the SAME refresh the user already triggers (no extra
+// DataForSEO calls), so the Competencia chart can compare "now" against an
+// earlier date the way Ahrefs/SEMrush do — though only from whenever this
+// started recording onward, since we don't have retroactive history.
+model TrafficSnapshot {
+  id                     String   @id @default(cuid())
+  projectId              String
+  project                Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  domain                 String
+  organicKeywords        Int?
+  organicTrafficEstimate Int?
+  trafficValueEstimate   Float?
+  checkedAt              DateTime @default(now())
+
+  @@index([projectId, domain, checkedAt])
 }
 
 model Competitor {
@@ -260,12 +282,12 @@ model Competitor {
   // Estimated organic/paid search visibility (DataForSEO Labs) — an
   // estimate, like SEMrush/Ahrefs show, not real analytics. Nobody outside
   // the site owner can see a competitor's actual traffic or sales.
-  organicKeywords         Int?
-  organicTrafficEstimate  Int?
-  paidKeywords            Int?
-  paidTrafficEstimate     Int?
-  trafficValueEstimate    Float? // what the organic traffic would cost via ads (USD/mo)
-  trafficCheckedAt        DateTime?
+  organicKeywords        Int?
+  organicTrafficEstimate Int?
+  paidKeywords           Int?
+  paidTrafficEstimate    Int?
+  trafficValueEstimate   Float? // what the organic traffic would cost via ads (USD/mo)
+  trafficCheckedAt       DateTime?
 
   // Technologies detected on the competitor's homepage (same Wappalyzer-
   // style signatures used for the project's own site).
@@ -291,7 +313,7 @@ model Keyword {
   createdAt  DateTime  @default(now())
   archivedAt DateTime?
 
-  rankings   Ranking[]
+  rankings Ranking[]
 
   @@index([projectId])
 }
@@ -299,19 +321,19 @@ model Keyword {
 // A single position measurement for a keyword, for either the project's own
 // domain or a tracked competitor domain
 model Ranking {
-  id          String   @id @default(cuid())
-  keywordId   String
-  keyword     Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
-  domain      String
-  position    Int? // null = not found in results
-  url         String?
-  source      String   @default("dataforseo") // dataforseo, gsc, manual
-  aiMentioned Boolean? // for AI engines: was the domain/brand mentioned at all
-  snippet     String?
+  id                 String   @id @default(cuid())
+  keywordId          String
+  keyword            Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  domain             String
+  position           Int? // null = not found in results
+  url                String?
+  source             String   @default("dataforseo") // dataforseo, gsc, manual
+  aiMentioned        Boolean? // for AI engines: was the domain/brand mentioned at all
+  snippet            String?
   aiOverviewText     String? // text snippet of Google's AI Overview for this keyword, if shown
   aiCitedDomainsJson String? // domains cited inside the AI Overview, as a JSON array
-  topResultsJson String? // top-10 organic domains/urls for this SERP snapshot, as a JSON array
-  checkedAt   DateTime @default(now())
+  topResultsJson     String? // top-10 organic domains/urls for this SERP snapshot, as a JSON array
+  checkedAt          DateTime @default(now())
 
   @@unique([keywordId, domain, checkedAt, source])
   @@index([keywordId, domain, checkedAt])
@@ -319,12 +341,12 @@ model Ranking {
 
 // One row per run of the daily automatic rank-check job.
 model CronRun {
-  id             String   @id @default(cuid())
-  startedAt      DateTime @default(now())
+  id             String    @id @default(cuid())
+  startedAt      DateTime  @default(now())
   finishedAt     DateTime?
-  keywordsOk     Int      @default(0)
-  keywordsFailed Int      @default(0)
-  gscProjectsOk  Int      @default(0)
+  keywordsOk     Int       @default(0)
+  keywordsFailed Int       @default(0)
+  gscProjectsOk  Int       @default(0)
   error          String?
 }
 

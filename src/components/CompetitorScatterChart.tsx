@@ -71,10 +71,14 @@ function linearRegression(points: { x: number; y: number }[]) {
 
 export default function CompetitorScatterChart({
   points,
+  previousPoints,
+  previousLabel,
   xMetric,
   colorFor,
 }: {
   points: CompetitorPoint[];
+  previousPoints?: CompetitorPoint[];
+  previousLabel?: string;
   xMetric: XMetricKey;
   colorFor: (domain: string) => string;
 }) {
@@ -90,7 +94,7 @@ export default function CompetitorScatterChart({
   const xValue = (p: CompetitorPoint) => p[xMetric];
 
   const fit = linearRegression(points.map((p) => ({ x: xValue(p), y: p.organicTraffic })));
-  const maxX = Math.max(...points.map(xValue), 0) * 1.05;
+  const maxX = Math.max(...points.map(xValue), ...(previousPoints ?? []).map(xValue), 0) * 1.05;
   const trendSegment: [{ x: number; y: number }, { x: number; y: number }] | null =
     fit && maxX > 0
       ? [
@@ -146,13 +150,14 @@ export default function CompetitorScatterChart({
           cursor={{ strokeDasharray: "3 3" }}
           content={({ active, payload }) => {
             if (!active || !payload || payload.length === 0) return null;
-            const point = payload[0]?.payload as CompetitorPoint | undefined;
+            const point = payload[0]?.payload as (CompetitorPoint & { __previous?: boolean }) | undefined;
             if (!point) return null;
             return (
               <div style={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12, padding: "8px 10px", borderRadius: 6 }}>
                 <p style={{ fontWeight: 600, marginBottom: 4 }}>
                   {point.domain}
                   {point.isOwn ? " (tu)" : ""}
+                  {point.__previous ? ` — ${previousLabel ?? "antes"}` : ""}
                 </p>
                 {payload.map((entry) => {
                   const n = Number(entry.value);
@@ -167,6 +172,21 @@ export default function CompetitorScatterChart({
             );
           }}
         />
+        {previousPoints?.map((p) => {
+          const color = colorFor(p.domain);
+          return (
+            <Scatter
+              key={`prev-${p.domain}`}
+              name={p.domain}
+              data={[{ ...p, __previous: true }]}
+              fill="none"
+              stroke={color}
+              strokeWidth={1.5}
+              strokeDasharray="3 2"
+              legendType="none"
+            />
+          );
+        })}
         {points.map((p) => {
           const color = colorFor(p.domain);
           return (

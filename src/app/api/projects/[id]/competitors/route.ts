@@ -101,5 +101,17 @@ export async function POST(
       ? await prisma.competitor.update({ where: { id: competitor.id }, data })
       : competitor;
 
+  if (data.organicTrafficEstimate !== undefined) {
+    await prisma.trafficSnapshot.create({
+      data: {
+        projectId: params.id,
+        domain: cleanDomain,
+        organicKeywords: data.organicKeywords as number | null,
+        organicTrafficEstimate: data.organicTrafficEstimate as number | null,
+        trafficValueEstimate: data.trafficValueEstimate as number | null,
+      },
+    });
+  }
+
   return NextResponse.json(withInfo, { status: 201 });
 }

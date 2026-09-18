@@ -5368,6 +5368,28 @@ const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
     "lo que costaria comprar ese mismo trafico organico con anuncios de pago (Google Ads) en vez de aparecer gratis en los resultados. Entre mas alto, mas dinero en publicidad le esta ahorrando el SEO cada mes.",
 };
 
+// "Compararse en fechas anteriores" (like Ahrefs' Position Tracking chart):
+// each option is how many days back to look for the closest saved
+// TrafficSnapshot per domain. We only started recording snapshots recently
+// (see the writes in traffic-overview/refresh and competitors' routes), so
+// older options will simply show no historical dot yet for most domains —
+// they'll start working as snapshots accumulate over time.
+const COMPARISON_OPTIONS = [
+  { value: "none", label: "No comparar" },
+  { value: "7", label: "Semana anterior" },
+  { value: "30", label: "Mes anterior" },
+  { value: "90", label: "3 meses anteriores" },
+  { value: "180", label: "6 meses anteriores" },
+] as const;
+type ComparisonValue = (typeof COMPARISON_OPTIONS)[number]["value"];
+
+interface TrafficSnapshotDTO {
+  organicKeywords: number | null;
+  organicTrafficEstimate: number | null;
+  trafficValueEstimate: number | null;
+  checkedAt: string;
+}
+
 interface BeatTask {
   keyword: string;
   searchVolume: number | null;
@@ -5483,6 +5505,35 @@ function CompetitorComparisonOverview({
   const [checkedTasks, setCheckedTasks] = useState<Set<string>>(new Set());
   const captureRef = useRef<HTMLDivElement>(null);
 
+  const [comparison, setComparison] = useState<ComparisonValue>("none");
+  const [previousByDomain, setPreviousByDomain] = useState<Record<string, TrafficSnapshotDTO> | null>(null);
+  const [loadingComparison, setLoadingComparison] = useState(false);
+
+  useEffect(() => {
+    if (comparison === "none") {
+      setPreviousByDomain(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingComparison(true);
+    const before = new Date();
+    before.setDate(before.getDate() - Number(comparison));
+    fetch(`/api/projects/${project.id}/competitors/traffic-history?before=${before.toISOString().slice(0, 10)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setPreviousByDomain(data.domains ?? {});
+      })
+      .catch(() => {
+        if (!cancelled) setPreviousByDomain({});
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingComparison(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [comparison, project.id]);
+
   function toggleTaskChecked(keyword: string) {
     setCheckedTasks((prev) => {
       const next = new Set(prev);
@@ -5574,6 +5625,24 @@ function CompetitorComparisonOverview({
 
   const visiblePoints = points.filter((p) => visibleDomains.has(p.domain));
 
+  const previousPoints: CompetitorPoint[] | undefined = previousByDomain
+    ? visiblePoints
+        .filter((p) => previousByDomain[p.domain])
+        .map((p) => {
+          const snap = previousByDomain[p.domain];
+          return {
+            domain: p.domain,
+            organicTraffic: snap.organicTrafficEstimate ?? 0,
+            trafficValue: snap.trafficValueEstimate ?? 0,
+            organicKeywords: snap.organicKeywords ?? 0,
+            isOwn: p.isOwn,
+          };
+        })
+    : undefined;
+  const previousLabel = COMPARISON_OPTIONS.find((o) => o.value === comparison)?.label;
+  const comparisonHasNoData =
+    comparison !== "none" && !loadingComparison && previousByDomain != null && previousPoints?.length === 0;
+
   // "Tu proximo competidor a vencer" — of the competitors currently ahead
   // of you on organic traffic, the CLOSEST one (smallest traffic gap) is
   // the most realistic next target, rather than whoever's biggest overall.
@@ -5656,6 +5725,18 @@ function CompetitorComparisonOverview({
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <select
+            value={comparison}
+            onChange={(e) => setComparison(e.target.value as ComparisonValue)}
+            title="Comparar la grafica contra una fecha anterior, como en Ahrefs"
+            className="bg-white border border-neutral-200 rounded-md px-2 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors"
+          >
+            {COMPARISON_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
           <button
             onClick={handleRefreshOwn}
             disabled={refreshingOwn}
@@ -5666,6 +5747,17 @@ function CompetitorComparisonOverview({
           {detectButton}
         </div>
       </div>
+
+      {loadingComparison && (
+        <p className="text-xs text-neutral-400 mb-2">Buscando datos de esa fecha...</p>
+      )}
+      {comparisonHasNoData && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-2">
+          Aun no tenemos datos guardados de esa fecha para ningun dominio visible. Empezamos a
+          guardar un historico cada vez que analizas/actualizas un dominio — vuelve a intentar
+          esta comparacion mas adelante.
+        </p>
+      )}
 
       <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[14px] text-neutral-500 leading-relaxed flex flex-col gap-1">
         <p>
@@ -5734,7 +5826,18 @@ function CompetitorComparisonOverview({
         />
       </div>
 
-      <CompetitorScatterChart points={visiblePoints} xMetric={xMetric} colorFor={colorFor} />
+      {previousPoints && previousPoints.length > 0 && (
+        <p className="text-xs text-neutral-400 mb-1">
+          Circulo relleno = ahora. Circulo punteado = {previousLabel?.toLowerCase()}.
+        </p>
+      )}
+      <CompetitorScatterChart
+        points={visiblePoints}
+        previousPoints={previousPoints}
+        previousLabel={previousLabel}
+        xMetric={xMetric}
+        colorFor={colorFor}
+      />
 
       <div className="overflow-x-auto mt-3">
         <table className="w-full text-xs">

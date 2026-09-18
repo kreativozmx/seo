@@ -85,5 +85,19 @@ export async function POST(
     data,
   });
 
+  // Keep a dated snapshot (same data, no extra DataForSEO call) so the
+  // Competencia chart can compare "now" against an earlier date later on.
+  if (data.organicTrafficEstimate !== undefined) {
+    await prisma.trafficSnapshot.create({
+      data: {
+        projectId: competitor.projectId,
+        domain: competitor.domain,
+        organicKeywords: data.organicKeywords as number | null,
+        organicTrafficEstimate: data.organicTrafficEstimate as number | null,
+        trafficValueEstimate: data.trafficValueEstimate as number | null,
+      },
+    });
+  }
+
   return NextResponse.json({ competitor: updated, errors });
 }
