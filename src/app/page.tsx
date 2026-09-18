@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import NewProjectForm from "@/components/NewProjectForm";
 import FaviconThumb from "@/components/FaviconThumb";
+import MiniTrendSparkline from "@/components/MiniTrendSparkline";
 import { computeProjectStats } from "@/lib/projectStats";
 
 export const dynamic = "force-dynamic";
@@ -199,6 +200,7 @@ export default async function Home() {
                   </>
                 )}
               </div>
+              {project.gscSiteUrl && <MiniTrendSparkline projectId={project.id} />}
             </Link>
           ))}
         </section>

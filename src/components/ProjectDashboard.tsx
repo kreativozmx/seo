@@ -3810,12 +3810,10 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
         </div>
       )}
 
-      {hasResult && topSelling.length > 0 && (
+      {hasResult && topSelling.length > 0 && topSellingResult.source === "merchant" && (
         <div>
           <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-            {topSellingResult.source === "merchant"
-              ? `Productos populares (coleccion "${topSellingResult.collectionTitle}")`
-              : "Productos populares segun Shopify (aprox.)"}
+            {`Productos populares (coleccion "${topSellingResult.collectionTitle}")`}
           </h2>
           <div className="flex flex-col gap-1 bg-white border border-neutral-200 rounded-xl p-1.5">
             {topSelling.map((p, i) => (
@@ -3832,9 +3830,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
             ))}
           </div>
           <p className="text-[14px] text-neutral-400 mt-1.5">
-            {topSellingResult.source === "merchant"
-              ? `Orden tal cual lo dejo la tienda en su propia coleccion "${topSellingResult.collectionTitle}" — el dato mas cercano a ventas reales sin acceso al Admin de Shopify.`
-              : "Shopify no expone el numero real de ventas por producto en su catalogo publico; este es su propio orden algoritmico \"best-selling\", que puede no reflejar ventas reales. Si conectas Google Analytics con seguimiento de ecommerce, en Analiticas veras \"Productos mas vendidos\" con datos reales de compra."}
+            {`Orden tal cual lo dejo la tienda en su propia coleccion "${topSellingResult.collectionTitle}" — el dato mas cercano a ventas reales sin acceso al Admin de Shopify.`}
           </p>
         </div>
       )}
@@ -4752,12 +4748,10 @@ function CompetitorShopifyDetails({
         )}
       </div>
 
-      {topSelling.length > 0 && (
+      {topSelling.length > 0 && topSellingResult.source === "merchant" && (
         <div>
           <p className="text-neutral-400 mb-1">
-            {topSellingResult.source === "merchant"
-              ? `Populares (coleccion "${topSellingResult.collectionTitle}")`
-              : "Populares segun Shopify (aprox.)"}
+            {`Populares (coleccion "${topSellingResult.collectionTitle}")`}
           </p>
           <ul className="flex flex-col gap-0.5">
             {topSelling.map((p) => (
