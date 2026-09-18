@@ -3630,9 +3630,14 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
   const sync = useSyncStatus();
 
   const hasResult = project.ecommerceCheckedAt != null;
-  const topSelling: { title: string; handle: string }[] = project.ecommerceTopSellingJson
+  const topSellingResult: {
+    source: "merchant" | "algorithm" | "none";
+    collectionTitle: string | null;
+    items: { title: string; handle: string }[];
+  } = project.ecommerceTopSellingJson
     ? JSON.parse(project.ecommerceTopSellingJson)
-    : [];
+    : { source: "none", collectionTitle: null, items: [] };
+  const topSelling = topSellingResult.items;
 
   async function handleRun() {
     setLoading(true);
@@ -3814,7 +3819,9 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
       {hasResult && topSelling.length > 0 && (
         <div>
           <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-            Productos mas vendidos (aprox.)
+            {topSellingResult.source === "merchant"
+              ? `Productos populares (coleccion "${topSellingResult.collectionTitle}")`
+              : "Productos populares segun Shopify (aprox.)"}
           </h2>
           <div className="flex flex-col gap-1 bg-white border border-neutral-200 rounded-xl p-1.5">
             {topSelling.map((p, i) => (
@@ -3831,8 +3838,9 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
             ))}
           </div>
           <p className="text-[14px] text-neutral-400 mt-1.5">
-            Orden aproximado segun la coleccion &ldquo;best-selling&rdquo; publica de la
-            tienda — Shopify no expone el numero real de ventas por producto.
+            {topSellingResult.source === "merchant"
+              ? `Orden tal cual lo dejo la tienda en su propia coleccion "${topSellingResult.collectionTitle}" — el dato mas cercano a ventas reales sin acceso al Admin de Shopify.`
+              : "Shopify no expone el numero real de ventas por producto en su catalogo publico; este es su propio orden algoritmico \"best-selling\", que puede no reflejar ventas reales. Si conectas Google Analytics con seguimiento de ecommerce, en Analiticas veras \"Productos mas vendidos\" con datos reales de compra."}
           </p>
         </div>
       )}
@@ -4678,9 +4686,14 @@ function CompetitorShopifyDetails({
   const tags: { name: string; count: number }[] = competitor.ecommerceTopTagsJson
     ? JSON.parse(competitor.ecommerceTopTagsJson)
     : [];
-  const topSelling: { title: string; handle: string }[] = competitor.ecommerceTopSellingJson
+  const topSellingResult: {
+    source: "merchant" | "algorithm" | "none";
+    collectionTitle: string | null;
+    items: { title: string; handle: string }[];
+  } = competitor.ecommerceTopSellingJson
     ? JSON.parse(competitor.ecommerceTopSellingJson)
-    : [];
+    : { source: "none", collectionTitle: null, items: [] };
+  const topSelling = topSellingResult.items;
 
   const hasAnything =
     vendors.length > 0 ||
@@ -4731,7 +4744,11 @@ function CompetitorShopifyDetails({
 
       {topSelling.length > 0 && (
         <div>
-          <p className="text-neutral-400 mb-1">Productos mas vendidos (aprox.)</p>
+          <p className="text-neutral-400 mb-1">
+            {topSellingResult.source === "merchant"
+              ? `Populares (coleccion "${topSellingResult.collectionTitle}")`
+              : "Populares segun Shopify (aprox.)"}
+          </p>
           <ul className="flex flex-col gap-0.5">
             {topSelling.map((p) => (
               <li key={p.handle} className="text-neutral-700 truncate">

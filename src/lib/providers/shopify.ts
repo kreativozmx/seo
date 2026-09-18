@@ -55,7 +55,19 @@ export interface ShopifyAudit {
   topProductTypes: NameCount[];
   topTags: NameCount[];
   newestProductAt: string | null;
-  topSelling: { title: string; handle: string }[];
+  topSelling: TopSellingResult;
+}
+
+export interface TopSellingResult {
+  // "merchant": a real collection the store itself curates as its
+  // bestsellers/most-popular list (as authoritative as the public catalog
+  // gets without Admin API access). "algorithm": Shopify's own
+  // sort_by=best-selling on the auto "all" collection — this is Shopify's
+  // opaque, sometimes stale ranking, not a guaranteed real sales order.
+  // "none": neither was available.
+  source: "merchant" | "algorithm" | "none";
+  collectionTitle: string | null;
+  items: { title: string; handle: string }[];
 }
 
 // Some stores sit behind bot/WAF protection (Cloudflare, Shopify's own
@@ -117,16 +129,22 @@ async function fetchAllProducts(
   return { products, hasMore };
 }
 
+interface ShopifyCollection {
+  title?: string;
+  handle?: string;
+}
+
 // /collections.json has no working pagination on the storefront API either
-// — a single page, capped at 250.
-async function fetchCollectionCount(domain: string): Promise<{ count: number; hasMore: boolean }> {
+// — a single page, capped at 250. Fetched once and reused both for the
+// collection count and to look for a merchant-curated bestsellers list.
+async function fetchCollectionsList(domain: string): Promise<{ collections: ShopifyCollection[]; hasMore: boolean }> {
   try {
     const { ok, json } = await fetchJson(`https://${domain}/collections.json?limit=250`);
-    if (!ok) return { count: 0, hasMore: false };
-    const count = ((json as { collections?: unknown[] })?.collections ?? []).length;
-    return { count, hasMore: count >= 250 };
+    if (!ok) return { collections: [], hasMore: false };
+    const collections = (json as { collections?: ShopifyCollection[] })?.collections ?? [];
+    return { collections, hasMore: collections.length >= 250 };
   } catch {
-    return { count: 0, hasMore: false };
+    return { collections: [], hasMore: false };
   }
 }
 
@@ -144,7 +162,8 @@ export async function detectShopifyBasic(domain: string): Promise<ShopifyBasicIn
     return { isShopify: false, productCount: 0, collectionCount: 0 };
   }
   const products: ShopifyProduct[] = (json as { products?: ShopifyProduct[] })?.products ?? [];
-  const { count: collectionCount } = await fetchCollectionCount(domain);
+  const { collections } = await fetchCollectionsList(domain);
+  const collectionCount = collections.length;
   return {
     isShopify: true,
     productCount: products.length,
@@ -166,29 +185,96 @@ function topCounts(values: string[], limit = 8): NameCount[] {
     .slice(0, limit);
 }
 
-// Shopify's storefront honors ?sort_by=best-selling on the auto-generated
-// "all" collection, which is the closest a public (no-admin-access) catalog
-// gets to exposing sales rank — no counts, just relative order.
+// Keywords (accent/case-insensitive) that show up in a merchant's own
+// "bestsellers" collection name across the storefronts we've seen —
+// Spanish and English. A real merchant-curated list like this is a much
+// stronger signal than Shopify's opaque sort_by=best-selling order, since
+// it reflects what the store owner actually chose to feature as popular.
+const BESTSELLER_NAME_HINTS = [
+  "best sell",
+  "bestsell",
+  "best-sell",
+  "mas vendid",
+  "más vendid",
+  "top ventas",
+  "top venta",
+  "populares",
+  "lo mas popular",
+  "lo más popular",
+  "favoritos",
+];
+
+function stripAccents(s: string) {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+function findBestsellerCollection(collections: ShopifyCollection[]): ShopifyCollection | null {
+  for (const c of collections) {
+    const haystack = stripAccents(`${c.title ?? ""} ${c.handle ?? ""}`.toLowerCase());
+    if (BESTSELLER_NAME_HINTS.some((hint) => haystack.includes(stripAccents(hint)))) {
+      return c;
+    }
+  }
+  return null;
+}
+
+async function fetchProductsForCollection(
+  domain: string,
+  handle: string,
+  limit: number,
+  sortBy?: string
+): Promise<ShopifyProduct[]> {
+  const sortParam = sortBy ? `&sort_by=${sortBy}` : "";
+  const { ok, json } = await fetchJson(
+    `https://${domain}/collections/${handle}/products.json?limit=${limit}${sortParam}`
+  );
+  if (!ok) return [];
+  return (json as { products?: ShopifyProduct[] })?.products ?? [];
+}
+
+// Best-effort "most popular products" without Admin API access. Prefers a
+// collection the merchant themselves curates as bestsellers/popular (their
+// own judgment, informed by real sales they can see in the admin) over
+// Shopify's public sort_by=best-selling, which several merchants have
+// reported as unreliable/stale on their storefronts.
 async function fetchTopSelling(
   domain: string,
+  collections: ShopifyCollection[],
   limit = 5
-): Promise<{ title: string; handle: string }[]> {
-  try {
-    const { ok, json } = await fetchJson(
-      `https://${domain}/collections/all/products.json?sort_by=best-selling&limit=${limit}`
-    );
-    if (!ok) return [];
-    const products: ShopifyProduct[] = (json as { products?: ShopifyProduct[] })?.products ?? [];
-    return products.map((p) => ({ title: p.title, handle: p.handle }));
-  } catch {
-    return [];
+): Promise<TopSellingResult> {
+  const bestsellerCollection = findBestsellerCollection(collections);
+  if (bestsellerCollection?.handle) {
+    try {
+      const products = await fetchProductsForCollection(domain, bestsellerCollection.handle, limit);
+      if (products.length > 0) {
+        return {
+          source: "merchant",
+          collectionTitle: bestsellerCollection.title ?? bestsellerCollection.handle,
+          items: products.map((p) => ({ title: p.title, handle: p.handle })),
+        };
+      }
+    } catch {
+      // fall through to the algorithmic sort below
+    }
   }
+
+  try {
+    const products = await fetchProductsForCollection(domain, "all", limit, "best-selling");
+    if (products.length > 0) {
+      return { source: "algorithm", collectionTitle: null, items: products.map((p) => ({ title: p.title, handle: p.handle })) };
+    }
+  } catch {
+    // ignore — falls through to "none" below
+  }
+
+  return { source: "none", collectionTitle: null, items: [] };
 }
 
 export async function auditShopifyStore(domain: string): Promise<ShopifyAudit> {
   const { products, hasMore: productCountIsMin } = await fetchAllProducts(domain);
-  const { count: collectionCount, hasMore: collectionCountIsMin } = await fetchCollectionCount(domain);
-  const topSelling = await fetchTopSelling(domain);
+  const { collections, hasMore: collectionCountIsMin } = await fetchCollectionsList(domain);
+  const collectionCount = collections.length;
+  const topSelling = await fetchTopSelling(domain, collections);
 
   let missingDescCount = 0;
   let missingImageCount = 0;
