@@ -161,22 +161,32 @@ export interface ContentIdea {
 export async function generateContentIdeas(params: {
   domain: string;
   queries: { query: string; clicks: number; impressions: number }[];
+  existingTitles?: string[];
 }): Promise<ContentIdea[]> {
-  const { domain, queries } = params;
+  const { domain, queries, existingTitles = [] } = params;
 
   const queryLines = queries
     .slice(0, 60)
     .map((q) => `- "${q.query}" (${q.clicks} clics, ${q.impressions} impresiones)`)
     .join("\n");
 
+  const existingTitlesBlock =
+    existingTitles.length > 0
+      ? `\n\nEl blog de la tienda ya tiene estos articulos publicados — NO propongas un titulo igual ni muy similar en tema a ninguno de estos, busca angulos o subtemas distintos que no se repitan:\n${existingTitles
+          .slice(0, 200)
+          .map((t) => `- "${t}"`)
+          .join("\n")}`
+      : "";
+
   const prompt = `Eres un estratega de contenido SEO para el sitio ${domain}.
 
 Estas son las busquedas reales que la gente hizo en Google en los ultimos 7 dias y que ya le traen trafico o impresiones al sitio (datos de Google Search Console):
-${queryLines}
+${queryLines}${existingTitlesBlock}
 
 Con base en esas busquedas reales, genera exactamente 12 ideas de titulos de blog en español, pensados para ayudar a posicionar mejor el dominio en Google. Cada idea debe:
 - Tener un titulo de blog atractivo y especifico (no generico), inspirado en una o varias de las busquedas reales de arriba.
 - Traer 3 a 6 palabras clave relacionadas que ese articulo deberia intentar posicionar (pueden incluir variantes de las busquedas reales, no solo copiarlas literal).
+- No repetir tema ni titulo con ningun articulo que el blog ya tenga publicado (ver lista arriba, si existe).
 
 Responde SOLO como JSON valido, sin texto adicional, con esta forma exacta:
 {

@@ -4129,15 +4129,48 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                 value={(project.gaAvgOrderValue28d ?? 0).toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })}
               />
             </div>
-            {(project.gaTransactions28d ?? 0) === 0 && (
-              <p className="text-[14px] text-emerald-700/70 mt-2">
-                Si estos numeros estan en cero, tu tienda probablemente no
-                tiene el seguimiento de ecommerce de GA4 activado (Shopify
-                lo manda automaticamente si conectaste GA4 desde el admin
-                de Shopify, o vía Google &amp; YouTube channel app).
-              </p>
-            )}
           </div>
+
+          {(project.gaRevenue28d ?? 0) === 0 && (project.gaTransactions28d ?? 0) === 0 && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-amber-800 mb-1">
+                Ingresos y pedidos en cero — probablemente falta configurar el ecommerce de GA4
+              </p>
+              <p className="text-[13px] text-amber-700/80 mb-3">
+                Esto no es un error de la app: significa que Google Analytics no esta recibiendo
+                los eventos de compra de tu tienda. Revisa esto en orden:
+              </p>
+              <ol className="text-[13px] text-amber-800 flex flex-col gap-2 list-decimal pl-4">
+                <li>
+                  En tu admin de Shopify ve a{" "}
+                  <a
+                    href={`https://${project.domain}/admin/settings/customer-events`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-amber-900"
+                  >
+                    Configuracion → Eventos del cliente
+                  </a>{" "}
+                  y confirma que la app/pixel de Google (Google &amp; YouTube o Google Analytics) este
+                  agregada y activa, no solo instalada.
+                </li>
+                <li>
+                  Verifica que el <strong>Measurement ID</strong> (empieza con &quot;G-&quot;) que Shopify
+                  esta usando sea el mismo property de GA4 que conectaste aqui en Conexiones — dos
+                  propiedades distintas es la causa mas comun de este problema.
+                </li>
+                <li>
+                  En GA4 mismo, ve a Admin → Estructura de datos → Flujos de datos y confirma que el
+                  flujo web tenga la <strong>medicion mejorada de ecommerce</strong> activada.
+                </li>
+                <li>
+                  Haz una compra de prueba y revisa el reporte <strong>Tiempo real</strong> de GA4 — deberias
+                  ver el evento <code className="bg-amber-100 rounded px-1">purchase</code> aparecer en
+                  segundos. Si no aparece, el problema esta en la conexion Shopify↔GA4, no en esta app.
+                </li>
+              </ol>
+            </div>
+          )}
 
           <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
             <p className="text-sm font-medium text-neutral-900 mb-2">Pedidos por dia</p>

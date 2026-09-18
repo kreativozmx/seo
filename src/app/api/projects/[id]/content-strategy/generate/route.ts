@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { oauthClientWithRefreshToken } from "@/lib/googleAuth";
 import { fetchTopQueries } from "@/lib/providers/gsc";
 import { generateContentIdeas } from "@/lib/providers/openai";
+import { fetchExistingBlogTitles } from "@/lib/providers/shopify";
 
 export const maxDuration = 60;
 
@@ -37,7 +38,8 @@ export async function POST(
       );
     }
 
-    const ideas = await generateContentIdeas({ domain: project.domain, queries });
+    const existingTitles = await fetchExistingBlogTitles(project.domain).catch(() => []);
+    const ideas = await generateContentIdeas({ domain: project.domain, queries, existingTitles });
     const ideasWithDone = ideas.map((idea) => ({ ...idea, done: false }));
 
     await prisma.project.update({
