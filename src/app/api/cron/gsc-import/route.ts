@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDailyGscImport } from "@/lib/dailyCheck";
+import { runWeeklyEmailSummaries } from "@/lib/weeklyEmail";
 
 // Triggered by Vercel Cron Jobs in production (GET, see vercel.json) —
 // Vercel automatically sends "Authorization: Bearer $CRON_SECRET" when a
@@ -21,7 +22,18 @@ async function run(req: NextRequest) {
   }
   try {
     const result = await runDailyGscImport();
-    return NextResponse.json(result);
+
+    // Piggybacks on this daily cron instead of registering a separate
+    // Vercel Cron entry — the Hobby plan caps projects at 2 cron jobs,
+    // and this project already uses both (gsc-import + changelog-sync).
+    // Only actually sends on Mondays.
+    let weeklyEmail: { sent: number; failed: number; error: string | null } | null = null;
+    if (new Date().getUTCDay() === 1) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+      weeklyEmail = await runWeeklyEmailSummaries(baseUrl);
+    }
+
+    return NextResponse.json({ ...result, weeklyEmail });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -1378,6 +1378,12 @@ export default function ProjectDashboard({
                 </h2>
                 <ShareLinkSection project={project} />
               </div>
+              <div>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  Notificaciones por correo
+                </h2>
+                <WeeklyEmailSection project={project} />
+              </div>
             </section>
           )}
 
@@ -4879,6 +4885,93 @@ function GaSection({ project }: { project: ProjectDTO }) {
             </strong>{" "}
             conversiones (28d)
           </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  async function handleToggle() {
+    setSaving(true);
+    setTestResult(null);
+    try {
+      await fetch(`/api/projects/${project.id}/weekly-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !project.weeklyEmailEnabled }),
+      });
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/weekly-email/test`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al enviar el correo de prueba");
+      setTestResult("Correo de prueba enviado ✓");
+      router.refresh();
+    } catch (err) {
+      setTestResult(err instanceof Error ? err.message : "Error al enviar el correo de prueba");
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl p-4">
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={project.weeklyEmailEnabled}
+          onChange={handleToggle}
+          disabled={saving}
+          className="mt-0.5 w-4 h-4 accent-[#228449] cursor-pointer shrink-0"
+        />
+        <div>
+          <p className="text-sm text-neutral-800 font-medium">Resumen semanal por correo</p>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Cada lunes recibes un correo con la posicion promedio, cuantas keywords estan en
+            Top 3/Top 10 (y como cambiaron vs. la semana pasada), clics de Search Console y las
+            keywords que mas se movieron.
+          </p>
+        </div>
+      </label>
+
+      {project.weeklyEmailEnabled && (
+        <div className="mt-3 pl-7 flex flex-col gap-2">
+          <p className="text-xs text-neutral-400">
+            {project.weeklyEmailLastSentAt
+              ? `Ultimo enviado: ${new Date(project.weeklyEmailLastSentAt).toLocaleString("es-MX", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}`
+              : "Aun no se ha enviado ninguno — el primero sale el proximo lunes."}
+          </p>
+          <button
+            onClick={handleTest}
+            disabled={testing}
+            className="self-start text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {testing ? "Enviando..." : "Enviar de prueba ahora"}
+          </button>
+          {testResult && (
+            <p className={`text-xs ${testResult.includes("✓") ? "text-[#155D34]" : "text-red-600"}`}>
+              {testResult}
+            </p>
+          )}
         </div>
       )}
     </div>
