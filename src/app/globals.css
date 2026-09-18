@@ -41,37 +41,30 @@ body {
   }
 }
 
-/* Presentation mode (screen-share on a call): a magnifying-glass lens
-   that follows the cursor at a chosen zoom level (1x/2x/4x), built in
-   src/components/PresentationMode.tsx. The lens is a fixed circle that
-   clips ("overflow: hidden" + "border-radius: 50%") a scaled clone of
-   #presentation-content so only the small area under the cursor is
-   magnified, leaving the rest of the page at normal size. */
+/* Presentation mode (screen-share on a call), built in
+   src/components/PresentationMode.tsx: zooms #presentation-content to a
+   chosen level, hides anything marked data-presentation-hide (the
+   dashboard sidebar) so the extra width goes to real content, and swaps
+   the cursor for a red laser-pointer dot. */
+body.presentation-active [data-presentation-hide] {
+  display: none !important;
+}
+
 body.presentation-cursor-none,
 body.presentation-cursor-none * {
   cursor: none !important;
 }
 
-.presentation-lens {
+.presentation-laser-dot {
   position: fixed;
   top: 0;
   left: 0;
-  width: 260px;
-  height: 260px;
+  width: 26px;
+  height: 26px;
   border-radius: 9999px;
-  overflow: hidden;
-  border: 3px solid #ef4444;
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 8px 24px rgba(0,0,0,0.35), 0 0 20px 4px rgba(239,68,68,0.5);
+  background: radial-gradient(circle, rgba(255,45,45,0.95) 0%, rgba(255,45,45,0.55) 45%, rgba(255,45,45,0) 75%);
+  box-shadow: 0 0 14px 4px rgba(255,0,0,0.5);
   pointer-events: none;
-  z-index: 10000;
-  background: #ffffff;
-  will-change: transform;
-}
-
-.presentation-lens-mirror {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
+  z-index: 10001;
   will-change: transform;
 }

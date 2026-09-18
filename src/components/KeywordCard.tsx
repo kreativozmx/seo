@@ -63,15 +63,6 @@ function TrashIcon() {
   );
 }
 
-function CompareIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
-
 function ChangeBadge({ delta }: { delta: number | null }) {
   if (delta == null || delta === 0) {
     return <span className="text-neutral-300 text-xs">—</span>;
@@ -259,13 +250,13 @@ export function KeywordListItem({
                   setShowCompare((v) => !v);
                 }}
                 title="Ver mi URL posicionada y quien esta mejor posicionado que yo"
-                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors shrink-0 ${
+                className={`h-7 px-2 flex items-center justify-center rounded-full text-[11px] font-semibold tracking-wide transition-colors shrink-0 ${
                   showCompare
                     ? "text-[#228449] bg-[#E6F4EC]"
                     : "text-neutral-400 hover:text-[#228449] hover:bg-[#E6F4EC]"
                 }`}
               >
-                <CompareIcon />
+                SERP
               </button>
             )}
             <ConfirmButton
@@ -494,7 +485,6 @@ export function KeywordDetailCard({
       </div>
       <div ref={chartCaptureRef} className="bg-white">
         <RankingChart rankings={keyword.rankings} domains={domains} period={chartPeriod} />
-        <RankingHistoryTable rankings={keyword.rankings} domains={domains} ownDomain={ownDomain} />
       </div>
 
       {showManual && (
@@ -508,100 +498,6 @@ export function KeywordDetailCard({
           }}
         />
       )}
-    </div>
-  );
-}
-
-// Day-by-day table under the chart: one row per calendar date, one column
-// per domain, including past dates backfilled from GSC's daily history.
-function RankingHistoryTable({
-  rankings,
-  domains,
-  ownDomain,
-}: {
-  rankings: KeywordDTO["rankings"];
-  domains: string[];
-  ownDomain: string;
-}) {
-  const byDate = new Map<string, Map<string, KeywordDTO["rankings"][number]>>();
-
-  for (const r of rankings) {
-    const dateKey = new Date(r.checkedAt).toISOString().slice(0, 10);
-    if (!byDate.has(dateKey)) byDate.set(dateKey, new Map());
-    const perDomain = byDate.get(dateKey)!;
-    const existing = perDomain.get(r.domain);
-    if (!existing || new Date(r.checkedAt) > new Date(existing.checkedAt)) {
-      perDomain.set(r.domain, r);
-    }
-  }
-
-  const dates = Array.from(byDate.keys()).sort((a, b) => (a < b ? 1 : -1));
-
-  if (dates.length === 0) return null;
-
-  return (
-    <div className="mt-4">
-      <p className="text-[14px] text-neutral-400 uppercase tracking-wide mb-2">
-        Historial por dia
-      </p>
-      <div className="max-h-72 overflow-y-auto border border-neutral-100 rounded-lg">
-        <table className="w-full text-xs">
-          <thead className="sticky top-0 bg-neutral-50">
-            <tr>
-              <th className="text-left font-medium text-neutral-500 px-3 py-2">
-                Fecha
-              </th>
-              {domains.map((domain) => (
-                <th
-                  key={domain}
-                  className="text-left font-medium text-neutral-500 px-3 py-2 truncate max-w-[140px]"
-                >
-                  {domain === ownDomain ? "Tu sitio" : domain}
-                </th>
-              ))}
-              <th className="text-left font-medium text-neutral-500 px-3 py-2">
-                Fuente
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {dates.map((date) => {
-              const perDomain = byDate.get(date)!;
-              const ownEntry = perDomain.get(ownDomain);
-              return (
-                <tr key={date} className="border-t border-neutral-100">
-                  <td className="px-3 py-1.5 text-neutral-500 whitespace-nowrap">
-                    {new Date(`${date}T00:00:00.000Z`).toLocaleDateString(
-                      "es-MX",
-                      { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }
-                    )}
-                  </td>
-                  {domains.map((domain) => {
-                    const r = perDomain.get(domain);
-                    return (
-                      <td key={domain} className="px-3 py-1.5">
-                        <PositionBadge
-                          position={r?.position ?? null}
-                          aiMentioned={r?.aiMentioned}
-                        />
-                      </td>
-                    );
-                  })}
-                  <td className="px-3 py-1.5 text-neutral-400">
-                    {ownEntry?.source === "gsc"
-                      ? "GSC"
-                      : ownEntry?.source === "manual"
-                      ? "Manual"
-                      : ownEntry?.source
-                      ? "Rastreo"
-                      : "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

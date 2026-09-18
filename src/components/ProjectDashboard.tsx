@@ -949,7 +949,10 @@ export default function ProjectDashboard({
       </div>
 
       <div className="flex flex-1 min-h-0 md:flex">
-        <aside className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible md:w-64 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-[calc(100vh-3rem)] md:sticky md:top-12 px-2 py-2 md:py-3">
+        <aside
+          data-presentation-hide="true"
+          className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible md:w-64 shrink-0 bg-white border-b md:border-b-0 md:border-r border-neutral-200 md:min-h-[calc(100vh-3rem)] md:sticky md:top-12 px-2 py-2 md:py-3"
+        >
           <nav className="flex md:flex-col gap-1.5 md:gap-0 shrink-0">
             {NAV_GROUPS.filter(
               (group) =>
