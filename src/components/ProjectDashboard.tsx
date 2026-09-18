@@ -4073,6 +4073,13 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
     project.gaTopProductsJson ? JSON.parse(project.gaTopProductsJson) : [];
   const topAddToCartProducts: { name: string; unitsAddedToCart: number }[] =
     project.gaTopAddToCartProductsJson ? JSON.parse(project.gaTopAddToCartProductsJson) : [];
+  const scrollByPage: { path: string; pageviews: number; scrollCount: number; scrollRate: number }[] =
+    project.gaScrollByPageJson ? JSON.parse(project.gaScrollByPageJson) : [];
+  const engagementByPage: { path: string; sessions: number; avgEngagementSec: number }[] =
+    project.gaEngagementByPageJson ? JSON.parse(project.gaEngagementByPageJson) : [];
+  const engagementByPath = new Map(engagementByPage.map((e) => [e.path, e]));
+  const internalReferrers: { path: string; referrerPath: string; sessions: number }[] =
+    project.gaInternalReferrersJson ? JSON.parse(project.gaInternalReferrersJson) : [];
 
   const channels = {
     organic: project.gaSessionsOrganic28d ?? 0,
@@ -4271,6 +4278,100 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
               )}
             </div>
           </div>
+
+          {scrollByPage.length > 0 && (
+            <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+              <p className="text-sm font-medium text-neutral-900 mb-0.5">Comportamiento por pagina</p>
+              <p className="text-neutral-400 text-[14px] mb-3">
+                Un proxy de mapa de calor sin instalar nada en tu tienda: que tanto llegan al final
+                de la pagina y cuanto tiempo se quedan, segun datos reales de GA4 (no clics exactos
+                como Clarity, GA4 no guarda coordenadas).
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-neutral-400 border-b border-neutral-200">
+                      <th className="text-left font-normal px-2 py-1.5">Pagina</th>
+                      <th className="text-right font-normal px-2 py-1.5">Vistas</th>
+                      <th className="text-right font-normal px-2 py-1.5">
+                        <span className="inline-flex items-center gap-1 justify-end">
+                          Llega al final
+                          <InfoTooltip text="% de sesiones que hicieron scroll hasta el 90% de la pagina (evento 'scroll' de GA4)." />
+                        </span>
+                      </th>
+                      <th className="text-right font-normal px-2 py-1.5">Tiempo prom.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scrollByPage.map((p) => {
+                      const eng = engagementByPath.get(p.path);
+                      return (
+                        <tr key={p.path} className="hover:bg-neutral-50 transition-colors">
+                          <td className="px-2 py-1.5 max-w-[260px]">
+                            <a
+                              href={`https://${project.domain}${p.path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-neutral-700 hover:text-[#228449] hover:underline truncate block"
+                            >
+                              {p.path}
+                            </a>
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-neutral-500">
+                            {p.pageviews.toLocaleString("es-MX")}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            <span className="inline-flex items-center gap-1.5 justify-end">
+                              <span className="w-12 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                                <span
+                                  className="block h-full bg-[#228449]"
+                                  style={{ width: `${Math.round(p.scrollRate * 100)}%` }}
+                                />
+                              </span>
+                              <span className="text-neutral-600 w-8 text-right">{Math.round(p.scrollRate * 100)}%</span>
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-neutral-500">
+                            {eng ? `${Math.round(eng.avgEngagementSec)}s` : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {internalReferrers.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-[13px] text-neutral-400 uppercase tracking-wide mb-2">
+                    De donde llegan (navegacion interna)
+                  </p>
+                  <div className="flex flex-col gap-1 max-h-56 overflow-y-auto">
+                    {internalReferrers.map((r, i) => {
+                      let referrerPath = r.referrerPath;
+                      try {
+                        referrerPath = new URL(r.referrerPath).pathname || "/";
+                      } catch {
+                        // keep the raw value if it isn't a parseable URL
+                      }
+                      return (
+                        <div
+                          key={`${r.path}-${r.referrerPath}-${i}`}
+                          className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-neutral-50 text-xs"
+                        >
+                          <span className="min-w-0 truncate text-neutral-600">
+                            {referrerPath} <span className="text-neutral-300">→</span>{" "}
+                            <span className="text-neutral-700">{r.path}</span>
+                          </span>
+                          <span className="text-neutral-400 shrink-0">{r.sessions.toLocaleString("es-MX")}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {deviceTotal > 0 && (
             <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">

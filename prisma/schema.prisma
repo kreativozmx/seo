@@ -88,18 +88,29 @@ model Project {
   gaOrdersByDateJson         String? // cached array of {date, transactions, revenue}
   gaTopProductsJson          String? // cached array of {name, unitsSold, revenue}
   gaTopAddToCartProductsJson String? // cached array of {name, unitsAddedToCart}
-  brokenLinksJson            String? // cached array of {url, path, status} — 404s (and other errors) found on the last sitemap crawl
-  brokenLinksChecked         Int? // how many sitemap URLs were actually checked (may be less than the full sitemap if capped)
-  brokenLinksCheckedAt       DateTime?
-  weeklyEmailEnabled         Boolean   @default(false)
-  weeklyEmailTo              String? // recipient override — falls back to AUTH_EMAIL when null
-  weeklyEmailLastSentAt      DateTime?
-  weeklyEmailSectionsJson    String? // cached array of section keys to include — null means "all" (positions, traffic, keywords, pages)
-  gaAiTrafficSessions28d     Int?
-  gaAiTrafficBySourceJson    String? // cached array of {label, sessions} — real AI-referred visits (ChatGPT, Perplexity, etc. + UTM tags)
-  gaAiLandingPagesJson       String? // cached array of {path, sessions} — pages AI traffic actually lands on
-  aiQueryCrossRefJson        String? // cached array of {path, queries:[{query,impressions,clicks,position}]} — real GSC queries for those AI landing pages
-  aiQueryCrossRefUpdatedAt   DateTime?
+
+  // Page-behavior proxies (Analiticas tab) — real GA4 signals that stand in
+  // for a visual heatmap/session-recording tool (Clarity-style) without
+  // needing any tracking script installed on the merchant's store: how far
+  // people scroll, how long they stay, and which internal pages lead
+  // where. GA4's Data API has no click coordinates, so this can't produce
+  // an actual pixel heatmap — see fetchGa4PageBehavior in ga4.ts.
+  gaScrollByPageJson       String? // cached array of {path, pageviews, scrollCount, scrollRate}
+  gaEngagementByPageJson   String? // cached array of {path, sessions, avgEngagementSec}
+  gaInternalReferrersJson  String? // cached array of {path, referrerPath, sessions} — internal-only page-to-page traffic
+  gaBehaviorUpdatedAt      DateTime?
+  brokenLinksJson          String? // cached array of {url, path, status} — 404s (and other errors) found on the last sitemap crawl
+  brokenLinksChecked       Int? // how many sitemap URLs were actually checked (may be less than the full sitemap if capped)
+  brokenLinksCheckedAt     DateTime?
+  weeklyEmailEnabled       Boolean   @default(false)
+  weeklyEmailTo            String? // recipient override — falls back to AUTH_EMAIL when null
+  weeklyEmailLastSentAt    DateTime?
+  weeklyEmailSectionsJson  String? // cached array of section keys to include — null means "all" (positions, traffic, keywords, pages)
+  gaAiTrafficSessions28d   Int?
+  gaAiTrafficBySourceJson  String? // cached array of {label, sessions} — real AI-referred visits (ChatGPT, Perplexity, etc. + UTM tags)
+  gaAiLandingPagesJson     String? // cached array of {path, sessions} — pages AI traffic actually lands on
+  aiQueryCrossRefJson      String? // cached array of {path, queries:[{query,impressions,clicks,position}]} — real GSC queries for those AI landing pages
+  aiQueryCrossRefUpdatedAt DateTime?
 
   // Estrategia > Contenidos: 12 blog title ideas generated from real GSC
   // queries of the last 7 days, aimed at helping the domain rank.

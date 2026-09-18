@@ -614,3 +614,111 @@ export async function fetchGa4Analytics(
     topAddToCartProducts,
   };
 }
+
+export interface Ga4PageBehavior {
+  scrollByPage: { path: string; pageviews: number; scrollCount: number; scrollRate: number }[];
+  engagementByPage: { path: string; sessions: number; avgEngagementSec: number }[];
+  internalReferrers: { path: string; referrerPath: string; sessions: number }[];
+}
+
+// A real (if partial) stand-in for a Clarity-style heatmap, built entirely
+// from GA4's standard automatic-collection events — no tracking script to
+// install on the merchant's store, no custom dimensions required. GA4
+// doesn't record click coordinates, so this can't draw a literal heatmap;
+// instead it answers three proxy questions per page: how far do people
+// scroll (the "scroll" event fires once per session at 90% depth), how
+// long do they stay (userEngagementDuration), and which of the site's own
+// pages send people here (pageReferrer, filtered to the project's own
+// domain so external traffic sources — already shown elsewhere — don't
+// crowd this out).
+export async function fetchGa4PageBehavior(
+  auth: OAuth2Client,
+  propertyId: string,
+  ownDomain: string,
+  days = 28
+): Promise<Ga4PageBehavior> {
+  const analyticsData = google.analyticsdata({ version: "v1beta", auth });
+  const dateRanges = [{ startDate: `${days}daysAgo`, endDate: "today" }];
+  const property = `properties/${propertyId}`;
+
+  const [scrollRes, engagementRes, referrerRes] = await Promise.all([
+    analyticsData.properties.runReport({
+      property,
+      requestBody: {
+        dateRanges,
+        dimensions: [{ name: "pagePath" }, { name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            inListFilter: { values: ["scroll", "page_view"] },
+          },
+        },
+        limit: "500",
+      },
+    }),
+    analyticsData.properties.runReport({
+      property,
+      requestBody: {
+        dateRanges,
+        dimensions: [{ name: "pagePath" }],
+        metrics: [{ name: "userEngagementDuration" }, { name: "sessions" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: "20",
+      },
+    }),
+    analyticsData.properties.runReport({
+      property,
+      requestBody: {
+        dateRanges,
+        dimensions: [{ name: "pagePath" }, { name: "pageReferrer" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: "150",
+      },
+    }),
+  ]);
+
+  const scrollMap = new Map<string, { pageviews: number; scrollCount: number }>();
+  for (const row of scrollRes.data.rows ?? []) {
+    const path = row.dimensionValues?.[0]?.value ?? "";
+    const eventName = row.dimensionValues?.[1]?.value ?? "";
+    const count = Number(row.metricValues?.[0]?.value ?? 0);
+    const entry = scrollMap.get(path) ?? { pageviews: 0, scrollCount: 0 };
+    if (eventName === "page_view") entry.pageviews += count;
+    else if (eventName === "scroll") entry.scrollCount += count;
+    scrollMap.set(path, entry);
+  }
+  const scrollByPage = Array.from(scrollMap.entries())
+    .map(([path, v]) => ({
+      path,
+      pageviews: v.pageviews,
+      scrollCount: v.scrollCount,
+      scrollRate: v.pageviews > 0 ? Math.min(v.scrollCount / v.pageviews, 1) : 0,
+    }))
+    .filter((r) => r.pageviews >= 10) // drop low-traffic pages, too noisy to mean anything
+    .sort((a, b) => b.pageviews - a.pageviews)
+    .slice(0, 20);
+
+  const engagementByPage = (engagementRes.data.rows ?? []).map((row) => {
+    const totalSec = Number(row.metricValues?.[0]?.value ?? 0);
+    const sessions = Number(row.metricValues?.[1]?.value ?? 0);
+    return {
+      path: row.dimensionValues?.[0]?.value ?? "",
+      sessions,
+      avgEngagementSec: sessions > 0 ? totalSec / sessions : 0,
+    };
+  });
+
+  const normalizedOwnDomain = ownDomain.replace(/^www\./, "").toLowerCase();
+  const internalReferrers = (referrerRes.data.rows ?? [])
+    .map((row) => ({
+      path: row.dimensionValues?.[0]?.value ?? "",
+      referrerPath: row.dimensionValues?.[1]?.value ?? "",
+      sessions: Number(row.metricValues?.[0]?.value ?? 0),
+    }))
+    .filter((r) => r.referrerPath && r.referrerPath.toLowerCase().includes(normalizedOwnDomain))
+    .slice(0, 20);
+
+  return { scrollByPage, engagementByPage, internalReferrers };
+}

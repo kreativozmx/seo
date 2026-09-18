@@ -107,6 +107,10 @@ export interface ProjectDTO {
   gaOrdersByDateJson: string | null;
   gaTopProductsJson: string | null;
   gaTopAddToCartProductsJson: string | null;
+  gaScrollByPageJson: string | null;
+  gaEngagementByPageJson: string | null;
+  gaInternalReferrersJson: string | null;
+  gaBehaviorUpdatedAt: string | null;
   brokenLinksJson: string | null;
   brokenLinksChecked: number | null;
   brokenLinksCheckedAt: string | null;

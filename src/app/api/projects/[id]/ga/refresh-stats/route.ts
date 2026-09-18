@@ -6,6 +6,7 @@ import {
   fetchGa4ChannelBreakdown,
   fetchGa4Analytics,
   fetchGa4AiTraffic,
+  fetchGa4PageBehavior,
 } from "@/lib/providers/ga4";
 
 export const maxDuration = 60;
@@ -39,6 +40,16 @@ export async function POST(
       fetchGa4Analytics(client, project.gaPropertyId, 28),
       fetchGa4AiTraffic(client, project.gaPropertyId, 28),
     ]);
+
+    // Kept as its own try/catch: it's a nice-to-have proxy for a heatmap,
+    // not core traffic/revenue data, so a hiccup here shouldn't fail the
+    // whole refresh.
+    let behavior: Awaited<ReturnType<typeof fetchGa4PageBehavior>> | null = null;
+    try {
+      behavior = await fetchGa4PageBehavior(client, project.gaPropertyId, project.domain, 28);
+    } catch {
+      // leave behavior null — the Analiticas tab just shows the last cached values (if any)
+    }
 
     const updated = await prisma.project.update({
       where: { id: project.id },
@@ -77,6 +88,12 @@ export async function POST(
         gaAiTrafficSessions28d: aiTraffic.totalSessions,
         gaAiTrafficBySourceJson: JSON.stringify(aiTraffic.bySource),
         gaAiLandingPagesJson: JSON.stringify(aiTraffic.landingPages),
+        ...(behavior && {
+          gaScrollByPageJson: JSON.stringify(behavior.scrollByPage),
+          gaEngagementByPageJson: JSON.stringify(behavior.engagementByPage),
+          gaInternalReferrersJson: JSON.stringify(behavior.internalReferrers),
+          gaBehaviorUpdatedAt: new Date(),
+        }),
       },
     });
 
