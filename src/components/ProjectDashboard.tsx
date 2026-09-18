@@ -6594,15 +6594,29 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
     }
   }
 
-  // Solo keywords realmente compartidas: donde tu tienes posicion Y al
-  // menos un competidor tambien — no todo lo que rastreas o que le
-  // detectamos a cada quien por separado.
+  // Two kinds of rows: (1) up to 20 of the keywords you actually track
+  // (project.keywords, in tracking order) — always shown as long as you
+  // have a position, even if a competitor has no cached ranking for that
+  // exact keyword (shows "—" for them, which is itself useful info), and
+  // (2) any other keyword where a competitor's ranked-keywords sample
+  // happens to overlap with your own real/estimated position — the
+  // original "coincidencia real" behavior, uncapped.
+  const trackedKeys = new Set(project.keywords.map((k) => k.text.toLowerCase()));
+  const trackedRowKeysShown = new Set(
+    project.keywords
+      .slice(0, 20)
+      .map((k) => k.text.toLowerCase())
+      .filter((key) => rows.get(key)?.own.position != null)
+  );
+
   const sortedRows = Array.from(rows.entries())
     .map(([keyword, data]) => ({ keyword, ...data }))
     .filter(
       (row) =>
-        row.own.position != null &&
-        Object.values(row.positions).some((p) => p.position != null)
+        trackedRowKeysShown.has(row.keyword) ||
+        (!trackedKeys.has(row.keyword) &&
+          row.own.position != null &&
+          Object.values(row.positions).some((p) => p.position != null))
     )
     .sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
@@ -6629,10 +6643,12 @@ function KeywordGapSection({ project }: { project: ProjectDTO }) {
     <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
       <p className="text-sm font-medium text-neutral-900 mb-0.5">Comparativa de keywords</p>
       <p className="text-neutral-400 text-[14px] mb-3">
-        Solo keywords donde tu y al menos un competidor coinciden (hasta 20
-        de muestra por competidor, no su catalogo completo), con la
-        posicion de cada quien lado a lado. Dale clic a una posicion para
-        abrir la URL que esta posicionada.
+        Siempre incluye hasta 20 de las keywords que rastreas, con la
+        posicion de cada competidor junto a la tuya — un &quot;—&quot; significa que
+        no tenemos ese dato en la muestra del competidor, no que no
+        posicione. Tambien suma otras keywords donde detectamos coincidencia
+        real con algun competidor. Dale clic a una posicion para abrir la
+        URL que esta posicionada.
       </p>
       {sortedRows.length === 0 ? (
         <p className="text-xs text-neutral-400">
