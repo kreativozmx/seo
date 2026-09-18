@@ -3989,6 +3989,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
   const sync = useSyncStatus();
   const ordersCaptureRef = useRef<HTMLDivElement>(null);
   const salesCaptureRef = useRef<HTMLDivElement>(null);
+  const [behaviorSearch, setBehaviorSearch] = useState("");
 
   const connected = Boolean(project.gaConnectedAt);
   const hasData = project.gaAnalyticsUpdatedAt != null;
@@ -4081,6 +4082,16 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
   const engagementByPath = new Map(engagementByPage.map((e) => [e.path, e]));
   const internalReferrers: { path: string; referrerPath: string; sessions: number }[] =
     project.gaInternalReferrersJson ? JSON.parse(project.gaInternalReferrersJson) : [];
+
+  const behaviorQuery = behaviorSearch.trim().toLowerCase();
+  const filteredScrollByPage = behaviorQuery
+    ? scrollByPage.filter((p) => p.path.toLowerCase().includes(behaviorQuery))
+    : scrollByPage;
+  const filteredInternalReferrers = behaviorQuery
+    ? internalReferrers.filter(
+        (r) => r.path.toLowerCase().includes(behaviorQuery) || r.referrerPath.toLowerCase().includes(behaviorQuery)
+      )
+    : internalReferrers;
 
   const channels = {
     organic: project.gaSessionsOrganic28d ?? 0,
@@ -4282,12 +4293,23 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
 
           {scrollByPage.length > 0 && (
             <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
-              <p className="text-sm font-medium text-neutral-900 mb-0.5">Comportamiento por pagina</p>
+              <div className="flex items-start justify-between flex-wrap gap-3 mb-0.5">
+                <p className="text-sm font-medium text-neutral-900">Comportamiento por pagina</p>
+                <input
+                  value={behaviorSearch}
+                  onChange={(e) => setBehaviorSearch(e.target.value)}
+                  placeholder="Buscar pagina (ej. /collections)"
+                  className="w-56 bg-white border border-neutral-200 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors"
+                />
+              </div>
               <p className="text-neutral-400 text-[14px] mb-3">
                 Un proxy de mapa de calor sin instalar nada en tu tienda: que tanto llegan al final
                 de la pagina y cuanto tiempo se quedan, segun datos reales de GA4 (no clics exactos
                 como Clarity, GA4 no guarda coordenadas).
               </p>
+              {filteredScrollByPage.length === 0 ? (
+                <p className="text-xs text-neutral-400">No encontramos paginas que coincidan con &quot;{behaviorSearch}&quot;.</p>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -4304,7 +4326,7 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {scrollByPage.map((p) => {
+                    {filteredScrollByPage.map((p) => {
                       const eng = engagementByPath.get(p.path);
                       return (
                         <tr key={p.path} className="hover:bg-neutral-50 transition-colors">
@@ -4341,14 +4363,15 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
                   </tbody>
                 </table>
               </div>
+              )}
 
-              {internalReferrers.length > 0 && (
+              {filteredInternalReferrers.length > 0 && (
                 <div className="mt-4">
                   <p className="text-[13px] text-neutral-400 uppercase tracking-wide mb-2">
                     De donde llegan (navegacion interna)
                   </p>
                   <div className="flex flex-col gap-1 max-h-56 overflow-y-auto">
-                    {internalReferrers.map((r, i) => {
+                    {filteredInternalReferrers.map((r, i) => {
                       let referrerPath = r.referrerPath;
                       try {
                         referrerPath = new URL(r.referrerPath).pathname || "/";
