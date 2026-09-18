@@ -1364,6 +1364,7 @@ export default function ProjectDashboard({
                 </h2>
                 <EcommerceSection project={project} />
               </div>
+              <BrokenLinksSection project={project} />
               <AuditSection project={project} />
             </section>
           )}
@@ -3527,6 +3528,126 @@ function AuditChecklistRow({
         <p className="text-neutral-400 text-[14px] mt-0.5">{item.hint}</p>
       </div>
     </label>
+  );
+}
+
+function BrokenLinksSection({ project }: { project: ProjectDTO }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
+  const sync = useSyncStatus();
+
+  const hasResult = project.brokenLinksCheckedAt != null;
+  const broken: { url: string; path: string; status: number }[] = project.brokenLinksJson
+    ? JSON.parse(project.brokenLinksJson)
+    : [];
+
+  async function handleRun() {
+    setLoading(true);
+    setError(null);
+    startProgress();
+    sync.begin("broken-links", "Buscando enlaces rotos");
+    try {
+      const res = await fetch(`/api/projects/${project.id}/broken-links/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al revisar enlaces");
+      finishProgress();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al revisar enlaces");
+    } finally {
+      setTimeout(() => setLoading(false), 300);
+      sync.end("broken-links");
+    }
+  }
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-medium text-neutral-900">Enlaces rotos (404)</p>
+          <p className="text-neutral-500 text-xs mt-0.5">
+            Rastrea el sitemap de {project.domain} ahora mismo y revisa el codigo de
+            respuesta real de cada URL — Google Search Console no expone por API la
+            lista de 404 que ve, asi que esto verifica el sitio directamente.
+          </p>
+        </div>
+        <button
+          onClick={handleRun}
+          disabled={loading}
+          className="text-sm bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
+        >
+          {loading ? "Revisando..." : hasResult ? "Volver a revisar" : "Buscar enlaces rotos"}
+        </button>
+      </div>
+
+      {loading && (
+        <div className="mt-3">
+          <ProgressBar percent={progress} />
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+
+      {hasResult && !loading && (
+        <div className="mt-4">
+          <div className="flex items-center gap-3 flex-wrap mb-3">
+            <span
+              className={`text-sm font-semibold rounded-md px-2.5 py-1 ${
+                broken.length > 0 ? "bg-red-50 text-red-700" : "bg-[#E6F4EC] text-[#155D34]"
+              }`}
+            >
+              {broken.length} {broken.length === 1 ? "enlace roto" : "enlaces rotos"}
+            </span>
+            <span className="text-xs text-neutral-400">
+              {project.brokenLinksChecked ?? 0} URLs revisadas del sitemap
+              {project.brokenLinksCheckedAt &&
+                ` · ${new Date(project.brokenLinksCheckedAt).toLocaleString("es-MX", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}`}
+            </span>
+          </div>
+
+          {broken.length > 0 && (
+            <div className="flex flex-col gap-1 bg-white border border-neutral-200 rounded-lg p-1.5">
+              {broken.map((b) => (
+                <div
+                  key={b.url}
+                  className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
+                >
+                  <div className="min-w-0 flex items-center gap-2">
+                    <span className="text-[13px] font-semibold text-red-600 shrink-0">{b.status}</span>
+                    <a
+                      href={b.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-neutral-700 hover:text-[#228449] hover:underline truncate"
+                      title={b.url}
+                    >
+                      {b.path}
+                    </a>
+                  </div>
+                  <a
+                    href={`https://${project.domain}/admin/settings/redirects/new?path=${encodeURIComponent(b.path)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-md px-2.5 py-1 transition-colors whitespace-nowrap shrink-0"
+                  >
+                    Crear redireccion →
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
