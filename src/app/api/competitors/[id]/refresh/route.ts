@@ -73,7 +73,7 @@ export async function POST(
       competitor.domain,
       competitor.project.locationCode,
       competitor.project.languageCode,
-      20
+      100
     );
     data.rankedKeywordsJson = JSON.stringify(ranked);
   } catch (err) {

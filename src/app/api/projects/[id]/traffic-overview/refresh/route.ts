@@ -19,7 +19,7 @@ export async function POST(
   try {
     const [traffic, rankedKeywords] = await Promise.all([
       fetchDomainTrafficOverview(project.domain, project.locationCode, project.languageCode),
-      fetchRankedKeywords(project.domain, project.locationCode, project.languageCode, 20),
+      fetchRankedKeywords(project.domain, project.locationCode, project.languageCode, 100),
     ]);
 
     const updated = await prisma.project.update({

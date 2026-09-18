@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
@@ -162,6 +162,7 @@ const NAV_ITEMS = [
   { id: "changelog", label: "Actualizaciones Shopify" },
   { id: "contenidos", label: "Contenidos" },
   { id: "competencia", label: "Competencia" },
+  { id: "monitoreo", label: "Monitoreo" },
   { id: "apps", label: "Apps iOS/Android", comingSoon: true },
   { id: "marketplaces", label: "Marketplaces", comingSoon: true },
   { id: "notificaciones", label: "Notificaciones", comingSoon: true },
@@ -182,6 +183,7 @@ const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
   { id: null, label: "Planificacion", children: ["planificacion", "changelog"] },
   { id: null, label: "Estrategia", children: ["contenidos"] },
   { id: "competencia" },
+  { id: "monitoreo" },
   { id: "apps" },
   { id: "marketplaces" },
   { id: "notificaciones" },
@@ -228,6 +230,7 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
     </>
   ),
   velocidad: <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />,
+  monitoreo: <path d="M3 12h4l2-7 4 14 2-7h6" />,
   youtube: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="3" />
@@ -358,6 +361,171 @@ function ComingSoonSection({
       </span>
       <p className="text-sm font-medium text-neutral-900 mt-1">{title}</p>
       <p className="text-neutral-500 text-xs max-w-md">{description}</p>
+    </div>
+  );
+}
+
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  operational: { label: "Operativo", className: "bg-[#E6F4EC] text-[#155D34]" },
+  degraded_performance: { label: "Rendimiento degradado", className: "bg-amber-50 text-amber-700" },
+  partial_outage: { label: "Falla parcial", className: "bg-amber-50 text-amber-700" },
+  major_outage: { label: "Falla mayor", className: "bg-red-50 text-red-700" },
+  under_maintenance: { label: "En mantenimiento", className: "bg-neutral-100 text-neutral-500" },
+};
+
+const INDICATOR_LABELS: Record<string, { label: string; className: string }> = {
+  none: { label: "Todos los sistemas operativos", className: "bg-[#E6F4EC] text-[#155D34] border-[#155D34]/20" },
+  minor: { label: "Problema menor detectado", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  major: { label: "Problema mayor detectado", className: "bg-red-50 text-red-700 border-red-200" },
+  critical: { label: "Falla critica detectada", className: "bg-red-50 text-red-700 border-red-200" },
+};
+
+interface ShopifyStatusComponentRow {
+  name: string;
+  status: string;
+}
+interface ShopifyStatusIncidentRow {
+  id: string;
+  name: string;
+  status: string;
+  impact: string;
+  shortlink: string;
+  updatedAt: string;
+  latestUpdateBody: string | null;
+}
+
+// Monitoreo tab — real, live status of the Shopify platform itself (not
+// this specific store), from shopifystatus.com's public Statuspage API —
+// no key needed, no Shopify Admin access required.
+function ShopifyStatusSection() {
+  const [data, setData] = useState<{
+    indicator: string;
+    description: string;
+    components: ShopifyStatusComponentRow[];
+    incidents: ShopifyStatusIncidentRow[];
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/shopify-status");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Error al consultar el estado de Shopify");
+      setData(json);
+      setLastChecked(new Date());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al consultar el estado de Shopify");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const indicatorInfo = INDICATOR_LABELS[data?.indicator ?? "none"] ?? INDICATOR_LABELS.none;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-medium text-neutral-900">Estado de Shopify</p>
+            <p className="text-neutral-500 text-xs mt-0.5">
+              Estado en vivo de la plataforma de Shopify (no de tu tienda especifica) — util
+              para saber si un problema que ves es de Shopify en general antes de investigar
+              tu propia configuracion. Fuente:{" "}
+              <a
+                href="https://www.shopifystatus.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#228449] hover:underline"
+              >
+                shopifystatus.com
+              </a>
+              .
+            </p>
+          </div>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {loading ? "Consultando..." : "Actualizar"}
+          </button>
+        </div>
+
+        {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
+
+        {data && (
+          <>
+            <div className={`mt-4 flex items-center gap-2 border rounded-lg px-3 py-2.5 text-sm font-medium ${indicatorInfo.className}`}>
+              <span className="w-2 h-2 rounded-full bg-current shrink-0" />
+              {indicatorInfo.label}
+            </div>
+            {lastChecked && (
+              <p className="text-[13px] text-neutral-400 mt-1.5">
+                Consultado {lastChecked.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" })}
+              </p>
+            )}
+
+            {data.components.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+                {data.components.map((c) => {
+                  const info = STATUS_LABELS[c.status] ?? STATUS_LABELS.operational;
+                  return (
+                    <div
+                      key={c.name}
+                      className="flex items-center justify-between gap-2 bg-white border border-neutral-200 rounded-lg px-3 py-2"
+                    >
+                      <span className="text-xs text-neutral-700 truncate">{c.name}</span>
+                      <span className={`text-[11px] rounded-md px-1.5 py-0.5 whitespace-nowrap shrink-0 ${info.className}`}>
+                        {info.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {data && data.incidents.length > 0 && (
+        <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+          <p className="text-sm font-medium text-neutral-900 mb-2">Incidentes activos</p>
+          <div className="flex flex-col gap-2">
+            {data.incidents.map((inc) => (
+              <a
+                key={inc.id}
+                href={inc.shortlink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-amber-50 border border-amber-100 hover:border-amber-200 rounded-lg px-3 py-2.5 transition-colors"
+              >
+                <p className="text-sm font-medium text-amber-800">{inc.name}</p>
+                {inc.latestUpdateBody && (
+                  <p className="text-xs text-amber-700/80 mt-1 line-clamp-2">{inc.latestUpdateBody}</p>
+                )}
+                <p className="text-[11px] text-amber-600 mt-1">
+                  {new Date(inc.updatedAt).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                </p>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <ComingSoonSection
+        title="Reportes de usuarios (Down Detector)"
+        description="Vamos a sumar reportes de usuarios en tiempo real via DownDetector para complementar el estado oficial de Shopify. La API de DownDetector es de paga — en cuanto tengamos la clave la conectamos aqui mismo."
+      />
     </div>
   );
 }
@@ -1359,6 +1527,12 @@ export default function ProjectDashboard({
           {activeTab === "velocidad" && (
             <section>
               <PageSpeedSection project={project} />
+            </section>
+          )}
+
+          {activeTab === "monitoreo" && (
+            <section>
+              <ShopifyStatusSection />
             </section>
           )}
 
@@ -5372,7 +5546,13 @@ const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
     "lo que costaria comprar ese mismo trafico organico con anuncios de pago (Google Ads) en vez de aparecer gratis en los resultados. Entre mas alto, mas dinero en publicidad le esta ahorrando el SEO cada mes.",
 };
 
-function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
+function CompetitorComparisonOverview({
+  project,
+  detectButton,
+}: {
+  project: ProjectDTO;
+  detectButton?: React.ReactNode;
+}) {
   const router = useRouter();
   const [refreshingOwn, setRefreshingOwn] = useState(false);
   const sync = useSyncStatus();
@@ -5497,7 +5677,7 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
         }))
         .filter((t) => t.ownPosition == null || t.ownPosition > t.competitorPosition)
         .sort((a, b) => (b.searchVolume ?? 0) - (a.searchVolume ?? 0))
-        .slice(0, 6)
+        .slice(0, 15)
     : [];
 
   if (!ownHasData && competitorsWithData.length === 0) {
@@ -5511,13 +5691,16 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
               como en SEMrush/Ahrefs.
             </p>
           </div>
-          <button
-            onClick={handleRefreshOwn}
-            disabled={refreshingOwn}
-            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
-          >
-            {refreshingOwn ? "Analizando..." : "Analizar mi dominio"}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleRefreshOwn}
+              disabled={refreshingOwn}
+              className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+            >
+              {refreshingOwn ? "Analizando..." : "Analizar mi dominio"}
+            </button>
+            {detectButton}
+          </div>
         </div>
         <p className="text-xs text-neutral-400 mt-3">
           Analiza tu dominio arriba y agrega/analiza al menos un competidor
@@ -5541,13 +5724,16 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
             ambas metricas a la vez.
           </p>
         </div>
-        <button
-          onClick={handleRefreshOwn}
-          disabled={refreshingOwn}
-          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
-        >
-          {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleRefreshOwn}
+            disabled={refreshingOwn}
+            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
+          </button>
+          {detectButton}
+        </div>
       </div>
 
       <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[14px] text-neutral-500 leading-relaxed flex flex-col gap-1">
@@ -5825,6 +6011,81 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
           </table>
         </div>
 
+        <button
+          onClick={() => toggleIntersection(nextCompetitor.domain)}
+          className="text-[13px] text-[#228449] hover:underline underline-offset-2 mb-4 inline-block"
+        >
+          {expandedDomain === nextCompetitor.domain ? "Ocultar" : "Ver"} palabras clave en comun y su posicionamiento →
+        </button>
+
+        {expandedDomain === nextCompetitor.domain && (
+          <div className="mb-4">
+            {intersectionByDomain[nextCompetitor.domain] === "loading" && (
+              <p className="text-neutral-400 text-xs">Cargando keywords en comun...</p>
+            )}
+            {intersectionByDomain[nextCompetitor.domain] === "error" && (
+              <p className="text-red-600 text-xs">Error al cargar las keywords en comun.</p>
+            )}
+            {Array.isArray(intersectionByDomain[nextCompetitor.domain]) &&
+              (intersectionByDomain[nextCompetitor.domain] as IntersectionKeywordRow[]).length === 0 && (
+                <p className="text-neutral-400 text-xs">No encontramos keywords en comun.</p>
+              )}
+            {Array.isArray(intersectionByDomain[nextCompetitor.domain]) &&
+              (intersectionByDomain[nextCompetitor.domain] as IntersectionKeywordRow[]).length > 0 && (
+                <div className="max-h-64 overflow-y-auto border border-neutral-200 rounded-lg">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-neutral-50">
+                      <tr className="text-neutral-400 border-b border-neutral-200">
+                        <th className="text-left font-normal px-2 py-1.5">Keyword</th>
+                        <th className="text-right font-normal px-2 py-1.5">Volumen</th>
+                        <th className="text-right font-normal px-2 py-1.5">Tu posicion</th>
+                        <th className="text-right font-normal px-2 py-1.5">Posicion de {nextCompetitor.domain}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(intersectionByDomain[nextCompetitor.domain] as IntersectionKeywordRow[]).map((k) => (
+                        <tr key={k.keyword} className="border-t border-neutral-100">
+                          <td className="px-2 py-1.5 text-neutral-700">{k.keyword}</td>
+                          <td className="px-2 py-1.5 text-right text-neutral-500">
+                            {k.searchVolume != null ? k.searchVolume.toLocaleString("es-MX") : "—"}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            {k.ownUrl ? (
+                              <a
+                                href={k.ownUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#228449] font-medium hover:underline"
+                              >
+                                #{k.ownPosition}
+                              </a>
+                            ) : (
+                              <span className="text-neutral-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            {k.competitorUrl ? (
+                              <a
+                                href={k.competitorUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-neutral-700 font-medium hover:underline"
+                              >
+                                #{k.competitorPosition}
+                              </a>
+                            ) : (
+                              <span className="text-neutral-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+          </div>
+        )}
+
         <p className="text-[13px] font-medium text-neutral-700 mb-2">
           Tareas para ganarle keywords a {nextCompetitor.domain}
         </p>
@@ -5888,9 +6149,16 @@ interface IntersectionKeywordRow {
   competitorUrl: string | null;
 }
 
-function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
+const CompetitorDiscoverySection = forwardRef(function CompetitorDiscoverySection(
+  { projectId, onLoadingChange }: { projectId: string; onLoadingChange?: (loading: boolean) => void },
+  ref: React.Ref<{ detect: () => void }>
+) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoadingState] = useState(false);
+  function setLoading(v: boolean) {
+    setLoadingState(v);
+    onLoadingChange?.(v);
+  }
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<CompetitorSuggestionRow[] | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -5970,6 +6238,10 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
     router.refresh();
   }
 
+  useImperativeHandle(ref, () => ({ detect: handleDetect }));
+
+  if (suggestions === null && !loading && !error) return null;
+
   return (
     <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4 flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -5980,13 +6252,6 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
             clave que tu, para que elijas cuales agregar al rastreo.
           </p>
         </div>
-        <button
-          onClick={handleDetect}
-          disabled={loading}
-          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3.5 py-2 transition-colors whitespace-nowrap"
-        >
-          {loading ? "Buscando..." : suggestions ? "Buscar de nuevo" : "Detectar competidores"}
-        </button>
       </div>
 
       {error && <p className="text-xs text-red-600">{error}</p>}
@@ -6165,7 +6430,7 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
       )}
     </div>
   );
-}
+});
 
 interface GapPositionCell {
   position: number | null;
@@ -6377,6 +6642,8 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [domain, setDomain] = useState("");
   const [saving, setSaving] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const discoveryRef = useRef<{ detect: () => void }>(null);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -6396,9 +6663,20 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <CompetitorComparisonOverview project={project} />
+      <CompetitorComparisonOverview
+        project={project}
+        detectButton={
+          <button
+            onClick={() => discoveryRef.current?.detect()}
+            disabled={detecting}
+            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {detecting ? "Buscando..." : "Detectar competidores"}
+          </button>
+        }
+      />
 
-      <CompetitorDiscoverySection projectId={project.id} />
+      <CompetitorDiscoverySection ref={discoveryRef} projectId={project.id} onLoadingChange={setDetecting} />
 
       <form onSubmit={handleAdd} className="flex gap-2">
         <input
