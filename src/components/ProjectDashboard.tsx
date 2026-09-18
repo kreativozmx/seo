@@ -5494,9 +5494,11 @@ function exportBeatTasksPdf(tasks: BeatTask[], competitorDomain: string, checked
 function CompetitorComparisonOverview({
   project,
   detectButton,
+  addCompetitorForm,
 }: {
   project: ProjectDTO;
   detectButton?: React.ReactNode;
+  addCompetitorForm?: React.ReactNode;
 }) {
   const router = useRouter();
   const [refreshingOwn, setRefreshingOwn] = useState(false);
@@ -5703,6 +5705,7 @@ function CompetitorComparisonOverview({
               {refreshingOwn ? "Analizando..." : "Analizar mi dominio"}
             </button>
             {detectButton}
+            {addCompetitorForm}
           </div>
         </div>
         <p className="text-xs text-neutral-400 mt-3">
@@ -5728,18 +5731,6 @@ function CompetitorComparisonOverview({
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <select
-            value={comparison}
-            onChange={(e) => setComparison(e.target.value as ComparisonValue)}
-            title="Comparar la grafica contra una fecha anterior, como en Ahrefs"
-            className="bg-white border border-neutral-200 rounded-md px-2 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors"
-          >
-            {COMPARISON_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
           <button
             onClick={handleRefreshOwn}
             disabled={refreshingOwn}
@@ -5748,19 +5739,9 @@ function CompetitorComparisonOverview({
             {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
           </button>
           {detectButton}
+          {addCompetitorForm}
         </div>
       </div>
-
-      {loadingComparison && (
-        <p className="text-xs text-neutral-400 mb-2">Buscando datos de esa fecha...</p>
-      )}
-      {comparisonHasNoData && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-2">
-          Aun no tenemos datos guardados de esa fecha para ningun dominio visible. Empezamos a
-          guardar un historico cada vez que analizas/actualizas un dominio — vuelve a intentar
-          esta comparacion mas adelante.
-        </p>
-      )}
 
       <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[14px] text-neutral-500 leading-relaxed flex flex-col gap-1">
         <p>
@@ -5829,6 +5810,34 @@ function CompetitorComparisonOverview({
         />
       </div>
 
+      <div data-capture-ignore="true" className="flex items-center gap-1.5 flex-wrap mb-2">
+        {COMPARISON_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setComparison(opt.value)}
+            title="Comparar la grafica contra una fecha anterior, como en Ahrefs"
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors whitespace-nowrap ${
+              comparison === opt.value
+                ? "bg-[#228449] border-[#228449] text-white font-medium"
+                : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {loadingComparison && (
+        <p className="text-xs text-neutral-400 mb-2">Buscando datos de esa fecha...</p>
+      )}
+      {comparisonHasNoData && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-2">
+          Aun no tenemos datos guardados de esa fecha para ningun dominio visible. Empezamos a
+          guardar un historico cada vez que analizas/actualizas un dominio — vuelve a intentar
+          esta comparacion mas adelante.
+        </p>
+      )}
       {previousPoints && previousPoints.length > 0 && (
         <p className="text-xs text-neutral-400 mb-1">
           Circulo relleno = ahora. Circulo punteado = {previousLabel?.toLowerCase()}.
@@ -6740,25 +6749,26 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
             {detecting ? "Buscando..." : "Detectar competidores"}
           </button>
         }
+        addCompetitorForm={
+          <form onSubmit={handleAdd} className="flex gap-2">
+            <input
+              value={domain}
+              onChange={(e) => setDomain(normalizeDomain(e.target.value))}
+              placeholder="competidor.com"
+              className="w-40 bg-white border border-neutral-200 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={saving || !domain}
+              className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+            >
+              {saving ? "Agregando..." : "Agregar competidor"}
+            </button>
+          </form>
+        }
       />
 
       <CompetitorDiscoverySection ref={discoveryRef} projectId={project.id} onLoadingChange={setDetecting} />
-
-      <form onSubmit={handleAdd} className="flex gap-2">
-        <input
-          value={domain}
-          onChange={(e) => setDomain(normalizeDomain(e.target.value))}
-          placeholder="competidor.com o su tienda Shopify"
-          className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
-        />
-        <button
-          type="submit"
-          disabled={saving || !domain}
-          className="text-sm bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors"
-        >
-          {saving ? "Agregando..." : "Agregar"}
-        </button>
-      </form>
 
       <p className="text-[14px] text-neutral-400">
         El trafico es un estimado (como el de SEMrush/Ahrefs), no un dato
