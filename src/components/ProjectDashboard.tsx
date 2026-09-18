@@ -3,6 +3,7 @@
 import { Fragment, createContext, forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toPng } from "html-to-image";
 import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -5474,6 +5475,26 @@ function CompetitorComparisonOverview({
     Record<string, IntersectionKeywordRow[] | "loading" | "error">
   >({});
   const [checkedTasks, setCheckedTasks] = useState<Set<string>>(new Set());
+  const captureRef = useRef<HTMLDivElement>(null);
+  const [capturing, setCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+
+  async function handleCapture() {
+    if (!captureRef.current) return;
+    setCapturing(true);
+    setCaptureError(null);
+    try {
+      const dataUrl = await toPng(captureRef.current, { backgroundColor: "#ffffff", pixelRatio: 2 });
+      const link = document.createElement("a");
+      link.download = `competencia-organica-${normalizeDomain(project.domain)}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      setCaptureError("No se pudo generar la captura. Intenta de nuevo.");
+    } finally {
+      setCapturing(false);
+    }
+  }
 
   function toggleTaskChecked(keyword: string) {
     setCheckedTasks((prev) => {
@@ -5656,8 +5677,17 @@ function CompetitorComparisonOverview({
             {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
           </button>
           {detectButton}
+          <button
+            onClick={handleCapture}
+            disabled={capturing}
+            title="Descargar una captura PNG de la grafica y la tabla de competidores"
+            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {capturing ? "Generando..." : "Descargar captura"}
+          </button>
         </div>
       </div>
+      {captureError && <p className="text-xs text-red-600 mb-2">{captureError}</p>}
 
       <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 mb-3 text-[14px] text-neutral-500 leading-relaxed flex flex-col gap-1">
         <p>
@@ -5683,6 +5713,7 @@ function CompetitorComparisonOverview({
         </p>
       </div>
 
+      <div ref={captureRef} className="bg-white">
       <div className="flex flex-wrap gap-1.5 mb-2">
         {points.map((p) => {
           const active = visibleDomains.has(p.domain);
@@ -5854,6 +5885,7 @@ function CompetitorComparisonOverview({
               })}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
 
