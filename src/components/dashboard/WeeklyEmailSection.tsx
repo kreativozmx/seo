@@ -30,7 +30,8 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
-  const [emailInput, setEmailInput] = useState(project.weeklyEmailTo ?? "");
+  const [emailInput, setEmailInput] = useState("");
+  const [savedTo, setSavedTo] = useState(project.weeklyEmailTo);
   const [emailSaved, setEmailSaved] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
@@ -48,6 +49,7 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
   );
 
   async function handleSaveEmail() {
+    const trimmed = emailInput.trim();
     setSaving(true);
     setEmailError(null);
     setEmailSaved(false);
@@ -55,10 +57,12 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
       const res = await fetch(`/api/projects/${project.id}/weekly-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: emailInput }),
+        body: JSON.stringify({ to: trimmed }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Correo invalido");
+      setSavedTo(trimmed || null);
+      setEmailInput("");
       setEmailSaved(true);
       setTimeout(() => setEmailSaved(false), 2000);
       router.refresh();
@@ -67,6 +71,17 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleClearEmail() {
+    setSavedTo(null);
+    fetch(`/api/projects/${project.id}/weekly-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: "" }),
+    })
+      .then(() => router.refresh())
+      .catch(() => setSavedTo(savedTo));
   }
 
   function handleToggle() {
@@ -134,24 +149,36 @@ export function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
         <div className="mt-3 pl-7 flex flex-col gap-3">
           <div>
             <p className="text-xs font-medium text-neutral-700 mb-1">Enviar a</p>
+            {savedTo && (
+              <div className="flex items-center gap-1.5 bg-[#E6F4EC] text-[#155D34] text-xs font-medium rounded-full pl-3 pr-1.5 py-1 w-fit mb-2">
+                {savedTo}
+                <button
+                  onClick={handleClearEmail}
+                  aria-label="Quitar correo"
+                  className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-[#155D34]/10 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="email"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="tu@correo.com"
+                placeholder={savedTo ? "Cambiar a otro correo..." : "tu@correo.com"}
                 className="flex-1 min-w-[200px] bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors"
               />
               <button
                 onClick={handleSaveEmail}
-                disabled={saving}
+                disabled={saving || !emailInput.trim()}
                 className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
               >
                 {saving ? "Guardando..." : emailSaved ? "Guardado ✓" : "Guardar correo"}
               </button>
             </div>
             {emailError && <p className="text-xs text-red-600 mt-1">{emailError}</p>}
-            {!project.weeklyEmailTo && (
+            {!savedTo && (
               <p className="text-xs text-neutral-400 mt-1">
                 Sin un correo aqui, se usa el correo con el que inicias sesion.
               </p>
