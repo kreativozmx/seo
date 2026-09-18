@@ -2,52 +2,77 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Floating toggle for "presentation mode": 4x zoom + a laser-pointer
-// cursor, meant for screen-sharing on a call. Mounted once in the root
-// layout so it's available on every page and its state survives client
-// navigation.
+// "Presentation mode": a magnifying-glass lens that follows the cursor,
+// meant for pointing things out while screen-sharing on a call. Mounted
+// once in the root layout so it's available on every page and its state
+// survives client navigation.
 //
-// The toggle button and the laser dot are rendered OUTSIDE the zoomed
-// #presentation-content wrapper on purpose. Mouse events (clientX/clientY)
-// always report real, unzoomed viewport pixels, so a sibling fixed
-// element tracks the cursor correctly and stays a normal, clickable size
-// no matter the zoom level — a descendant of the zoomed wrapper would
-// both drift and balloon to 4x itself.
+// How the lens works: rather than zooming the whole page (which used to
+// distort layout and made fixed elements balloon to the zoom level too),
+// it clones #presentation-content into a hidden "mirror" copy, scales
+// that clone with a CSS transform, and clips it to a small circle
+// (border-radius: 50% + overflow: hidden) positioned at the cursor. The
+// clone is refreshed on an interval so it doesn't go stale as the
+// dashboard's own data loads, and repositioned/retranslated on every
+// mousemove so the point under the cursor always lines up with the
+// content shown inside the lens.
+//
+// The lens and toggle controls are rendered as siblings of
+// #presentation-content (not descendants), so mouse coordinates
+// (clientX/clientY, always real unzoomed viewport pixels) map directly
+// onto them without any correction.
+const ZOOM_LEVELS = [1, 2, 4] as const;
+type ZoomLevel = (typeof ZOOM_LEVELS)[number];
+const LENS_SIZE = 260;
+
 export function PresentationModeToggle() {
   const [active, setActive] = useState(false);
-  const dotRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState<ZoomLevel>(2);
+  const lensRef = useRef<HTMLDivElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const root = document.getElementById("presentation-content");
-    root?.classList.toggle("presentation-zoom", active);
     document.body.classList.toggle("presentation-cursor-none", active);
     if (!active) return;
 
-    function onMove(e: MouseEvent) {
-      const dot = dotRef.current;
-      if (!dot) return;
-      dot.style.transform = `translate(${e.clientX - 13}px, ${e.clientY - 13}px)`;
+    const source = document.getElementById("presentation-content");
+    const lens = lensRef.current;
+    const mirror = mirrorRef.current;
+    if (!source || !lens || !mirror) return;
+
+    function refreshMirror() {
+      if (!source || !mirror) return;
+      const rect = source.getBoundingClientRect();
+      mirror.style.width = `${rect.width}px`;
+      mirror.innerHTML = "";
+      const clone = source.cloneNode(true) as HTMLElement;
+      clone.removeAttribute("id");
+      mirror.appendChild(clone);
     }
-    function onClick(e: MouseEvent) {
-      const ripple = document.createElement("div");
-      ripple.className = "presentation-laser-ripple";
-      ripple.style.left = `${e.clientX}px`;
-      ripple.style.top = `${e.clientY}px`;
-      document.body.appendChild(ripple);
-      ripple.addEventListener("animationend", () => ripple.remove());
+    refreshMirror();
+    const refreshInterval = setInterval(refreshMirror, 800);
+
+    function onMove(e: MouseEvent) {
+      if (!source || !lens || !mirror) return;
+      const half = LENS_SIZE / 2;
+      lens.style.transform = `translate(${e.clientX - half}px, ${e.clientY - half}px)`;
+
+      const rect = source.getBoundingClientRect();
+      const xInSource = e.clientX - rect.left;
+      const yInSource = e.clientY - rect.top;
+      mirror.style.transform = `translate(${half - xInSource * zoom}px, ${half - yInSource * zoom}px) scale(${zoom})`;
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setActive(false);
     }
     window.addEventListener("mousemove", onMove);
-    window.addEventListener("mousedown", onClick);
     window.addEventListener("keydown", onKey);
     return () => {
+      clearInterval(refreshInterval);
       window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mousedown", onClick);
       window.removeEventListener("keydown", onKey);
     };
-  }, [active]);
+  }, [active, zoom]);
 
   useEffect(() => {
     function onShortcut(e: KeyboardEvent) {
@@ -62,22 +87,42 @@ export function PresentationModeToggle() {
 
   return (
     <>
-      <button
-        onClick={() => setActive((a) => !a)}
-        title={`${active ? "Salir del" : "Activar"} modo presentación (Ctrl+Shift+L) — zoom x4 y puntero laser para videollamadas`}
-        aria-pressed={active}
-        className={`fixed bottom-5 right-5 z-[10001] w-11 h-11 rounded-full shadow-lg border flex items-center justify-center transition-colors ${
-          active
-            ? "bg-red-600 border-red-600 text-white"
-            : "bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300"
-        }`}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="3" />
-          <circle cx="12" cy="12" r="9" strokeDasharray="2 3" />
-        </svg>
-      </button>
-      {active && <div ref={dotRef} className="presentation-laser-dot" />}
+      <div className="fixed bottom-5 right-5 z-[10001] flex items-center gap-2">
+        <div className="flex bg-white border border-neutral-200 rounded-full shadow-lg p-1 gap-0.5">
+          {ZOOM_LEVELS.map((z) => (
+            <button
+              key={z}
+              onClick={() => setZoom(z)}
+              title={`Lupa a ${z}x`}
+              className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
+                zoom === z ? "bg-red-600 text-white" : "text-neutral-500 hover:bg-neutral-100"
+              }`}
+            >
+              {z}x
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setActive((a) => !a)}
+          title={`${active ? "Salir del" : "Activar"} modo presentación (Ctrl+Shift+L) — lupa para videollamadas`}
+          aria-pressed={active}
+          className={`w-11 h-11 rounded-full shadow-lg border flex items-center justify-center transition-colors ${
+            active
+              ? "bg-red-600 border-red-600 text-white"
+              : "bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300"
+          }`}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+      </div>
+      {active && (
+        <div ref={lensRef} className="presentation-lens">
+          <div ref={mirrorRef} className="presentation-lens-mirror" />
+        </div>
+      )}
     </>
   );
 }

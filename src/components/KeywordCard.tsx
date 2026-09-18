@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import RankingChart, { ChartPeriod } from "@/components/RankingChart";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { ProgressBar } from "@/components/ProgressBar";
+import { ChartCaptureButton } from "@/components/dashboard/ChartCaptureButton";
 import { useSimulatedProgress } from "@/lib/useSimulatedProgress";
 import {
   AUTO_ENGINES,
@@ -363,6 +364,7 @@ export function KeywordDetailCard({
   const router = useRouter();
   const [checking, setChecking] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("30d");
+  const chartCaptureRef = useRef<HTMLDivElement>(null);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
   const [error, setError] = useState<string | null>(null);
   const [showManual, setShowManual] = useState(false);
@@ -474,7 +476,7 @@ export function KeywordDetailCard({
         })}
       </div>
 
-      <div className="flex items-center justify-end gap-1 mt-4">
+      <div className="flex items-center justify-end gap-1.5 mt-4">
         {PERIOD_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -488,10 +490,12 @@ export function KeywordDetailCard({
             {opt.label}
           </button>
         ))}
+        <ChartCaptureButton targetRef={chartCaptureRef} filename={`ranking-${keyword.text}`} />
       </div>
-      <RankingChart rankings={keyword.rankings} domains={domains} period={chartPeriod} />
-
-      <RankingHistoryTable rankings={keyword.rankings} domains={domains} ownDomain={ownDomain} />
+      <div ref={chartCaptureRef} className="bg-white">
+        <RankingChart rankings={keyword.rankings} domains={domains} period={chartPeriod} />
+        <RankingHistoryTable rankings={keyword.rankings} domains={domains} ownDomain={ownDomain} />
+      </div>
 
       {showManual && (
         <ManualEntryForm

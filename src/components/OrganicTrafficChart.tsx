@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { ChartCaptureButton } from "@/components/dashboard/ChartCaptureButton";
 
 interface HistoryPoint {
   date: string;
@@ -42,6 +43,7 @@ export default function OrganicTrafficChart({ projectId }: { projectId: string }
   const [points, setPoints] = useState<HistoryPoint[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +77,7 @@ export default function OrganicTrafficChart({ projectId }: { projectId: string }
   }));
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+    <div ref={captureRef} className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <p className="text-sm font-medium text-neutral-900">Trafico organico (Search Console)</p>
         <div className="flex items-center gap-3">
@@ -103,6 +105,7 @@ export default function OrganicTrafficChart({ projectId }: { projectId: string }
               </option>
             ))}
           </select>
+          <ChartCaptureButton targetRef={captureRef} filename={`trafico-organico-${metric}`} />
         </div>
       </div>
 
