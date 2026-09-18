@@ -198,6 +198,83 @@ export async function fetchCompetitorSuggestions(
     }));
 }
 
+export interface IntersectionKeyword {
+  keyword: string;
+  searchVolume: number | null;
+  ownPosition: number | null;
+  ownUrl: string | null;
+  competitorPosition: number | null;
+  competitorUrl: string | null;
+}
+
+// Keywords two domains BOTH rank for organically, with each domain's own
+// position/URL — DataForSEO's purpose-built endpoint for exactly this,
+// used to show real "keywords en comun" (and their positioning) instead of
+// just the intersection count competitors_domain gives.
+export async function fetchDomainIntersection(
+  ownDomain: string,
+  competitorDomain: string,
+  locationCode: string,
+  languageCode: string,
+  limit = 100
+): Promise<IntersectionKeyword[]> {
+  const res = await fetch(
+    `${BASE_URL}/dataforseo_labs/google/domain_intersection/live`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: authHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        {
+          target1: ownDomain,
+          target2: competitorDomain,
+          location_code: Number(locationCode),
+          language_code: languageCode,
+          limit,
+          order_by: ["first_domain_serp_element.rank_group,asc"],
+        },
+      ]),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`DataForSEO Labs request failed (${res.status}): ${text}`);
+  }
+
+  const json = await res.json();
+  const task = json?.tasks?.[0];
+  if (task?.status_code && task.status_code !== 20000) {
+    throw new Error(
+      `DataForSEO task error ${task.status_code}: ${task.status_message}`
+    );
+  }
+
+  interface SerpElement {
+    rank_group?: number;
+    rank_absolute?: number;
+    url?: string;
+  }
+  interface IntersectionItem {
+    keyword_data?: { keyword?: string; keyword_info?: { search_volume?: number } };
+    first_domain_serp_element?: SerpElement | null;
+    second_domain_serp_element?: SerpElement | null;
+  }
+  const items: IntersectionItem[] = task?.result?.[0]?.items ?? [];
+  return items
+    .filter((item) => item.keyword_data?.keyword)
+    .map((item) => ({
+      keyword: item.keyword_data!.keyword as string,
+      searchVolume: item.keyword_data?.keyword_info?.search_volume ?? null,
+      ownPosition: item.first_domain_serp_element?.rank_group ?? null,
+      ownUrl: item.first_domain_serp_element?.url ?? null,
+      competitorPosition: item.second_domain_serp_element?.rank_group ?? null,
+      competitorUrl: item.second_domain_serp_element?.url ?? null,
+    }));
+}
+
 export interface RankedKeyword {
   keyword: string;
   position: number | null;

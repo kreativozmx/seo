@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KeywordDetailCard, KeywordListItem } from "@/components/KeywordCard";
@@ -5630,6 +5630,15 @@ interface CompetitorSuggestionRow {
   organicTrafficEstimate: number | null;
 }
 
+interface IntersectionKeywordRow {
+  keyword: string;
+  searchVolume: number | null;
+  ownPosition: number | null;
+  ownUrl: string | null;
+  competitorPosition: number | null;
+  competitorUrl: string | null;
+}
+
 function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -5638,6 +5647,30 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
+  const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
+  const [intersectionByDomain, setIntersectionByDomain] = useState<
+    Record<string, IntersectionKeywordRow[] | "loading" | "error">
+  >({});
+
+  async function toggleIntersection(domain: string) {
+    if (expandedDomain === domain) {
+      setExpandedDomain(null);
+      return;
+    }
+    setExpandedDomain(domain);
+    if (intersectionByDomain[domain]) return;
+    setIntersectionByDomain((prev) => ({ ...prev, [domain]: "loading" }));
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/competitors/intersection?domain=${encodeURIComponent(domain)}`
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      setIntersectionByDomain((prev) => ({ ...prev, [domain]: data.keywords ?? [] }));
+    } catch {
+      setIntersectionByDomain((prev) => ({ ...prev, [domain]: "error" }));
+    }
+  }
 
   async function handleDetect() {
     setLoading(true);
@@ -5742,9 +5775,11 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {suggestions.map((s) => (
+                {suggestions.map((s) => {
+                  const intersection = intersectionByDomain[s.domain];
+                  return (
+                  <Fragment key={s.domain}>
                   <tr
-                    key={s.domain}
                     className="cursor-pointer hover:bg-neutral-50 transition-colors"
                     onClick={() => toggle(s.domain)}
                   >
@@ -5774,8 +5809,17 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                         </a>
                       </span>
                     </td>
-                    <td className="px-2 py-1.5 text-right text-neutral-600">
-                      {s.commonKeywords.toLocaleString("es-MX")}
+                    <td className="px-2 py-1.5 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleIntersection(s.domain);
+                        }}
+                        className="text-neutral-600 hover:text-[#228449] hover:underline underline-offset-2 transition-colors"
+                        title="Ver las keywords en comun y su posicionamiento"
+                      >
+                        {s.commonKeywords.toLocaleString("es-MX")}
+                      </button>
                     </td>
                     <td className="px-2 py-1.5 text-right text-neutral-500">
                       {s.organicKeywords != null ? s.organicKeywords.toLocaleString("es-MX") : "—"}
@@ -5786,7 +5830,76 @@ function CompetitorDiscoverySection({ projectId }: { projectId: string }) {
                         : "—"}
                     </td>
                   </tr>
-                ))}
+                  {expandedDomain === s.domain && (
+                    <tr>
+                      <td colSpan={5} className="bg-neutral-50 px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                        {intersection === "loading" && (
+                          <p className="text-neutral-400 text-xs">Cargando keywords en comun...</p>
+                        )}
+                        {intersection === "error" && (
+                          <p className="text-red-600 text-xs">Error al cargar las keywords en comun.</p>
+                        )}
+                        {Array.isArray(intersection) && intersection.length === 0 && (
+                          <p className="text-neutral-400 text-xs">No encontramos keywords en comun.</p>
+                        )}
+                        {Array.isArray(intersection) && intersection.length > 0 && (
+                          <div className="max-h-64 overflow-y-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-neutral-400 border-b border-neutral-200">
+                                  <th className="text-left font-normal px-2 py-1">Keyword</th>
+                                  <th className="text-right font-normal px-2 py-1">Volumen</th>
+                                  <th className="text-right font-normal px-2 py-1">Tu posicion</th>
+                                  <th className="text-right font-normal px-2 py-1">Posicion de {s.domain}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {intersection.map((k) => (
+                                  <tr key={k.keyword} className="border-t border-neutral-100">
+                                    <td className="px-2 py-1 text-neutral-700">{k.keyword}</td>
+                                    <td className="px-2 py-1 text-right text-neutral-500">
+                                      {k.searchVolume != null ? k.searchVolume.toLocaleString("es-MX") : "—"}
+                                    </td>
+                                    <td className="px-2 py-1 text-right">
+                                      {k.ownUrl ? (
+                                        <a
+                                          href={k.ownUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-[#228449] font-medium hover:underline"
+                                        >
+                                          #{k.ownPosition}
+                                        </a>
+                                      ) : (
+                                        <span className="text-neutral-400">—</span>
+                                      )}
+                                    </td>
+                                    <td className="px-2 py-1 text-right">
+                                      {k.competitorUrl ? (
+                                        <a
+                                          href={k.competitorUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-neutral-700 font-medium hover:underline"
+                                        >
+                                          #{k.competitorPosition}
+                                        </a>
+                                      ) : (
+                                        <span className="text-neutral-400">—</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

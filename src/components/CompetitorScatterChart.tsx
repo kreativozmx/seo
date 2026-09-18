@@ -144,13 +144,28 @@ export default function CompetitorScatterChart({
         />
         <Tooltip
           cursor={{ strokeDasharray: "3 3" }}
-          contentStyle={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12 }}
-          formatter={(value, name) => {
-            const n = Number(value);
-            if (name === xConfig.shortLabel) return [xConfig.format(n), name];
-            return [n.toLocaleString("es-MX"), name];
+          content={({ active, payload }) => {
+            if (!active || !payload || payload.length === 0) return null;
+            const point = payload[0]?.payload as CompetitorPoint | undefined;
+            if (!point) return null;
+            return (
+              <div style={{ background: "#ffffff", border: "1px solid #e5e5e5", fontSize: 12, padding: "8px 10px", borderRadius: 6 }}>
+                <p style={{ fontWeight: 600, marginBottom: 4 }}>
+                  {point.domain}
+                  {point.isOwn ? " (tu)" : ""}
+                </p>
+                {payload.map((entry) => {
+                  const n = Number(entry.value);
+                  const isX = entry.name === xConfig.shortLabel;
+                  return (
+                    <p key={entry.name} style={{ margin: 0 }}>
+                      {entry.name} : {isX ? xConfig.format(n) : n.toLocaleString("es-MX")}
+                    </p>
+                  );
+                })}
+              </div>
+            );
           }}
-          labelFormatter={() => ""}
         />
         {points.map((p) => {
           const color = colorFor(p.domain);
