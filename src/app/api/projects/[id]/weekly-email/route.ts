@@ -12,7 +12,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const data: { weeklyEmailEnabled?: boolean; weeklyEmailSectionsJson?: string } = {};
+  const data: { weeklyEmailEnabled?: boolean; weeklyEmailSectionsJson?: string; weeklyEmailTo?: string | null } = {};
 
   if (typeof body.enabled === "boolean") {
     data.weeklyEmailEnabled = body.enabled;
@@ -23,6 +23,16 @@ export async function POST(
     );
     data.weeklyEmailSectionsJson = JSON.stringify(sections);
   }
+  if (typeof body.to === "string") {
+    const trimmed = body.to.trim();
+    if (trimmed === "") {
+      data.weeklyEmailTo = null;
+    } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      data.weeklyEmailTo = trimmed;
+    } else {
+      return NextResponse.json({ error: "Correo invalido" }, { status: 400 });
+    }
+  }
 
   const updated = await prisma.project.update({
     where: { id: project.id },
@@ -32,5 +42,6 @@ export async function POST(
   return NextResponse.json({
     weeklyEmailEnabled: updated.weeklyEmailEnabled,
     weeklyEmailSectionsJson: updated.weeklyEmailSectionsJson,
+    weeklyEmailTo: updated.weeklyEmailTo,
   });
 }

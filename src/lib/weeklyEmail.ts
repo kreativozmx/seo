@@ -399,20 +399,15 @@ export async function sendWeeklyEmailForProject(project: ProjectWithKeywords, to
 }
 
 export async function sendWeeklyEmailTest(projectId: string, baseUrl: string) {
-  const to = process.env.AUTH_EMAIL;
-  if (!to) {
-    throw new Error("Falta AUTH_EMAIL en las variables de entorno.");
-  }
   const project = await loadProjectForEmail(projectId);
+  const to = project.weeklyEmailTo || process.env.AUTH_EMAIL;
+  if (!to) {
+    throw new Error("Agrega un correo destino (o configura AUTH_EMAIL en las variables de entorno).");
+  }
   await sendWeeklyEmailForProject(project, to, baseUrl);
 }
 
 export async function runWeeklyEmailSummaries(baseUrl: string) {
-  const to = process.env.AUTH_EMAIL;
-  if (!to) {
-    return { sent: 0, failed: 0, error: "Falta AUTH_EMAIL en las variables de entorno." };
-  }
-
   const projects = await prisma.project.findMany({
     where: { weeklyEmailEnabled: true },
     include: {
@@ -429,6 +424,8 @@ export async function runWeeklyEmailSummaries(baseUrl: string) {
 
   for (const project of projects) {
     try {
+      const to = project.weeklyEmailTo || process.env.AUTH_EMAIL;
+      if (!to) throw new Error("Sin correo destino (agrega uno en Notificaciones o configura AUTH_EMAIL).");
       await sendWeeklyEmailForProject(project, to, baseUrl);
       sent++;
     } catch (err) {

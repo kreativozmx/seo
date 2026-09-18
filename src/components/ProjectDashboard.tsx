@@ -4911,12 +4911,37 @@ function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [emailInput, setEmailInput] = useState(project.weeklyEmailTo ?? "");
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const selectedSections = new Set<WeeklyEmailSectionKey>(
     project.weeklyEmailSectionsJson
       ? (JSON.parse(project.weeklyEmailSectionsJson) as WeeklyEmailSectionKey[])
       : [...WEEKLY_EMAIL_SECTIONS]
   );
+
+  async function handleSaveEmail() {
+    setSaving(true);
+    setEmailError(null);
+    setEmailSaved(false);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/weekly-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Correo invalido");
+      setEmailSaved(true);
+      setTimeout(() => setEmailSaved(false), 2000);
+      router.refresh();
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : "Correo invalido");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleToggle() {
     setSaving(true);
@@ -4987,6 +5012,31 @@ function WeeklyEmailSection({ project }: { project: ProjectDTO }) {
 
       {project.weeklyEmailEnabled && (
         <div className="mt-3 pl-7 flex flex-col gap-3">
+          <div>
+            <p className="text-xs font-medium text-neutral-700 mb-1">Enviar a</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="tu@correo.com"
+                className="flex-1 min-w-[200px] bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#228449] transition-colors"
+              />
+              <button
+                onClick={handleSaveEmail}
+                disabled={saving}
+                className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+              >
+                {saving ? "Guardando..." : emailSaved ? "Guardado ✓" : "Guardar correo"}
+              </button>
+            </div>
+            {emailError && <p className="text-xs text-red-600 mt-1">{emailError}</p>}
+            {!project.weeklyEmailTo && (
+              <p className="text-xs text-neutral-400 mt-1">
+                Sin un correo aqui, se usa el correo con el que inicias sesion.
+              </p>
+            )}
+          </div>
           <div className="flex flex-col gap-1.5">
             {WEEKLY_EMAIL_SECTIONS.map((key) => (
               <label

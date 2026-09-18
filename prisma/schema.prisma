@@ -92,6 +92,7 @@ model Project {
   brokenLinksChecked    Int? // how many sitemap URLs were actually checked (may be less than the full sitemap if capped)
   brokenLinksCheckedAt  DateTime?
   weeklyEmailEnabled    Boolean   @default(false)
+  weeklyEmailTo         String? // recipient override — falls back to AUTH_EMAIL when null
   weeklyEmailLastSentAt DateTime?
   weeklyEmailSectionsJson String? // cached array of section keys to include — null means "all" (positions, traffic, keywords, pages)
   gaAiTrafficSessions28d  Int?
