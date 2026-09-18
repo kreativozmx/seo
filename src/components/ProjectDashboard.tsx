@@ -521,7 +521,14 @@ function BestWorstKeywordsCard({
           {top.map(({ keyword, ranking, change }) => (
             <div key={keyword.id} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg bg-white text-sm">
               <div className="min-w-0">
-                <p className="text-neutral-700 truncate">{keyword.text}</p>
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(keyword.text)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-neutral-700 hover:text-[#228449] hover:underline truncate block"
+                >
+                  {keyword.text}
+                </a>
                 {ranking.url && (
                   <a
                     href={ranking.url}
