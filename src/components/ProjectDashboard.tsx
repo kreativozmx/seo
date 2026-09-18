@@ -525,9 +525,14 @@ function BestWorstKeywordsCard({
                   href={`https://www.google.com/search?q=${encodeURIComponent(keyword.text)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-neutral-700 hover:text-[#228449] hover:underline truncate block"
+                  title="Buscar esta keyword en Google"
+                  className="inline-flex items-center gap-1 text-neutral-700 hover:text-[#228449] hover:underline truncate"
                 >
-                  {keyword.text}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-neutral-400">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                  <span className="truncate">{keyword.text}</span>
                 </a>
                 {ranking.url && (
                   <a

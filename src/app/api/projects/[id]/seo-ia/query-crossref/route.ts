@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { oauthClientWithRefreshToken } from "@/lib/googleAuth";
 import { fetchQueriesForPages } from "@/lib/providers/gsc";
 
+export const maxDuration = 60;
+
 // Cross-references the pages AI assistants send traffic to (from GA4, see
 // /api/projects/[id]/ga/refresh-stats) against real Google Search Console
 // queries for those same pages — the closest available proxy for "what are

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveChannel, fetchRecentVideos } from "@/lib/providers/youtube";
 
+export const maxDuration = 60;
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }

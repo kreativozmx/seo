@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateYoutubeSuggestions } from "@/lib/providers/openai";
 
+export const maxDuration = 60;
+
 interface StoredVideo {
   videoId: string;
   title: string;

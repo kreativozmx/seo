@@ -8,6 +8,8 @@ import {
   fetchGa4AiTraffic,
 } from "@/lib/providers/ga4";
 
+export const maxDuration = 60;
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }

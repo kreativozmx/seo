@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { auditShopifyStore } from "@/lib/providers/shopify";
 import { auditWooCommerceStore } from "@/lib/providers/woocommerce";
 
+export const maxDuration = 60;
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }

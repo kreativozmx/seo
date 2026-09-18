@@ -4,6 +4,8 @@ import { oauthClientWithRefreshToken } from "@/lib/googleAuth";
 import { fetchTopQueries } from "@/lib/providers/gsc";
 import { generateContentIdeas } from "@/lib/providers/openai";
 
+export const maxDuration = 60;
+
 // Estrategia > Contenidos: 12 blog title ideas based on real Search
 // Console queries from the last 7 days, aimed at helping the domain rank.
 export async function POST(

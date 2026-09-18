@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { oauthClientWithRefreshToken } from "@/lib/googleAuth";
 import { fetchGbpSummary } from "@/lib/providers/businessProfile";
 
+export const maxDuration = 60;
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { fetchShopifySales } from "@/lib/providers/shopifyAdmin";
 import { getValidShopifyAccessToken } from "@/lib/shopifyToken";
 
+export const maxDuration = 60;
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: { id: string } }

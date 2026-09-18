@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchDomainTrafficOverview, fetchRankedKeywords } from "@/lib/providers/dataforseoLabs";
 
+export const maxDuration = 60;
+
 // Same estimate source used for competitors, but for the project's own
 // domain — so the Competencia comparison chart/table can plot "you" next
 // to the competitors on equal footing.
