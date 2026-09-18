@@ -522,10 +522,50 @@ function ShopifyStatusSection() {
         </div>
       )}
 
-      <ComingSoonSection
-        title="Reportes de usuarios (Down Detector)"
-        description="Vamos a sumar reportes de usuarios en tiempo real via DownDetector para complementar el estado oficial de Shopify. La API de DownDetector es de paga — en cuanto tengamos la clave la conectamos aqui mismo."
-      />
+      <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
+        <p className="text-sm font-medium text-neutral-900">¿Tu tienda esta fallando ahora mismo?</p>
+        <p className="text-neutral-500 text-xs mt-0.5 mb-3">
+          Si el estado arriba dice &quot;Todos los sistemas operativos&quot; pero tu ves un problema,
+          probablemente no es una falla general de Shopify — sigue estos pasos antes de reportarlo.
+        </p>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <a
+            href="https://help.shopify.com/es/questions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs bg-[#228449] hover:bg-[#1B6B3A] text-white font-medium rounded-md px-3.5 py-2 transition-colors whitespace-nowrap"
+          >
+            Reportar a Shopify Support →
+          </a>
+          <a
+            href="https://www.shopifystatus.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 font-medium rounded-md px-3.5 py-2 transition-colors whitespace-nowrap"
+          >
+            Ver historial completo de estado →
+          </a>
+        </div>
+
+        <p className="text-[13px] font-medium text-neutral-700 mb-2">Antes de reportar, revisa:</p>
+        <ul className="flex flex-col gap-1.5 mb-4">
+          {[
+            "Prueba en modo incognito o en otro navegador/dispositivo — descarta que sea cache o una extension tuya.",
+            "Revisa si instalaste, actualizaste o desinstalaste una app o cambiaste de tema justo antes de que empezara el problema.",
+            "Abre la consola del navegador (F12) en la pagina con el error y busca mensajes en rojo — suelen apuntar directo a la causa.",
+            "Confirma si el problema es solo en tu tienda o tambien en otras tiendas Shopify que conozcas — si es solo la tuya, no es una falla de la plataforma.",
+            "Si el checkout esta afectado, avisa a tus clientes por redes sociales mientras se resuelve, para evitar quejas o pedidos duplicados.",
+          ].map((tip) => (
+            <li key={tip} className="flex items-start gap-2 text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-neutral-600">
+              <span className="text-neutral-400 shrink-0 mt-0.5">•</span>
+              {tip}
+            </li>
+          ))}
+        </ul>
+
+        <ExpertBanner />
+      </div>
     </div>
   );
 }
@@ -5546,6 +5586,104 @@ const X_METRIC_EXPLANATIONS: Record<XMetricKey, string> = {
     "lo que costaria comprar ese mismo trafico organico con anuncios de pago (Google Ads) en vez de aparecer gratis en los resultados. Entre mas alto, mas dinero en publicidad le esta ahorrando el SEO cada mes.",
 };
 
+interface BeatTask {
+  keyword: string;
+  searchVolume: number | null;
+  competitorPosition: number;
+  ownPosition: number | null;
+}
+
+function beatTaskLabel(t: BeatTask, competitorDomain: string): string {
+  const vol = t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : "";
+  if (t.ownPosition == null) {
+    return `Crea o mejora contenido para "${t.keyword}"${vol} — ${competitorDomain} esta en el puesto #${t.competitorPosition} y tu no apareces en el top 100.`;
+  }
+  return `Mejora tu posicion en "${t.keyword}"${vol} — estas en el puesto #${t.ownPosition}, ${competitorDomain} esta en el #${t.competitorPosition}.`;
+}
+
+function downloadBlob(filename: string, content: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function exportBeatTasksCsv(tasks: BeatTask[], competitorDomain: string, checked: Set<string>) {
+  const header = ["Hecho", "Keyword", "Volumen", "Tu posicion", `Posicion ${competitorDomain}`, "Tarea"];
+  const rows = tasks.map((t) => [
+    checked.has(t.keyword) ? "Si" : "No",
+    t.keyword,
+    t.searchVolume != null ? String(t.searchVolume) : "",
+    t.ownPosition != null ? String(t.ownPosition) : "",
+    String(t.competitorPosition),
+    beatTaskLabel(t, competitorDomain),
+  ]);
+  const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n");
+  downloadBlob(`tareas-vs-${competitorDomain}.csv`, `﻿${csv}`, "text/csv;charset=utf-8");
+}
+
+// A plain HTML <table> saved with an Excel mime type/extension — Excel
+// opens this natively, no spreadsheet library (and its dependency-security
+// baggage) needed just to produce a table of text and numbers.
+function exportBeatTasksExcel(tasks: BeatTask[], competitorDomain: string, checked: Set<string>) {
+  const rows = tasks
+    .map(
+      (t) => `<tr>
+        <td>${checked.has(t.keyword) ? "Si" : "No"}</td>
+        <td>${t.keyword}</td>
+        <td>${t.searchVolume ?? ""}</td>
+        <td>${t.ownPosition ?? ""}</td>
+        <td>${t.competitorPosition}</td>
+        <td>${beatTaskLabel(t, competitorDomain).replace(/"/g, "&quot;")}</td>
+      </tr>`
+    )
+    .join("");
+  const html = `<html><head><meta charset="utf-8"></head><body>
+    <table border="1">
+      <tr><th>Hecho</th><th>Keyword</th><th>Volumen</th><th>Tu posicion</th><th>Posicion ${competitorDomain}</th><th>Tarea</th></tr>
+      ${rows}
+    </table>
+  </body></html>`;
+  downloadBlob(`tareas-vs-${competitorDomain}.xls`, html, "application/vnd.ms-excel;charset=utf-8");
+}
+
+// No PDF library either — opens a plain print-styled window and lets the
+// browser's own "Guardar como PDF" print destination handle it.
+function exportBeatTasksPdf(tasks: BeatTask[], competitorDomain: string, checked: Set<string>) {
+  const rows = tasks
+    .map(
+      (t) => `<li style="margin-bottom:8px;">
+        <strong>${checked.has(t.keyword) ? "[x]" : "[ ]"}</strong>
+        ${beatTaskLabel(t, competitorDomain).replace(/</g, "&lt;")}
+      </li>`
+    )
+    .join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Tareas vs ${competitorDomain}</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
+      h1 { font-size: 16px; }
+      ol { padding-left: 20px; }
+    </style>
+    </head><body>
+      <h1>Tareas para ganarle keywords a ${competitorDomain}</h1>
+      <ol>${rows}</ol>
+      <script>window.onload = () => window.print();</script>
+    </body></html>`;
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+}
+
 function CompetitorComparisonOverview({
   project,
   detectButton,
@@ -5560,6 +5698,16 @@ function CompetitorComparisonOverview({
   const [intersectionByDomain, setIntersectionByDomain] = useState<
     Record<string, IntersectionKeywordRow[] | "loading" | "error">
   >({});
+  const [checkedTasks, setCheckedTasks] = useState<Set<string>>(new Set());
+
+  function toggleTaskChecked(keyword: string) {
+    setCheckedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(keyword)) next.delete(keyword);
+      else next.add(keyword);
+      return next;
+    });
+  }
 
   async function toggleIntersection(domain: string) {
     if (expandedDomain === domain) {
@@ -5613,7 +5761,7 @@ function CompetitorComparisonOverview({
     }
   }
 
-  const [xMetric, setXMetric] = useState<XMetricKey>("trafficValue");
+  const xMetric: XMetricKey = "trafficValue";
 
   const points: CompetitorPoint[] = [];
   if (ownHasData) {
@@ -5695,7 +5843,7 @@ function CompetitorComparisonOverview({
             <button
               onClick={handleRefreshOwn}
               disabled={refreshingOwn}
-              className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+              className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
             >
               {refreshingOwn ? "Analizando..." : "Analizar mi dominio"}
             </button>
@@ -5728,7 +5876,7 @@ function CompetitorComparisonOverview({
           <button
             onClick={handleRefreshOwn}
             disabled={refreshingOwn}
-            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+            className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
           >
             {refreshingOwn ? "Analizando..." : ownHasData ? "Actualizar mi dominio" : "Analizar mi dominio"}
           </button>
@@ -5758,23 +5906,6 @@ function CompetitorComparisonOverview({
           <strong className="text-neutral-700">abajo</strong>, hay
           oportunidad de mejorar para acercarte a lo que logran ellos.
         </p>
-      </div>
-
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-[14px] text-neutral-400">Eje horizontal:</span>
-        <div className="flex bg-white border border-neutral-200 rounded-md p-0.5 text-[14px] flex-wrap">
-          {(Object.keys(X_METRICS) as XMetricKey[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => setXMetric(key)}
-              className={`px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
-                xMetric === key ? "bg-[#228449] text-white font-medium" : "text-neutral-500 hover:bg-neutral-100"
-              }`}
-            >
-              {X_METRICS[key].shortLabel}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -6086,9 +6217,36 @@ function CompetitorComparisonOverview({
           </div>
         )}
 
-        <p className="text-[13px] font-medium text-neutral-700 mb-2">
-          Tareas para ganarle keywords a {nextCompetitor.domain}
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <p className="text-[13px] font-medium text-neutral-700">
+            Tareas para ganarle keywords a {nextCompetitor.domain}
+            {beatTasks.length > 0 && (
+              <span className="text-neutral-400 font-normal"> ({checkedTasks.size}/{beatTasks.length} hechas)</span>
+            )}
+          </p>
+          {beatTasks.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => exportBeatTasksCsv(beatTasks, nextCompetitor.domain, checkedTasks)}
+                className="text-[11px] bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 rounded-md px-2 py-1 transition-colors"
+              >
+                Exportar CSV
+              </button>
+              <button
+                onClick={() => exportBeatTasksExcel(beatTasks, nextCompetitor.domain, checkedTasks)}
+                className="text-[11px] bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 rounded-md px-2 py-1 transition-colors"
+              >
+                Exportar Excel
+              </button>
+              <button
+                onClick={() => exportBeatTasksPdf(beatTasks, nextCompetitor.domain, checkedTasks)}
+                className="text-[11px] bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 rounded-md px-2 py-1 transition-colors"
+              >
+                Exportar PDF
+              </button>
+            </div>
+          )}
+        </div>
         {!nextCompetitor.rankedKeywordsJson ? (
           <p className="text-xs text-neutral-400">
             Todavia no tenemos las keywords posicionadas de {nextCompetitor.domain} — ve a su
@@ -6101,30 +6259,41 @@ function CompetitorComparisonOverview({
           </p>
         ) : (
           <ul className="flex flex-col gap-1.5">
-            {beatTasks.map((t) => (
-              <li
-                key={t.keyword}
-                className="flex items-start gap-2 text-xs bg-white border border-neutral-200 rounded-lg px-3 py-2"
-              >
-                <span className="text-amber-500 shrink-0 mt-0.5">☐</span>
-                <span className="text-neutral-700">
-                  {t.ownPosition == null ? (
-                    <>
-                      Crea o mejora contenido para <strong>&quot;{t.keyword}&quot;</strong>
-                      {t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : ""} — {nextCompetitor.domain} esta en el puesto{" "}
-                      <strong>#{t.competitorPosition}</strong> y tu no apareces en el top 100.
-                    </>
-                  ) : (
-                    <>
-                      Mejora tu posicion en <strong>&quot;{t.keyword}&quot;</strong>
-                      {t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : ""} — estas en el puesto{" "}
-                      <strong>#{t.ownPosition}</strong>, {nextCompetitor.domain} esta en el{" "}
-                      <strong>#{t.competitorPosition}</strong>.
-                    </>
-                  )}
-                </span>
-              </li>
-            ))}
+            {beatTasks.map((t) => {
+              const done = checkedTasks.has(t.keyword);
+              return (
+                <li key={t.keyword}>
+                  <label
+                    className={`flex items-start gap-2 text-xs border rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                      done ? "bg-neutral-50 border-neutral-200" : "bg-white border-neutral-200 hover:border-neutral-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={done}
+                      onChange={() => toggleTaskChecked(t.keyword)}
+                      className="mt-0.5 w-3.5 h-3.5 accent-[#228449] cursor-pointer shrink-0"
+                    />
+                    <span className={done ? "text-neutral-400 line-through decoration-neutral-300" : "text-neutral-700"}>
+                      {t.ownPosition == null ? (
+                        <>
+                          Crea o mejora contenido para <strong>&quot;{t.keyword}&quot;</strong>
+                          {t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : ""} — {nextCompetitor.domain} esta en el puesto{" "}
+                          <strong>#{t.competitorPosition}</strong> y tu no apareces en el top 100.
+                        </>
+                      ) : (
+                        <>
+                          Mejora tu posicion en <strong>&quot;{t.keyword}&quot;</strong>
+                          {t.searchVolume ? ` (${t.searchVolume.toLocaleString("es-MX")} busquedas/mes)` : ""} — estas en el puesto{" "}
+                          <strong>#{t.ownPosition}</strong>, {nextCompetitor.domain} esta en el{" "}
+                          <strong>#{t.competitorPosition}</strong>.
+                        </>
+                      )}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -6669,7 +6838,7 @@ function CompetitorsSection({ project }: { project: ProjectDTO }) {
           <button
             onClick={() => discoveryRef.current?.detect()}
             disabled={detecting}
-            className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+            className="text-xs bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
           >
             {detecting ? "Buscando..." : "Detectar competidores"}
           </button>
