@@ -8,6 +8,7 @@ import { ConfirmButton } from "@/components/ConfirmButton";
 import { ProgressBar } from "@/components/ProgressBar";
 import OrdersChart from "@/components/OrdersChart";
 import SalesBreakdownChart from "@/components/SalesBreakdownChart";
+import SharePieChart from "@/components/SharePieChart";
 import OrganicTrafficChart from "@/components/OrganicTrafficChart";
 import CompetitorScatterChart, {
   CompetitorPoint,
@@ -4376,11 +4377,13 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           {deviceTotal > 0 && (
             <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
               <p className="text-sm font-medium text-neutral-900 mb-2">Dispositivos</p>
-              <div className="flex h-3 rounded-md overflow-hidden">
-                <div className="bg-[#228449]" style={{ width: `${(device.mobile / deviceTotal) * 100}%` }} />
-                <div className="bg-emerald-500" style={{ width: `${(device.desktop / deviceTotal) * 100}%` }} />
-                <div className="bg-amber-500" style={{ width: `${(device.tablet / deviceTotal) * 100}%` }} />
-              </div>
+              <SharePieChart
+                data={[
+                  { label: "Movil", value: device.mobile, color: "#228449" },
+                  { label: "Escritorio", value: device.desktop, color: "#10b981" },
+                  { label: "Tablet", value: device.tablet, color: "#f59e0b" },
+                ]}
+              />
               <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
                 <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Movil {Math.round((device.mobile / deviceTotal) * 100)}%</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Escritorio {Math.round((device.desktop / deviceTotal) * 100)}%</span>
@@ -4392,13 +4395,15 @@ function AnalyticsSection({ project }: { project: ProjectDTO }) {
           {channelsTotal > 0 && (
             <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
               <p className="text-sm font-medium text-neutral-900 mb-2">Canales de trafico</p>
-              <div className="flex h-3 rounded-md overflow-hidden">
-                <div className="bg-emerald-500" style={{ width: `${(channels.organic / channelsTotal) * 100}%` }} />
-                <div className="bg-[#228449]" style={{ width: `${(channels.paid / channelsTotal) * 100}%` }} />
-                <div className="bg-neutral-400" style={{ width: `${(channels.direct / channelsTotal) * 100}%` }} />
-                <div className="bg-amber-500" style={{ width: `${(channels.referral / channelsTotal) * 100}%` }} />
-                <div className="bg-purple-500" style={{ width: `${(channels.ai / channelsTotal) * 100}%` }} />
-              </div>
+              <SharePieChart
+                data={[
+                  { label: "Organico", value: channels.organic, color: "#10b981" },
+                  { label: "Pago", value: channels.paid, color: "#228449" },
+                  { label: "Directo", value: channels.direct, color: "#a3a3a3" },
+                  { label: "Referencia", value: channels.referral, color: "#f59e0b" },
+                  { label: "IA", value: channels.ai, color: "#a855f7" },
+                ]}
+              />
               <div className="flex flex-wrap gap-4 mt-2 text-xs text-neutral-500">
                 <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />Organico {channels.organic.toLocaleString("es-MX")}</span>
                 <span><span className="inline-block w-2 h-2 rounded-full bg-[#228449] mr-1.5" />Pago {channels.paid.toLocaleString("es-MX")}</span>
