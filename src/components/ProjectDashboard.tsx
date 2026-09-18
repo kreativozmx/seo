@@ -5376,6 +5376,30 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
   const router = useRouter();
   const [refreshingOwn, setRefreshingOwn] = useState(false);
   const sync = useSyncStatus();
+  const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
+  const [intersectionByDomain, setIntersectionByDomain] = useState<
+    Record<string, IntersectionKeywordRow[] | "loading" | "error">
+  >({});
+
+  async function toggleIntersection(domain: string) {
+    if (expandedDomain === domain) {
+      setExpandedDomain(null);
+      return;
+    }
+    setExpandedDomain(domain);
+    if (intersectionByDomain[domain]) return;
+    setIntersectionByDomain((prev) => ({ ...prev, [domain]: "loading" }));
+    try {
+      const res = await fetch(
+        `/api/projects/${project.id}/competitors/intersection?domain=${encodeURIComponent(domain)}`
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      setIntersectionByDomain((prev) => ({ ...prev, [domain]: data.keywords ?? [] }));
+    } catch {
+      setIntersectionByDomain((prev) => ({ ...prev, [domain]: "error" }));
+    }
+  }
 
   const competitorsWithData = project.competitors.filter(
     (c) => c.organicTrafficEstimate != null || c.trafficValueEstimate != null
@@ -5591,8 +5615,11 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
             {points
               .slice()
               .sort((a, b) => b.organicTraffic - a.organicTraffic)
-              .map((p) => (
-                <tr key={p.domain} className="hover:bg-neutral-50 transition-colors">
+              .map((p) => {
+                const intersection = intersectionByDomain[p.domain];
+                return (
+                <Fragment key={p.domain}>
+                <tr className="hover:bg-neutral-50 transition-colors">
                   <td className="px-2 py-1.5">
                     <span className="inline-flex items-center gap-1.5">
                       <span
@@ -5606,7 +5633,17 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-right text-neutral-600">
-                    {p.organicKeywords.toLocaleString("es-MX")}
+                    {p.isOwn ? (
+                      p.organicKeywords.toLocaleString("es-MX")
+                    ) : (
+                      <button
+                        onClick={() => toggleIntersection(p.domain)}
+                        className="text-neutral-600 hover:text-[#228449] hover:underline underline-offset-2 transition-colors"
+                        title="Ver las keywords en comun y su posicionamiento"
+                      >
+                        {p.organicKeywords.toLocaleString("es-MX")}
+                      </button>
+                    )}
                   </td>
                   <td className="px-2 py-1.5 text-right text-neutral-600">
                     {p.organicTraffic.toLocaleString("es-MX")}/mes
@@ -5615,7 +5652,76 @@ function CompetitorComparisonOverview({ project }: { project: ProjectDTO }) {
                     ${p.trafficValue.toLocaleString("es-MX")}/mes
                   </td>
                 </tr>
-              ))}
+                {expandedDomain === p.domain && !p.isOwn && (
+                  <tr>
+                    <td colSpan={4} className="bg-neutral-50 px-3 py-3">
+                      {intersection === "loading" && (
+                        <p className="text-neutral-400 text-xs">Cargando keywords en comun...</p>
+                      )}
+                      {intersection === "error" && (
+                        <p className="text-red-600 text-xs">Error al cargar las keywords en comun.</p>
+                      )}
+                      {Array.isArray(intersection) && intersection.length === 0 && (
+                        <p className="text-neutral-400 text-xs">No encontramos keywords en comun.</p>
+                      )}
+                      {Array.isArray(intersection) && intersection.length > 0 && (
+                        <div className="max-h-64 overflow-y-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-neutral-400 border-b border-neutral-200">
+                                <th className="text-left font-normal px-2 py-1">Keyword</th>
+                                <th className="text-right font-normal px-2 py-1">Volumen</th>
+                                <th className="text-right font-normal px-2 py-1">Tu posicion</th>
+                                <th className="text-right font-normal px-2 py-1">Posicion de {p.domain}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {intersection.map((k) => (
+                                <tr key={k.keyword} className="border-t border-neutral-100">
+                                  <td className="px-2 py-1 text-neutral-700">{k.keyword}</td>
+                                  <td className="px-2 py-1 text-right text-neutral-500">
+                                    {k.searchVolume != null ? k.searchVolume.toLocaleString("es-MX") : "—"}
+                                  </td>
+                                  <td className="px-2 py-1 text-right">
+                                    {k.ownUrl ? (
+                                      <a
+                                        href={k.ownUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#228449] font-medium hover:underline"
+                                      >
+                                        #{k.ownPosition}
+                                      </a>
+                                    ) : (
+                                      <span className="text-neutral-400">—</span>
+                                    )}
+                                  </td>
+                                  <td className="px-2 py-1 text-right">
+                                    {k.competitorUrl ? (
+                                      <a
+                                        href={k.competitorUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-neutral-700 font-medium hover:underline"
+                                      >
+                                        #{k.competitorPosition}
+                                      </a>
+                                    ) : (
+                                      <span className="text-neutral-400">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+              })}
           </tbody>
         </table>
       </div>
