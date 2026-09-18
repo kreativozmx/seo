@@ -165,9 +165,10 @@ export function KeywordListItem({
       .sort((a, b) => a.position - b.position);
   }
 
-  // Top 5 best-positioned results that outrank you, in order (#1 first).
+  // Every result that outranks you (from the real SERP snapshot when we
+  // have one, otherwise just the competitors you're tracking), in order
+  // (#1 first) — not capped, so you see the whole picture, not just a top 5.
   const betterCount = better.length;
-  better = better.slice(0, 5);
 
   return (
     <>
@@ -291,7 +292,7 @@ export function KeywordListItem({
               </div>
               <div>
                 <p className="text-[13px] text-neutral-400 uppercase tracking-wide">
-                  Top 5 mejor posicionados que tu{betterCount > 0 ? ` (de ${betterCount})` : ""}
+                  Mejor posicionados que tu{betterCount > 0 ? ` (${betterCount})` : ""}
                 </p>
                 {!usingSnapshot && !snapshotEntry && (
                   <p className="text-[13px] text-neutral-400 mt-0.5">
