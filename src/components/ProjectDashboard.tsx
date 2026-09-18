@@ -3630,13 +3630,7 @@ function EcommerceSection({ project }: { project: ProjectDTO }) {
   const sync = useSyncStatus();
 
   const hasResult = project.ecommerceCheckedAt != null;
-  const topSellingResult: {
-    source: "merchant" | "algorithm" | "none";
-    collectionTitle: string | null;
-    items: { title: string; handle: string }[];
-  } = project.ecommerceTopSellingJson
-    ? JSON.parse(project.ecommerceTopSellingJson)
-    : { source: "none", collectionTitle: null, items: [] };
+  const topSellingResult = parseTopSelling(project.ecommerceTopSellingJson);
   const topSelling = topSellingResult.items;
 
   async function handleRun() {
@@ -4672,6 +4666,28 @@ function formatMoney(n: number) {
   return `$${n.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`;
 }
 
+interface TopSellingResult {
+  source: "merchant" | "algorithm" | "none";
+  collectionTitle: string | null;
+  items: { title: string; handle: string }[];
+}
+
+// ecommerceTopSellingJson used to store a plain array before the
+// merchant-collection-vs-algorithm distinction was added — normalize both
+// shapes so projects that haven't re-run "Analizar tienda" yet don't crash.
+function parseTopSelling(json: string | null): TopSellingResult {
+  if (!json) return { source: "none", collectionTitle: null, items: [] };
+  const parsed = JSON.parse(json);
+  if (Array.isArray(parsed)) {
+    return { source: "algorithm", collectionTitle: null, items: parsed };
+  }
+  return {
+    source: parsed?.source ?? "none",
+    collectionTitle: parsed?.collectionTitle ?? null,
+    items: parsed?.items ?? [],
+  };
+}
+
 function CompetitorShopifyDetails({
   competitor,
 }: {
@@ -4686,13 +4702,7 @@ function CompetitorShopifyDetails({
   const tags: { name: string; count: number }[] = competitor.ecommerceTopTagsJson
     ? JSON.parse(competitor.ecommerceTopTagsJson)
     : [];
-  const topSellingResult: {
-    source: "merchant" | "algorithm" | "none";
-    collectionTitle: string | null;
-    items: { title: string; handle: string }[];
-  } = competitor.ecommerceTopSellingJson
-    ? JSON.parse(competitor.ecommerceTopSellingJson)
-    : { source: "none", collectionTitle: null, items: [] };
+  const topSellingResult = parseTopSelling(competitor.ecommerceTopSellingJson);
   const topSelling = topSellingResult.items;
 
   const hasAnything =
