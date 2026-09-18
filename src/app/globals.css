@@ -40,3 +40,51 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Presentation mode (screen-share on a call): magnifies the page content
+   and replaces the cursor with a laser-pointer dot. `zoom` (not
+   `transform: scale`) is used deliberately — it re-flows layout at the
+   new scale instead of just stretching pixels, so text stays sharp and
+   scrolling still works normally. Supported by Chromium-based browsers,
+   which covers the vast majority of screen-share setups (Chrome, Edge,
+   and the Zoom/Meet/Teams desktop apps, all Chromium-based). */
+#presentation-content.presentation-zoom {
+  zoom: 4;
+}
+
+body.presentation-cursor-none,
+body.presentation-cursor-none * {
+  cursor: none !important;
+}
+
+.presentation-laser-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,45,45,0.95) 0%, rgba(255,45,45,0.55) 45%, rgba(255,45,45,0) 75%);
+  box-shadow: 0 0 14px 4px rgba(255,0,0,0.5);
+  pointer-events: none;
+  z-index: 10000;
+  will-change: transform;
+}
+
+.presentation-laser-ripple {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 9999px;
+  background: rgba(255,20,20,0.55);
+  pointer-events: none;
+  z-index: 9999;
+  animation: presentation-ripple 0.6s ease-out forwards;
+}
+
+@keyframes presentation-ripple {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(7); opacity: 0; }
+}

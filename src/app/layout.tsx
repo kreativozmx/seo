@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Footer from "@/components/Footer";
+import { PresentationModeToggle } from "@/components/PresentationMode";
 import "./globals.css";
 
 // Linear/Vercel-style geometric sans. Loaded via next/font/google so it's
@@ -27,8 +28,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased bg-surface text-on-surface min-h-screen flex flex-col`}
       >
-        <div className="flex-1">{children}</div>
+        <div id="presentation-content" className="flex-1">{children}</div>
         <Footer />
+        <PresentationModeToggle />
       </body>
     </html>
   );
