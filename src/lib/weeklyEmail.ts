@@ -105,6 +105,8 @@ interface EmailData {
   projectName: string;
   domain: string;
   projectUrl: string;
+  homeUrl: string;
+  logoUrl: string;
   dateRangeLabel: string;
   sections: WeeklyEmailSection[];
   stats: { avgPosition: number | null; top3: number; top10: number };
@@ -240,8 +242,11 @@ function buildEmailHtml(d: EmailData): string {
         <td align="center">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
             <tr>
-              <td style="background:#14171C;padding:16px 24px;">
-                <span style="color:#ffffff;font-size:15px;font-weight:600;">Shopify Audit</span>
+              <td style="background:#14171C;padding:14px 24px;">
+                <a href="${d.homeUrl}" style="text-decoration:none;display:inline-flex;align-items:center;">
+                  <img src="${d.logoUrl}" width="28" height="28" alt="" style="vertical-align:middle;border-radius:6px;display:inline-block;" />
+                  <span style="color:#ffffff;font-size:15px;font-weight:600;vertical-align:middle;margin-left:8px;">Shopify Audit</span>
+                </a>
               </td>
             </tr>
             <tr>
@@ -259,7 +264,7 @@ function buildEmailHtml(d: EmailData): string {
               </td>
             </tr>
           </table>
-          <p style="font-size:11px;color:#9ca3af;margin-top:16px;">Recibes esto porque activaste el resumen semanal para este proyecto en Shopify Audit. Elige que secciones recibir (o desactivalo) en la pestaña Notificaciones.</p>
+          <p style="font-size:11px;color:#9ca3af;margin-top:16px;">Recibes esto porque activaste el resumen semanal para este proyecto en <a href="${d.homeUrl}" style="color:#9ca3af;">Shopify Audit</a>. Elige que secciones recibir (o desactivalo) en la pestaña Notificaciones.</p>
         </td>
       </tr>
     </table>
@@ -376,6 +381,8 @@ export async function sendWeeklyEmailForProject(project: ProjectWithKeywords, to
     projectName: project.name,
     domain: project.domain,
     projectUrl: `${baseUrl}/projects/${project.id}`,
+    homeUrl: baseUrl,
+    logoUrl: `${baseUrl}/logo.png`,
     dateRangeLabel: dateRangeLabel || "ultimos 7 dias",
     sections,
     stats,
