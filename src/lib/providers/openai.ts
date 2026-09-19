@@ -250,6 +250,7 @@ El array "ideas" debe tener exactamente 12 elementos.`;
 
 export interface YoutubeTitleIdea {
   title: string;
+  topic: string;
   why: string;
 }
 
@@ -272,8 +273,9 @@ export async function generateYoutubeTitleIdeas(params: {
   virality: number;
   languageCode: string;
   count?: number;
+  avoidTitles?: string[];
 }): Promise<YoutubeTitleIdea[]> {
-  const { channelTitle, channelDescription, videos, videoType, virality, languageCode, count = 10 } = params;
+  const { channelTitle, channelDescription, videos, videoType, virality, languageCode, count = 5, avoidTitles = [] } = params;
   const languageName = LANGUAGE_PROMPT_NAMES[languageCode] ?? "español";
   const level = Math.min(5, Math.max(1, Math.round(virality)));
 
@@ -290,18 +292,20 @@ Descripcion del canal: "${channelDescription || "(sin descripcion)"}"
 Videos actuales del canal (con sus vistas):
 ${videoLines || "(el canal aun no tiene videos publicados)"}
 
-Genera exactamente ${count} ideas de titulos para NUEVOS videos, escritos en ${languageName}.
+Genera hasta ${count} ideas de titulos para NUEVOS videos, escritos en ${languageName}.
 Tipo de video: ${videoType}.
 ${VIRALITY_GUIDE[level]}
 
 Reglas:
-- Aprende de los videos actuales: repite el estilo y los temas que mejor funcionaron (mas vistas) sin copiar ningun titulo existente ni proponer un tema ya cubierto.
+- REGLA CLAVE: cada titulo debe cubrir un TEMA COMPLETAMENTE DISTINTO al de los demas. Antes de escribir cada titulo, define su "topic" (2 a 4 palabras) y verifica que ningun otro titulo tenga el mismo tema ni uno parecido (por ejemplo, si uno trata de fotos de producto, ninguno de los otros puede tratar de fotos, imagenes o fotografia). Recorre areas distintas del nicho del canal.
+- Aprende de los videos actuales: repite el estilo y lo que mejor funciono (mas vistas) sin copiar ningun titulo existente ni proponer un tema ya cubierto en el canal.
+${avoidTitles.length > 0 ? `- Ya se te propusieron antes estos titulos (NO repitas ni el titulo ni el tema):\n${avoidTitles.map((t) => `  * "${t}"`).join("\n")}\n` : ""}
 - Cada titulo de maximo 70 caracteres, sin exceso de mayusculas ni signos de exclamacion.
 - Los titulos deben encajar con el nicho real del canal.
 - Para cada uno agrega "why": una frase corta (maximo 20 palabras) que explique por que funcionaria (en ${languageName}).
 
 Responde SOLO como JSON valido, sin texto adicional:
-{ "ideas": [ { "title": "...", "why": "..." } ] }`;
+{ "ideas": [ { "topic": "...", "title": "...", "why": "..." } ] }`;
 
   const res = await fetch(BASE_URL, {
     method: "POST",
@@ -320,9 +324,18 @@ Responde SOLO como JSON valido, sin texto adicional:
   const json = await res.json();
   const content: string | undefined = json?.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenAI no devolvio contenido");
-  const parsed = JSON.parse(content) as { ideas?: { title?: string; why?: string }[] };
-  return (parsed.ideas ?? [])
-    .filter((i): i is { title: string; why?: string } => typeof i.title === "string" && i.title.trim().length > 0)
-    .map((i) => ({ title: i.title.trim(), why: (i.why ?? "").trim() }))
-    .slice(0, count);
+  const parsed = JSON.parse(content) as { ideas?: { title?: string; topic?: string; why?: string }[] };
+  // Belt and braces for the "different topics" rule: drop a later idea whose
+  // topic label repeats an earlier one's.
+  const seenTopics = new Set<string>();
+  const out: YoutubeTitleIdea[] = [];
+  for (const i of parsed.ideas ?? []) {
+    if (typeof i.title !== "string" || !i.title.trim()) continue;
+    const topic = (i.topic ?? "").trim();
+    const key = topic.toLowerCase();
+    if (key && seenTopics.has(key)) continue;
+    if (key) seenTopics.add(key);
+    out.push({ title: i.title.trim(), topic, why: (i.why ?? "").trim() });
+  }
+  return out.slice(0, count);
 }

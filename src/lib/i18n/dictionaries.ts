@@ -113,7 +113,7 @@ const es = {
   // Videos (Estrategia)
   "videos.ideas.title": "Ideas de titulos para nuevos videos",
   "videos.ideas.description":
-    "Analizamos los videos actuales de tu canal (temas y vistas) para proponerte titulos nuevos. Elige el tipo de video y que tan viral quieres el titulo.",
+    "Analizamos los videos actuales de tu canal (temas y vistas) para proponerte hasta 5 titulos nuevos por generacion, cada uno de un tema distinto. Marca los que ya usaste: se conservan al generar de nuevo.",
   "videos.typeLabel": "Tipo de video",
   "videos.type.educational": "Educativo",
   "videos.type.tutorial": "Tutorial / paso a paso",
@@ -133,6 +133,7 @@ const es = {
   "videos.virality.5": "Muy viral",
   "videos.language": "Idioma de los titulos:",
   "videos.generate": "Generar titulos",
+  "videos.progress": "{done} de {total} marcados",
   "videos.regenerate": "Generar de nuevo",
   "videos.copy": "Copiar",
   "videos.errorGenerate": "Error al generar titulos",
@@ -351,7 +352,7 @@ const en: Partial<Record<keyof typeof es, string>> = {
   // Videos (Estrategia)
   "videos.ideas.title": "Title ideas for new videos",
   "videos.ideas.description":
-    "We analyze your channel's current videos (topics and views) to suggest new titles. Choose the video type and how viral you want the title to be.",
+    "We analyze your channel's current videos (topics and views) to suggest up to 5 new titles per generation, each on a different topic. Check the ones you've used: they're kept when you generate again.",
   "videos.typeLabel": "Video type",
   "videos.type.educational": "Educational",
   "videos.type.tutorial": "Tutorial / step by step",
@@ -371,6 +372,7 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "videos.virality.5": "Very viral",
   "videos.language": "Title language:",
   "videos.generate": "Generate titles",
+  "videos.progress": "{done} of {total} checked",
   "videos.regenerate": "Generate again",
   "videos.copy": "Copy",
   "videos.errorGenerate": "Error generating titles",

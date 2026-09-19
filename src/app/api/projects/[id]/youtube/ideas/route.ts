@@ -29,14 +29,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const videos: { title?: string; viewCount?: number }[] = project.youtubeRecentVideosJson
       ? JSON.parse(project.youtubeRecentVideosJson)
       : [];
-    const ideas = await generateYoutubeTitleIdeas({
+    const previous: { title: string; topic?: string; why?: string; done?: boolean }[] = project.youtubeIdeasJson
+      ? JSON.parse(project.youtubeIdeasJson)
+      : [];
+    const generated = await generateYoutubeTitleIdeas({
       channelTitle: project.youtubeChannelTitle ?? project.name,
       channelDescription: project.youtubeDescription,
       videos: videos.map((v) => ({ title: v.title ?? "", views: v.viewCount ?? 0 })),
       videoType,
       virality,
       languageCode: project.languageCode,
+      count: 5,
+      avoidTitles: previous.map((p) => p.title),
     });
+
+    // Checked ideas are kept (so the user's progress isn't lost); unchecked
+    // ones from the previous batch are replaced by the new batch.
+    const ideas = [
+      ...previous.filter((p) => p.done).map((p) => ({ title: p.title, topic: p.topic ?? "", why: p.why ?? "", done: true })),
+      ...generated.map((g) => ({ ...g, done: false })),
+    ];
 
     await prisma.project.update({
       where: { id: project.id },

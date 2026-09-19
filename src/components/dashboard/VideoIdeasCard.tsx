@@ -9,7 +9,9 @@ import { VIDEO_TYPES, VideoTypeId } from "@/lib/videoTypes";
 
 interface TitleIdea {
   title: string;
+  topic?: string;
   why: string;
+  done?: boolean;
 }
 
 // Estrategia > Videos: AI title ideas for new videos, tuned by video type and
@@ -59,6 +61,21 @@ export function VideoIdeasCard({
     }
   }
 
+  async function handleToggle(index: number) {
+    const nextDone = !ideas[index]?.done;
+    setIdeas((prev) => prev.map((idea, i) => (i === index ? { ...idea, done: nextDone } : idea)));
+    try {
+      const res = await fetch(`/api/projects/${project.id}/youtube/ideas/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index, done: nextDone }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setIdeas((prev) => prev.map((idea, i) => (i === index ? { ...idea, done: !nextDone } : idea)));
+    }
+  }
+
   async function copyOne(index: number) {
     await navigator.clipboard.writeText(ideas[index].title);
     setCopiedIndex(index);
@@ -102,26 +119,28 @@ export function VideoIdeasCard({
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[13px] text-neutral-500">
+        <div className="flex flex-col gap-1 w-64">
+          <label htmlFor="virality-slider" className="text-[13px] text-neutral-500">
             {t("videos.viralityLabel")}:{" "}
-            <strong className="text-neutral-800">{t(`videos.virality.${virality}` as TranslationKey)}</strong>
+            <strong className="text-neutral-800">
+              {virality} · {t(`videos.virality.${virality}` as TranslationKey)}
+            </strong>
           </label>
-          <div className="flex items-center gap-1">
+          <input
+            id="virality-slider"
+            type="range"
+            min={1}
+            max={5}
+            step={1}
+            value={virality}
+            onChange={(e) => setVirality(Number(e.target.value))}
+            className="w-full h-2 accent-[#228449] cursor-pointer"
+          />
+          <div className="flex justify-between text-[12px] text-neutral-400 px-0.5">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                onClick={() => setVirality(n)}
-                aria-pressed={virality === n}
-                title={t(`videos.virality.${n}` as TranslationKey)}
-                className={`w-8 h-8 rounded-md text-xs font-medium border transition-colors ${
-                  n <= virality
-                    ? "bg-[#228449] border-[#228449] text-white"
-                    : "bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300"
-                }`}
-              >
+              <span key={n} className={n === virality ? "text-[#228449] font-semibold" : ""}>
                 {n}
-              </button>
+              </span>
             ))}
           </div>
           <p className="text-[12px] text-neutral-400">{t("videos.viralityHint")}</p>
@@ -144,6 +163,8 @@ export function VideoIdeasCard({
         <div className="mt-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[13px] text-neutral-400">
+              {t("videos.progress", { done: ideas.filter((i) => i.done).length, total: ideas.length })}
+              {project.youtubeIdeasUpdatedAt && " · "}
               {project.youtubeIdeasUpdatedAt &&
                 `${t("content.lastTime")} ${new Date(project.youtubeIdeasUpdatedAt).toLocaleDateString(dateLocale, {
                   month: "long",
@@ -161,21 +182,46 @@ export function VideoIdeasCard({
           </div>
           <div className="flex flex-col gap-2">
             {ideas.map((idea, i) => (
-              <div
-                key={i}
-                className="flex items-start justify-between gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3"
+              <label
+                key={`${i}-${idea.title}`}
+                className={`flex items-start gap-3 border rounded-xl px-4 py-3 cursor-pointer transition-colors ${
+                  idea.done
+                    ? "bg-neutral-50 border-neutral-100"
+                    : "bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                }`}
               >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-neutral-900">{idea.title}</p>
-                  {idea.why && <p className="text-xs text-neutral-500 mt-0.5">{idea.why}</p>}
+                <input
+                  type="checkbox"
+                  checked={Boolean(idea.done)}
+                  onChange={() => handleToggle(i)}
+                  className="mt-1 w-4 h-4 accent-[#228449] shrink-0 cursor-pointer"
+                />
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`text-sm font-medium ${
+                      idea.done ? "text-neutral-400 line-through decoration-neutral-300" : "text-neutral-900"
+                    }`}
+                  >
+                    {idea.title}
+                  </p>
+                  {idea.topic && (
+                    <span className="inline-block text-[12px] bg-white border border-neutral-200 rounded-md px-2 py-0.5 text-neutral-500 mt-1">
+                      {idea.topic}
+                    </span>
+                  )}
+                  {idea.why && <p className="text-xs text-neutral-500 mt-1">{idea.why}</p>}
                 </div>
                 <button
-                  onClick={() => copyOne(i)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    copyOne(i);
+                  }}
                   className="text-xs text-neutral-500 hover:text-[#228449] shrink-0 transition-colors"
                 >
                   {copiedIndex === i ? t("content.copied") : t("videos.copy")}
                 </button>
-              </div>
+              </label>
             ))}
           </div>
         </div>
