@@ -6001,7 +6001,7 @@ function CompetitorComparisonOverview({
           type="button"
           onClick={handleRefreshAuthority}
           disabled={loadingAuthority}
-          title="Autoridad de dominio 0-10 (Open PageRank, gratis)"
+          title="Autoridad de dominio 0-10 (OpenPageRank, plan gratuito)"
           className="text-xs px-2.5 py-1 rounded-full border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 disabled:opacity-50 transition-colors whitespace-nowrap"
         >
           {loadingAuthority ? "Consultando..." : "Actualizar autoridad"}
