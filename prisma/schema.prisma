@@ -255,6 +255,8 @@ model Project {
   uptimeLastCheckedAt  DateTime?
   uptimeIncidents      UptimeIncident[]
   uptimeChecks         UptimeCheck[]
+  siteChecksJson       String? // latest automatic site checks (SSL, robots, meta tags, policies...) — see siteChecks.ts
+  siteChecksUpdatedAt  DateTime?
   uptimeEmailsJson     String? // extra alert recipients (JSON array of emails)
   uptimeUseReportEmail Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
   taskMembers          TaskMember[]

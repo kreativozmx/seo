@@ -1,4 +1,5 @@
 import { ProjectDTO } from "@/lib/types";
+import type { SiteChecks } from "@/lib/providers/siteChecks";
 
 export interface AuditItem {
   id: string;
@@ -15,6 +16,16 @@ function hasTechCategory(project: ProjectDTO, category: string): boolean {
   if (!project.techDetectedJson) return false;
   const tech: { name: string; category: string }[] = JSON.parse(project.techDetectedJson);
   return tech.some((t) => t.category === category);
+}
+
+// Latest automatic site-check results (SSL, robots, meta tags, policies...).
+// null until they've run once — items depending on them read as unchecked.
+let scCache: { raw: string | null; parsed: SiteChecks | null } = { raw: null, parsed: null };
+function sc(p: ProjectDTO): SiteChecks | null {
+  if (p.siteChecksJson !== scCache.raw) {
+    scCache = { raw: p.siteChecksJson, parsed: p.siteChecksJson ? (JSON.parse(p.siteChecksJson) as SiteChecks) : null };
+  }
+  return scCache.parsed;
 }
 
 function daysSince(dateStr: string | null): number | null {
@@ -41,8 +52,58 @@ export const AUDIT_ITEMS: AuditItem[] = [
   {
     id: "seo-sitemap",
     category: "SEO tecnico",
-    label: "Sitemap.xml enviado en Search Console",
+    label: "Sitemap.xml publicado y accesible",
     hint: "Ayuda a Google a descubrir e indexar todas las paginas del sitio.",
+    auto: (p) => sc(p)?.sitemap === true,
+  },
+  {
+    id: "seo-robots",
+    category: "SEO tecnico",
+    label: "robots.txt accesible y sin bloquear todo el sitio",
+    hint: "Un 'Disallow: /' para todos los rastreadores saca al sitio de Google.",
+    auto: (p) => sc(p)?.robots.exists === true && sc(p)?.robots.blocksAll === false,
+  },
+  {
+    id: "seo-indexable",
+    category: "SEO tecnico",
+    label: "La pagina de inicio permite indexacion (sin noindex)",
+    hint: "Una etiqueta noindex en el inicio impide que aparezca en Google.",
+    auto: (p) => sc(p)?.home.status === 200 && sc(p)?.home.noindex === false,
+  },
+  {
+    id: "seo-title-desc",
+    category: "SEO tecnico",
+    label: "Inicio con titulo y meta descripcion",
+    hint: "Es lo que Google muestra como titulo y texto del resultado.",
+    auto: (p) => Boolean(sc(p)?.home.title) && sc(p)?.home.metaDescription === true,
+  },
+  {
+    id: "seo-h1",
+    category: "SEO tecnico",
+    label: "Inicio con un solo encabezado H1",
+    hint: "Un H1 unico deja claro el tema principal de la pagina.",
+    auto: (p) => sc(p)?.home.h1Count === 1,
+  },
+  {
+    id: "seo-canonical",
+    category: "SEO tecnico",
+    label: "Etiqueta canonical en el inicio",
+    hint: "Evita que Google trate variantes de la misma URL como contenido duplicado.",
+    auto: (p) => sc(p)?.home.canonical === true,
+  },
+  {
+    id: "seo-viewport",
+    category: "SEO tecnico",
+    label: "Sitio adaptado a movil (meta viewport)",
+    hint: "Google indexa primero la version movil.",
+    auto: (p) => sc(p)?.home.viewport === true,
+  },
+  {
+    id: "seo-open-graph",
+    category: "SEO tecnico",
+    label: "Vista previa al compartir (Open Graph)",
+    hint: "Controla titulo e imagen cuando alguien comparte tu enlace en redes o WhatsApp.",
+    auto: (p) => sc(p)?.home.openGraph === true,
   },
   {
     id: "seo-meta-unique",
@@ -53,8 +114,30 @@ export const AUDIT_ITEMS: AuditItem[] = [
   {
     id: "seo-ssl",
     category: "SEO tecnico",
-    label: "Certificado SSL (https) activo en todo el sitio",
-    hint: "Requisito basico de seguridad y de ranking en Google.",
+    label: "Certificado SSL (https) valido y activo",
+    hint: "Verificado automaticamente contra el certificado real del sitio.",
+    auto: (p) => sc(p)?.ssl.valid === true,
+  },
+  {
+    id: "seo-ssl-expiry",
+    category: "SEO tecnico",
+    label: "Certificado SSL con mas de 14 dias de vigencia",
+    hint: "Si vence, los visitantes ven una advertencia de seguridad y dejan de comprar.",
+    auto: (p) => (sc(p)?.ssl.daysLeft ?? -1) > 14,
+  },
+  {
+    id: "seo-https-redirect",
+    category: "SEO tecnico",
+    label: "http:// redirige a https://",
+    hint: "Asegura que nadie entre por la version insegura del sitio.",
+    auto: (p) => sc(p)?.httpsRedirect === true,
+  },
+  {
+    id: "seo-domain-expiry",
+    category: "SEO tecnico",
+    label: "Dominio con mas de 60 dias antes de vencer",
+    hint: "Un dominio vencido tumba la tienda entera. Consultado en el registro publico (RDAP/WHOIS).",
+    auto: (p) => (sc(p)?.domainDaysToExpire ?? -1) > 60,
   },
   {
     id: "seo-clean-urls",
@@ -73,6 +156,7 @@ export const AUDIT_ITEMS: AuditItem[] = [
     category: "SEO tecnico",
     label: "Marcado estructurado (schema.org) en productos",
     hint: "Habilita precios, estrellas y disponibilidad en los resultados de Google.",
+    auto: (p) => sc(p)?.productSchema === true,
   },
 
   // --- Rendimiento ---
@@ -110,6 +194,20 @@ export const AUDIT_ITEMS: AuditItem[] = [
     label: "INP bajo 200ms (buena capacidad de respuesta)",
     hint: "Que la pagina responda rapido a clics y toques.",
     auto: (p) => p.psiInpMs != null && p.psiInpMs <= 200,
+  },
+  {
+    id: "perf-compression",
+    category: "Rendimiento",
+    label: "Compresion activada (gzip/brotli)",
+    hint: "Reduce el peso de cada pagina que se descarga.",
+    auto: (p) => sc(p)?.home.compressed === true,
+  },
+  {
+    id: "perf-ttfb",
+    category: "Rendimiento",
+    label: "Servidor responde en menos de 800 ms",
+    hint: "Medicion puntual del tiempo hasta el primer byte; puede variar entre revisiones.",
+    auto: (p) => sc(p)?.home.ttfbMs != null && (sc(p)?.home.ttfbMs as number) < 800,
   },
   {
     id: "perf-images",
@@ -169,18 +267,21 @@ export const AUDIT_ITEMS: AuditItem[] = [
     category: "Catalogo",
     label: "Todos los productos con al menos una imagen",
     hint: "Un producto sin imagen practicamente no vende.",
+    auto: (p) => p.ecommerceCheckedAt != null && p.ecommerceMissingImageCount === 0,
   },
   {
     id: "cat-descriptions",
     category: "Catalogo",
     label: "Descripciones de producto completas (no vacias)",
     hint: "Descripciones vacias son contenido perdido para SEO y para el cliente.",
+    auto: (p) => p.ecommerceCheckedAt != null && p.ecommerceMissingDescCount === 0,
   },
   {
     id: "cat-prices",
     category: "Catalogo",
     label: "Precios consistentes, sin productos en $0",
     hint: "Un precio en $0 suele ser un error de captura que confunde al cliente.",
+    auto: (p) => p.ecommerceCheckedAt != null && p.ecommercePriceMin != null && p.ecommercePriceMin > 0,
   },
 
   // --- Analitica ---
@@ -252,8 +353,9 @@ export const AUDIT_ITEMS: AuditItem[] = [
   {
     id: "mkt-social",
     category: "Marketing y marca",
-    label: "Redes sociales vinculadas y activas",
-    hint: "Enlaces visibles a Instagram/Facebook/TikTok, con publicaciones recientes.",
+    label: "Redes sociales vinculadas en el sitio",
+    hint: "Enlaces visibles a Instagram, Facebook, TikTok, etc. en la pagina de inicio.",
+    auto: (p) => (sc(p)?.home.socialLinks.length ?? 0) > 0,
   },
   {
     id: "mkt-abandoned-cart",
@@ -274,30 +376,35 @@ export const AUDIT_ITEMS: AuditItem[] = [
     category: "Confianza y legal",
     label: "Politica de privacidad publicada",
     hint: "Requisito legal minimo y esperado por el cliente.",
+    auto: (p) => sc(p)?.policies.privacy === true,
   },
   {
     id: "trust-terms",
     category: "Confianza y legal",
     label: "Terminos y condiciones publicados",
     hint: "Protege al negocio y aclara reglas de uso del sitio.",
+    auto: (p) => sc(p)?.policies.terms === true,
   },
   {
     id: "trust-shipping",
     category: "Confianza y legal",
     label: "Politica de envios publicada",
     hint: "Tiempos, costos y zonas de entrega claras antes de comprar.",
+    auto: (p) => sc(p)?.policies.shipping === true,
   },
   {
     id: "trust-returns",
     category: "Confianza y legal",
     label: "Politica de devoluciones/reembolsos publicada",
     hint: "Una de las paginas que mas revisan los clientes antes de comprar.",
+    auto: (p) => sc(p)?.policies.returns === true,
   },
   {
     id: "trust-contact",
     category: "Confianza y legal",
     label: "Pagina de contacto visible",
     hint: "Un negocio sin forma de contacto visible genera desconfianza.",
+    auto: (p) => sc(p)?.policies.contact === true,
   },
   {
     id: "trust-safe-browsing",
@@ -344,10 +451,32 @@ export const AUDIT_ITEMS: AuditItem[] = [
     hint: "Evita que un cliente perdido simplemente se vaya del sitio.",
   },
   {
+    id: "sec-404-status",
+    category: "Seguridad y mantenimiento",
+    label: "Las paginas inexistentes responden con codigo 404",
+    hint: "Si responden 200, Google puede indexar paginas vacias como si existieran.",
+    auto: (p) => sc(p)?.notFoundStatus === 404,
+  },
+  {
+    id: "sec-hsts",
+    category: "Seguridad y mantenimiento",
+    label: "HSTS activado (fuerza siempre https)",
+    hint: "Encabezado Strict-Transport-Security en las respuestas del sitio.",
+    auto: (p) => sc(p)?.hsts === true,
+  },
+  {
+    id: "sec-broken-links",
+    category: "Seguridad y mantenimiento",
+    label: "Sin enlaces rotos en el sitemap",
+    hint: "Revisa el rastreo de enlaces rotos de esta herramienta.",
+    auto: (p) => p.brokenLinksCheckedAt != null && (p.brokenLinksJson ? JSON.parse(p.brokenLinksJson).length === 0 : true),
+  },
+  {
     id: "sec-favicon",
     category: "Seguridad y mantenimiento",
     label: "Favicon configurado",
     hint: "Detalle pequeño pero que se nota en pestañas del navegador y favoritos.",
+    auto: (p) => sc(p)?.home.favicon === true,
   },
   {
     id: "sec-theme-backup",
@@ -362,11 +491,13 @@ export const AUDIT_ITEMS: AuditItem[] = [
     category: "Contenido",
     label: "Blog o seccion de contenido activa",
     hint: "Fuente constante de nuevas paginas para posicionar en Google.",
+    auto: (p) => sc(p)?.policies.blog === true,
   },
   {
     id: "content-faq",
     category: "Contenido",
     label: "Preguntas frecuentes (FAQ) disponibles",
     hint: "Resuelve objeciones de compra sin depender de soporte.",
+    auto: (p) => sc(p)?.policies.faq === true,
   },
 ];

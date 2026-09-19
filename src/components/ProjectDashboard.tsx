@@ -3710,6 +3710,34 @@ function AuditSection({ project }: { project: ProjectDTO }) {
     project.auditManualChecksJson ? JSON.parse(project.auditManualChecksJson) : {}
   );
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [runningChecks, setRunningChecks] = useState(false);
+  const [checksError, setChecksError] = useState<string | null>(null);
+  const sync = useSyncStatus();
+
+  async function runSiteChecks() {
+    setRunningChecks(true);
+    setChecksError(null);
+    sync.begin("site-checks", "Revisando el sitio");
+    try {
+      const res = await fetch(`/api/projects/${project.id}/site-checks`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al revisar el sitio");
+      router.refresh();
+    } catch (err) {
+      setChecksError(err instanceof Error ? err.message : "Error al revisar el sitio");
+    } finally {
+      setRunningChecks(false);
+      sync.end("site-checks");
+    }
+  }
+
+  // Automatic: run the live checks when opening Auditoria if they've never
+  // run or are older than a day.
+  useEffect(() => {
+    const last = project.siteChecksUpdatedAt ? new Date(project.siteChecksUpdatedAt).getTime() : 0;
+    if (Date.now() - last > 24 * 60 * 60 * 1000) runSiteChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const results = AUDIT_ITEMS.map((item) => ({
     item,
@@ -3747,10 +3775,31 @@ function AuditSection({ project }: { project: ProjectDTO }) {
               Auditoria de tienda ({totalCount} puntos)
             </p>
             <p className="text-neutral-500 text-xs mt-0.5">
-              Los marcados como <strong>Auto</strong> los detectamos solos con
-              los datos de esta herramienta. El resto son recomendaciones que
-              tu marcas conforme las vas cumpliendo.
+              Los marcados como <strong>Auto</strong> los detectamos solos: revisamos tu
+              sitio en vivo (SSL, robots.txt, etiquetas, politicas...) y usamos los datos
+              de esta herramienta. El resto son recomendaciones que tu marcas conforme las
+              vas cumpliendo.
             </p>
+            <p className="text-[13px] text-neutral-400 mt-1.5">
+              {runningChecks
+                ? "Revisando tu sitio..."
+                : project.siteChecksUpdatedAt
+                ? `Ultima revision automatica: ${new Date(project.siteChecksUpdatedAt).toLocaleString("es-MX", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}`
+                : "Aun no se ha revisado el sitio."}{" "}
+              <button
+                onClick={runSiteChecks}
+                disabled={runningChecks}
+                className="text-[#228449] hover:underline underline-offset-2 disabled:opacity-50"
+              >
+                Revisar ahora
+              </button>
+            </p>
+            {checksError && <p className="text-xs text-red-600 mt-1">{checksError}</p>}
           </div>
           <div className="text-right shrink-0">
             <p className="text-xl font-semibold text-neutral-900">
