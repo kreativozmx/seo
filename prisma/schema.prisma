@@ -172,6 +172,9 @@ model Project {
   youtubeVideoCount         Int?
   youtubeRecentVideosJson   String? // cached array of recent videos
   youtubeUpdatedAt          DateTime?
+  youtubeIdeasJson          String? // cached array of {title, why} — AI title ideas for new videos
+  youtubeIdeasOptionsJson   String? // {videoType, virality, languageCode} used for the cached ideas
+  youtubeIdeasUpdatedAt     DateTime?
 
   // Ecommerce catalog audit (Ecommerce tab) — free, reads the store's
   // public product endpoints (Shopify /products.json or WooCommerce's

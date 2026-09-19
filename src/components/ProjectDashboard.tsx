@@ -28,6 +28,8 @@ import { ShopifyStatusSection } from "@/components/dashboard/ShopifyStatusSectio
 import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
+import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
+import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
 
@@ -159,7 +161,7 @@ const NAV_ITEMS = [
   { id: "analiticas", label: "Analiticas" },
   { id: "rankings", label: "Rankings" },
   { id: "seo-ia", label: "SEO IA" },
-  { id: "youtube", label: "SEO Youtube" },
+  { id: "videos", label: "Videos" },
   { id: "planificacion", label: "Keywords" },
   { id: "changelog", label: "Actualizaciones Shopify" },
   { id: "contenidos", label: "Contenidos" },
@@ -181,9 +183,9 @@ const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
   { id: "panel" },
   { id: "auditoria", children: ["velocidad"] },
   { id: "analiticas" },
-  { id: "rankings", children: ["seo-ia", "youtube"] },
+  { id: "rankings", children: ["seo-ia"] },
   { id: null, label: "Planificacion", children: ["planificacion", "changelog"] },
-  { id: null, label: "Estrategia", children: ["contenidos"] },
+  { id: null, label: "Estrategia", children: ["contenidos", "videos"] },
   { id: "competencia" },
   { id: "monitoreo" },
   { id: "apps" },
@@ -233,7 +235,7 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
   ),
   velocidad: <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />,
   monitoreo: <path d="M3 12h4l2-7 4 14 2-7h6" />,
-  youtube: (
+  videos: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="3" />
       <path d="m10 9 5 3-5 3Z" />
@@ -443,7 +445,7 @@ function PanelSummaryGrid({
           label="YouTube"
           value={(project.youtubeSubscribers ?? 0).toLocaleString("es-MX")}
           hint="suscriptores"
-          onClick={() => onNavigate("youtube")}
+          onClick={() => onNavigate("videos")}
         />
       )}
       {project.gaConnectedAt && (
@@ -1149,6 +1151,7 @@ export default function ProjectDashboard({
               </div>
               <GscSection project={project} />
               <GaSection project={project} />
+              <YoutubeConnectionCard project={project} />
               <ComingSoonSection
                 title="Conectar Shopify"
                 description="Estamos esperando que Shopify apruebe el acceso a datos protegidos de clientes para poder leer tus ventas reales via Admin API. En cuanto se apruebe, se activa aqui mismo."
@@ -1385,9 +1388,13 @@ export default function ProjectDashboard({
             </section>
           )}
 
-          {activeTab === "youtube" && (
+          {activeTab === "videos" && (
             <section>
-              <YoutubeSection project={project} />
+              <YoutubeSection
+                project={project}
+                onGoToConnections={() => setActiveTab("conexiones")}
+                onGoToSettings={() => setActiveTab("configuracion")}
+              />
             </section>
           )}
 
@@ -2969,12 +2976,18 @@ function YoutubeVideoRow({
   );
 }
 
-function YoutubeSection({ project }: { project: ProjectDTO }) {
+function YoutubeSection({
+  project,
+  onGoToConnections,
+  onGoToSettings,
+}: {
+  project: ProjectDTO;
+  onGoToConnections: () => void;
+  onGoToSettings: () => void;
+}) {
   const router = useRouter();
-  const [input, setInput] = useState("");
-  const [connecting, setConnecting] = useState(false);
+  const { t } = useLocale();
   const [refreshing, setRefreshing] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<YoutubeSortColumn>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -3048,27 +3061,6 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
         }, 0) / videos.length
       : null;
 
-  async function handleConnect(e: React.FormEvent) {
-    e.preventDefault();
-    setConnecting(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/projects/${project.id}/youtube/connect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al conectar");
-      setInput("");
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al conectar");
-    } finally {
-      setConnecting(false);
-    }
-  }
-
   async function handleRefresh() {
     setRefreshing(true);
     setError(null);
@@ -3086,47 +3078,17 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
     }
   }
 
-  async function handleDisconnect() {
-    setDisconnecting(true);
-    try {
-      await fetch(`/api/projects/${project.id}/youtube/disconnect`, {
-        method: "POST",
-      });
-      router.refresh();
-    } finally {
-      setDisconnecting(false);
-    }
-  }
-
   if (!connected) {
     return (
       <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
-        <p className="text-sm font-medium text-neutral-900">SEO de YouTube</p>
-        <p className="text-neutral-500 text-xs mt-0.5 mb-3">
-          Conecta tu canal para ver suscriptores, vistas, engagement y tus
-          videos recientes.
-        </p>
-        <form onSubmit={handleConnect} className="flex flex-wrap items-end gap-2">
-          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
-            <label className="text-[14px] text-neutral-500">
-              Canal (@handle, ID o URL)
-            </label>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="@acehrproyectos"
-              className="bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={connecting || !input}
-            className="bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 text-sm transition-colors"
-          >
-            {connecting ? "Conectando..." : "Conectar canal"}
-          </button>
-        </form>
-        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+        <p className="text-sm font-medium text-neutral-900">{t("videos.notConnectedTitle")}</p>
+        <p className="text-neutral-500 text-xs mt-0.5 mb-3">{t("videos.notConnectedDesc")}</p>
+        <button
+          onClick={onGoToConnections}
+          className="text-sm bg-[#228449] hover:bg-[#1B6B3A] text-white font-medium rounded-md px-4 py-2 transition-colors"
+        >
+          {t("videos.goToConnections")}
+        </button>
       </div>
     );
   }
@@ -3160,14 +3122,7 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
               disabled={refreshing}
               className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors"
             >
-              {refreshing ? "Actualizando..." : "Actualizar"}
-            </button>
-            <button
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
-            >
-              Desconectar
+              {refreshing ? t("videos.refreshing") : t("videos.refresh")}
             </button>
           </div>
         </div>
@@ -3192,10 +3147,12 @@ function YoutubeSection({ project }: { project: ProjectDTO }) {
         </div>
       </div>
 
+      <VideoIdeasCard project={project} videoCount={videos.length} onGoToSettings={onGoToSettings} />
+
       {videos.length > 0 && (
         <div>
           <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-            Videos recientes — los 5 mas vistos llevan insignia 🔥
+            {t("videos.recentHeader")}
           </h2>
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <div className="flex items-center gap-3 px-3 py-2 text-[14px] text-neutral-400 border-b border-neutral-200">

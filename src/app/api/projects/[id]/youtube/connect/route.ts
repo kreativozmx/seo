@@ -15,7 +15,7 @@ export async function POST(
   try {
     const channel = await resolveChannel(input);
     const videos = channel.uploadsPlaylistId
-      ? await fetchRecentVideos(channel.uploadsPlaylistId, 10)
+      ? await fetchRecentVideos(channel.uploadsPlaylistId, 30)
       : [];
 
     const updated = await prisma.project.update({

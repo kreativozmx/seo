@@ -166,6 +166,9 @@ export interface ProjectDTO {
   youtubeVideoCount: number | null;
   youtubeRecentVideosJson: string | null;
   youtubeUpdatedAt: string | null;
+  youtubeIdeasJson: string | null;
+  youtubeIdeasOptionsJson: string | null;
+  youtubeIdeasUpdatedAt: string | null;
   ecommercePlatform: string | null;
   ecommerceIsShopify: boolean | null;
   ecommerceProductCount: number | null;

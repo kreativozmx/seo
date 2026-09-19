@@ -247,3 +247,82 @@ El array "ideas" debe tener exactamente 12 elementos.`;
     }))
     .slice(0, 12);
 }
+
+export interface YoutubeTitleIdea {
+  title: string;
+  why: string;
+}
+
+// Virality scale shown to the user (1-5) -> concrete writing guidance.
+const VIRALITY_GUIDE: Record<number, string> = {
+  1: "Nivel 1/5 (sobrio): titulos claros, informativos y enfocados en SEO/busqueda. Sin gancho emocional ni exageracion.",
+  2: "Nivel 2/5 (moderado): claros y utiles, con un pequeno gancho de curiosidad o beneficio.",
+  3: "Nivel 3/5 (equilibrado): mezcla de SEO y gancho — promesa concreta, numeros o un giro de curiosidad.",
+  4: "Nivel 4/5 (llamativo): fuerte curiosidad o emocion, contraste, numeros, preguntas provocadoras; pensados para destacar en el feed.",
+  5: "Nivel 5/5 (maximo viral): el titulo mas magnetico posible — brecha de curiosidad fuerte, emocion intensa, afirmaciones audaces o contraintuitivas. Debe seguir siendo veraz y coherente con lo que el canal puede entregar (nada enganoso).",
+};
+
+// New video title ideas for a channel, informed by what its existing
+// videos already do (topics, and which ones got the most views).
+export async function generateYoutubeTitleIdeas(params: {
+  channelTitle: string;
+  channelDescription: string | null;
+  videos: { title: string; views: number }[];
+  videoType: string;
+  virality: number;
+  languageCode: string;
+  count?: number;
+}): Promise<YoutubeTitleIdea[]> {
+  const { channelTitle, channelDescription, videos, videoType, virality, languageCode, count = 10 } = params;
+  const languageName = LANGUAGE_PROMPT_NAMES[languageCode] ?? "español";
+  const level = Math.min(5, Math.max(1, Math.round(virality)));
+
+  const videoLines = videos
+    .slice(0, 40)
+    .map((v) => `- "${v.title}" (${v.views.toLocaleString("en-US")} vistas)`)
+    .join("\n");
+
+  const prompt = `Eres un estratega de YouTube y copywriter de titulos.
+
+Canal: "${channelTitle}"
+Descripcion del canal: "${channelDescription || "(sin descripcion)"}"
+
+Videos actuales del canal (con sus vistas):
+${videoLines || "(el canal aun no tiene videos publicados)"}
+
+Genera exactamente ${count} ideas de titulos para NUEVOS videos, escritos en ${languageName}.
+Tipo de video: ${videoType}.
+${VIRALITY_GUIDE[level]}
+
+Reglas:
+- Aprende de los videos actuales: repite el estilo y los temas que mejor funcionaron (mas vistas) sin copiar ningun titulo existente ni proponer un tema ya cubierto.
+- Cada titulo de maximo 70 caracteres, sin exceso de mayusculas ni signos de exclamacion.
+- Los titulos deben encajar con el nicho real del canal.
+- Para cada uno agrega "why": una frase corta (maximo 20 palabras) que explique por que funcionaria (en ${languageName}).
+
+Responde SOLO como JSON valido, sin texto adicional:
+{ "ideas": [ { "title": "...", "why": "..." } ] }`;
+
+  const res = await fetch(BASE_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.4 + level * 0.1,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OpenAI request failed (${res.status}): ${text}`);
+  }
+  const json = await res.json();
+  const content: string | undefined = json?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI no devolvio contenido");
+  const parsed = JSON.parse(content) as { ideas?: { title?: string; why?: string }[] };
+  return (parsed.ideas ?? [])
+    .filter((i): i is { title: string; why?: string } => typeof i.title === "string" && i.title.trim().length > 0)
+    .map((i) => ({ title: i.title.trim(), why: (i.why ?? "").trim() }))
+    .slice(0, count);
+}
