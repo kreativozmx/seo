@@ -13,8 +13,11 @@ export default function LoginPage() {
         <div className="max-w-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" width={40} height={40} className="mb-3" />
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-3 flex items-center gap-2.5">
             Shopify Audit
+            <span className="text-[11px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-md px-2 py-1 leading-none">
+              Beta
+            </span>
           </h1>
           <p className="text-neutral-600 text-base leading-relaxed mb-6">
             ¿Tienes una tienda en Shopify? Esta herramienta te muestra, en un

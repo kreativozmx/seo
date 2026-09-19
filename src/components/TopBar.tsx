@@ -55,6 +55,12 @@ export function TopBar({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" width={30} height={30} className="shrink-0" />
           <span className="text-neutral-900 text-sm font-semibold tracking-tight hidden sm:inline">Shopify Audit</span>
+          <span
+            title={t("beta.tooltip")}
+            className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-md px-1.5 py-0.5 leading-none"
+          >
+            Beta
+          </span>
         </Link>
         <nav className="flex items-stretch overflow-x-auto">
           {items.map((l) =>
