@@ -28,6 +28,7 @@ import { ShopifyStatusSection } from "@/components/dashboard/ShopifyStatusSectio
 import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
+import { WhoisLookup } from "@/components/WhoisLookup";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
 import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
@@ -957,6 +958,7 @@ export default function ProjectDashboard({
               <span className="hidden md:inline text-neutral-400 shrink-0">· puedes seguir navegando</span>
             </span>
           )}
+          {!readOnly && <WhoisLookup />}
           {readOnly ? (
             <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-600 rounded-md px-2.5 py-1 shrink-0">
               {t("chrome.readonly")}

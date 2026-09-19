@@ -6,6 +6,7 @@ import MiniTrendSparkline from "@/components/MiniTrendSparkline";
 import { computeProjectStats } from "@/lib/projectStats";
 import { cookies } from "next/headers";
 import { LOCALE_COOKIE, translate } from "@/lib/i18n/dictionaries";
+import { WhoisLookup } from "@/components/WhoisLookup";
 
 export const dynamic = "force-dynamic";
 
@@ -105,12 +106,15 @@ export default async function Home() {
             Shopify Audit
           </span>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+        <WhoisLookup />
         <a
           href="/api/logout"
           className="text-xs bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
         >
           {translate(cookies().get(LOCALE_COOKIE)?.value === "en" ? "en" : "es", "chrome.logout")}
         </a>
+        </div>
       </div>
 
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-3 sm:py-4">
