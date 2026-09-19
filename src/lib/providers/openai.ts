@@ -156,7 +156,7 @@ export interface ContentIdea {
   keywords: string[];
 }
 
-// 12 blog title ideas aimed at ranking the domain, based on real Search
+// 6 blog title ideas aimed at ranking the domain, based on real Search
 // Console queries from the last 7 days — so suggestions follow actual
 // demand instead of generic keyword brainstorming.
 export async function generateContentIdeas(params: {
@@ -164,8 +164,9 @@ export async function generateContentIdeas(params: {
   queries: { query: string; clicks: number; impressions: number }[];
   existingTitles?: string[];
   languageCode?: string;
+  count?: number;
 }): Promise<ContentIdea[]> {
-  const { domain, queries, existingTitles = [], languageCode = "es" } = params;
+  const { domain, queries, existingTitles = [], languageCode = "es", count = 6 } = params;
   const languageName = LANGUAGE_PROMPT_NAMES[languageCode] ?? "español";
 
   const queryLines = queries
@@ -186,7 +187,7 @@ export async function generateContentIdeas(params: {
 Estas son las busquedas reales que la gente hizo en Google en los ultimos 7 dias y que ya le traen trafico o impresiones al sitio (datos de Google Search Console):
 ${queryLines}${existingTitlesBlock}
 
-Con base en esas busquedas reales, genera exactamente 12 ideas de titulos de blog escritos en ${languageName}, pensados para ayudar a posicionar mejor el dominio en Google. Cada idea debe:
+Con base en esas busquedas reales, genera exactamente ${count} ideas de titulos de blog escritos en ${languageName}, pensados para ayudar a posicionar mejor el dominio en Google. Cada idea debe:
 - Tener un titulo de blog atractivo y especifico (no generico), inspirado en una o varias de las busquedas reales de arriba.
 - Traer 3 a 6 palabras clave relacionadas que ese articulo deberia intentar posicionar, tambien en ${languageName} (pueden incluir variantes de las busquedas reales, no solo copiarlas literal; si una busqueda real esta en otro idioma, adaptala a ${languageName}).
 - No repetir tema ni titulo con ningun articulo que el blog ya tenga publicado (ver lista arriba, si existe).
@@ -197,7 +198,7 @@ Responde SOLO como JSON valido, sin texto adicional, con esta forma exacta:
     { "title": "titulo del blog 1", "keywords": ["keyword 1", "keyword 2", "keyword 3"] }
   ]
 }
-El array "ideas" debe tener exactamente 12 elementos.`;
+El array "ideas" debe tener exactamente ${count} elementos.`;
 
   const res = await fetch(BASE_URL, {
     method: "POST",
@@ -245,7 +246,7 @@ El array "ideas" debe tener exactamente 12 elementos.`;
       title: idea.title,
       keywords: idea.keywords.filter((k): k is string => typeof k === "string"),
     }))
-    .slice(0, 12);
+    .slice(0, count);
 }
 
 export interface YoutubeTitleIdea {

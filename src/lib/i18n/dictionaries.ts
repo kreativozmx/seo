@@ -58,7 +58,7 @@ const es = {
   // Contenidos
   "content.title": "Ideas de contenido para el blog",
   "content.description":
-    "12 titulos generados con IA a partir de las busquedas reales en Google de los ultimos 7 dias (Search Console), pensados para ayudarte a posicionar.",
+    "6 titulos generados con IA a partir de las busquedas reales en Google de los ultimos 7 dias (Search Console), pensados para ayudarte a posicionar.",
   "content.language": "Idioma de generacion:",
   "content.changeLanguage": "Cambiar idioma del proyecto",
   "content.staleLanguage":
@@ -301,7 +301,7 @@ const en: Partial<Record<keyof typeof es, string>> = {
 
   "content.title": "Blog content ideas",
   "content.description":
-    "12 AI-generated titles based on real Google searches from the last 7 days (Search Console), designed to help you rank.",
+    "6 AI-generated titles based on real Google searches from the last 7 days (Search Console), designed to help you rank.",
   "content.language": "Generation language:",
   "content.changeLanguage": "Change project language",
   "content.staleLanguage":
