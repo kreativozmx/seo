@@ -10,6 +10,30 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    id: "2026-09-18-agregar-a-tareas",
+    date: "2026-09-18",
+    title: {
+      es: "Agregar a Tareas, modo pluma y más",
+      en: "Add to Tasks, pen mode and more",
+    },
+    items: {
+      es: [
+        "Agregar a Tareas: botón \"+ Tarea\" en la auditoría, competencia, inspección de URLs, historial del sitio, enlaces rotos, PageSpeed, ideas de blog e ideas de video; también puedes elegir varias con casillas y agregarlas de golpe.",
+        "Modo presentación: nueva pluma para dibujar sobre la pantalla (4 colores, trazo fino o grueso, deshacer y borrar), aparte del láser.",
+        "Competencia: signos \"?\" con explicaciones en palabras simples en cada métrica.",
+        "Autoridad de dominio (Open PageRank) ahora usa la nueva API alojada por Keywords Everywhere.",
+        "Nueva insignia Beta junto al logo y botón Novedades en la barra superior.",
+      ],
+      en: [
+        "Add to Tasks: \"+ Task\" button in the audit, competition, URL inspection, site history, broken links, PageSpeed, blog ideas and video ideas; you can also tick several and add them at once.",
+        "Presentation mode: new pen to draw on screen (4 colors, thin or thick stroke, undo and clear), alongside the laser.",
+        "Competition: \"?\" tooltips with plain-language explanations on every metric.",
+        "Domain authority (Open PageRank) now uses the new API hosted by Keywords Everywhere.",
+        "New Beta badge next to the logo and a What's new button in the top bar.",
+      ],
+    },
+  },
+  {
     id: "2026-09-18-auditoria-automatica",
     date: "2026-09-18",
     title: {
