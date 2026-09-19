@@ -326,6 +326,21 @@ const es = {
   "vr.usedNote": "Se usan en \"Generar titulos\": {videos} videos de la competencia y {questions} preguntas.",
   "vr.quota": "La busqueda gasta cuota de la API de YouTube (limite diario gratuito): usala con criterio.",
 
+  // Agregar a Tareas
+  "addtask.button": "+ Tarea",
+  "addtask.tooltip": "Agregar a tu lista de Tareas",
+  "addtask.added": "En Tareas ✓",
+  "addtask.adding": "Agregando...",
+  "addtask.pickMode": "Elegir varias",
+  "addtask.selectAll": "Seleccionar todas",
+  "addtask.selectNone": "Quitar seleccion",
+  "addtask.selected": "{count} seleccionadas",
+  "addtask.addSelected": "Agregar {count} a Tareas",
+  "addtask.cancel": "Cancelar",
+  "addtask.result": "{created} agregadas a Tareas",
+  "addtask.resultSkipped": "{created} agregadas a Tareas ({skipped} ya estaban)",
+  "addtask.error": "No se pudo agregar. Intenta de nuevo.",
+
   // Monitoreo > uptime
   "uptime.chartTitle": "Disponibilidad de {domain}",
   "uptime.chartDescription": "Revisamos tu sitio cada 10 minutos y guardamos el historial.",
@@ -673,6 +688,20 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "vr.usedNote": "Used by \"Generate titles\": {videos} competitor videos and {questions} questions.",
   "vr.quota": "Search uses YouTube API quota (free daily limit): use it wisely.",
 
+  // Add to Tasks
+  "addtask.button": "+ Task",
+  "addtask.tooltip": "Add to your Tasks list",
+  "addtask.added": "In Tasks ✓",
+  "addtask.adding": "Adding...",
+  "addtask.pickMode": "Pick several",
+  "addtask.selectAll": "Select all",
+  "addtask.selectNone": "Clear selection",
+  "addtask.selected": "{count} selected",
+  "addtask.addSelected": "Add {count} to Tasks",
+  "addtask.cancel": "Cancel",
+  "addtask.result": "{created} added to Tasks",
+  "addtask.resultSkipped": "{created} added to Tasks ({skipped} were already there)",
+  "addtask.error": "Couldn't add. Try again.",
   "uptime.chartTitle": "{domain} availability",
   "uptime.chartDescription": "We check your site every 10 minutes and keep the history.",
   "uptime.title": "Email me if {domain} goes down",

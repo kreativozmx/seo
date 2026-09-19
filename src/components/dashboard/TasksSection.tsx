@@ -7,6 +7,7 @@ import { TranslationKey } from "@/lib/i18n/dictionaries";
 import { TASK_STATUSES } from "@/lib/taskStatus";
 import { DateRangePopover } from "@/components/dashboard/DateRangePopover";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { tasksListCache } from "@/lib/tasksClient";
 
 interface Task {
   id: string;
@@ -168,7 +169,7 @@ function formatRange(start: string | null, end: string | null, locale: string): 
 // Stale-while-revalidate cache: re-entering the tab shows the last known
 // tasks instantly while a fresh copy loads, and the dashboard prefetches on
 // mount (see prefetchTasks) so even the first visit is usually instant.
-const tasksCache = new Map<string, { tasks: Task[]; members: Member[] }>();
+const tasksCache = tasksListCache as unknown as Map<string, { tasks: Task[]; members: Member[] }>;
 
 export async function prefetchTasks(projectId: string) {
   try {

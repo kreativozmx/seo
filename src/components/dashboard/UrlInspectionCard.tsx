@@ -6,6 +6,8 @@ import { ProjectDTO } from "@/lib/types";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
 import type { UrlInspection } from "@/lib/providers/gsc";
+import { AddToTasksButton, PickBox, PickerToolbar, useTaskPicker } from "@/components/dashboard/AddToTasks";
+import type { NewTask } from "@/lib/tasksClient";
 
 const VERDICT_STYLE: Record<string, string> = {
   PASS: "bg-[#E6F4EC] text-[#155D34]",
@@ -27,6 +29,7 @@ export function UrlInspectionCard({ project }: { project: ProjectDTO }) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customUrl, setCustomUrl] = useState("");
+  const picker = useTaskPicker();
 
   async function run(urls?: string[]) {
     setRunning(true);
@@ -48,6 +51,19 @@ export function UrlInspectionCard({ project }: { project: ProjectDTO }) {
       setRunning(false);
     }
   }
+
+  const shortUrl = (u: string) => u.replace(/^https?:\/\//, "");
+  const problemTasks: NewTask[] = items
+    .filter((i) => i.verdict !== "PASS")
+    .map((i) => ({
+      key: i.url,
+      title: `Revisar la indexacion en Google de ${shortUrl(i.url)}`,
+      note: `Search Console dice: ${i.error ?? i.coverageState ?? i.verdict}.${
+        i.googleCanonical && i.userCanonical && i.googleCanonical !== i.userCanonical
+          ? `\nGoogle eligio otra URL principal: ${i.googleCanonical}`
+          : ""
+      }\nURL: ${i.url}`,
+    }));
 
   const connected = Boolean(project.gscConnectedAt);
   const indexedCount = items.filter((i) => i.verdict === "PASS").length;
@@ -103,10 +119,13 @@ export function UrlInspectionCard({ project }: { project: ProjectDTO }) {
             <p className="text-xs text-neutral-400 mt-4">{t("insp.empty")}</p>
           ) : (
             <div className="mt-4">
-              <p className="text-[13px] text-neutral-400 mb-2">
-                {t("insp.summary", { ok: indexedCount, total: items.length })}
-                {project.urlInspectionsUpdatedAt && ` · ${t("insp.last")} ${fmt(project.urlInspectionsUpdatedAt)}`}
-              </p>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <p className="text-[13px] text-neutral-400">
+                  {t("insp.summary", { ok: indexedCount, total: items.length })}
+                  {project.urlInspectionsUpdatedAt && ` · ${t("insp.last")} ${fmt(project.urlInspectionsUpdatedAt)}`}
+                </p>
+                <PickerToolbar projectId={project.id} picker={picker} items={problemTasks} />
+              </div>
               <div className="flex flex-col divide-y divide-neutral-100 border border-neutral-100 rounded-lg overflow-hidden">
                 {items.map((i) => {
                   const canonicalDiff =
@@ -116,6 +135,9 @@ export function UrlInspectionCard({ project }: { project: ProjectDTO }) {
                   return (
                     <div key={i.url} className="px-3 py-2.5 flex flex-col gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {i.verdict !== "PASS" && (
+                          <PickBox projectId={project.id} picker={picker} task={problemTasks.find((p) => p.key === i.url) as NewTask} />
+                        )}
                         <span
                           className={`text-[11px] font-medium rounded px-1.5 py-0.5 shrink-0 ${
                             VERDICT_STYLE[i.verdict] ?? VERDICT_STYLE.VERDICT_UNSPECIFIED
@@ -131,6 +153,9 @@ export function UrlInspectionCard({ project }: { project: ProjectDTO }) {
                         >
                           {i.url.replace(/^https?:\/\//, "")}
                         </a>
+                        {i.verdict !== "PASS" && !picker.mode && (
+                          <AddToTasksButton projectId={project.id} task={problemTasks.find((p) => p.key === i.url) as NewTask} />
+                        )}
                         {i.mobileVerdict && i.mobileVerdict !== "VERDICT_UNSPECIFIED" && (
                           <span className="text-[11px] text-neutral-400 ml-auto shrink-0">
                             {i.mobileVerdict === "PASS" ? t("insp.mobileOk") : t("insp.mobileIssues")}

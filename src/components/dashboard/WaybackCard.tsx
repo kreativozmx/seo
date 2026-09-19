@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ProjectDTO } from "@/lib/types";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import type { WaybackReport } from "@/lib/providers/wayback";
+import { AddToTasksButton, PickBox, PickerToolbar, useTaskPicker } from "@/components/dashboard/AddToTasks";
+import type { NewTask } from "@/lib/tasksClient";
 
 // Auditoria: site history from the Wayback Machine, plus URLs that existed
 // before and now 404 (or dump visitors on the homepage) — redirect candidates.
@@ -16,6 +18,7 @@ export function WaybackCard({ project }: { project: ProjectDTO }) {
   );
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const picker = useTaskPicker();
 
   async function run() {
     setRunning(true);
@@ -32,6 +35,14 @@ export function WaybackCard({ project }: { project: ProjectDTO }) {
       setRunning(false);
     }
   }
+
+  const lostTasks: NewTask[] = (report?.lost ?? []).slice(0, 25).map((l) => ({
+    key: l.path,
+    title: `Redirigir la URL antigua ${l.path} a una pagina actual`,
+    note: `Esta URL existia (archivada el ${l.archivedAt}) y hoy ${
+      l.kind === "gone" ? "devuelve error 404" : "manda a los visitantes al inicio"
+    }.\nVersion archivada: ${l.archiveUrl}\nCrea una redireccion 301 hacia la pagina equivalente.`,
+  }));
 
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString(dateLocale, { year: "numeric", month: "short", day: "numeric" });
@@ -78,9 +89,13 @@ export function WaybackCard({ project }: { project: ProjectDTO }) {
 
           {report.lost.length > 0 && (
             <>
+              <div className="mt-2">
+                <PickerToolbar projectId={project.id} picker={picker} items={lostTasks} />
+              </div>
               <div className="flex flex-col divide-y divide-neutral-100 border border-neutral-100 rounded-lg overflow-hidden mt-2 max-h-72 overflow-y-auto">
                 {report.lost.slice(0, 25).map((l) => (
                   <div key={l.path} className="flex items-center gap-2 px-3 py-2 text-xs">
+                    <PickBox projectId={project.id} picker={picker} task={lostTasks.find((x) => x.key === l.path) as NewTask} />
                     <span
                       className={`text-[11px] font-medium rounded px-1.5 py-0.5 shrink-0 ${
                         l.kind === "gone" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
@@ -99,6 +114,9 @@ export function WaybackCard({ project }: { project: ProjectDTO }) {
                     >
                       {t("wb.viewArchive")}
                     </a>
+                    {!picker.mode && (
+                      <AddToTasksButton projectId={project.id} task={lostTasks.find((x) => x.key === l.path) as NewTask} />
+                    )}
                   </div>
                 ))}
               </div>

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ProjectDTO } from "@/lib/types";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
+import { AddToTasksButton, PickBox, PickerToolbar, useTaskPicker } from "@/components/dashboard/AddToTasks";
+import type { NewTask } from "@/lib/tasksClient";
 import { VIDEO_TYPES, VideoTypeId } from "@/lib/videoTypes";
 
 interface TitleIdea {
@@ -33,6 +35,7 @@ export function VideoIdeasCard({
     : {};
   const [videoType, setVideoType] = useState<VideoTypeId>(saved.videoType ?? "educational");
   const [virality, setVirality] = useState<number>(saved.virality ?? 3);
+  const picker = useTaskPicker();
   const [ideas, setIdeas] = useState<TitleIdea[]>(
     project.youtubeIdeasJson ? JSON.parse(project.youtubeIdeasJson) : []
   );
@@ -87,6 +90,12 @@ export function VideoIdeasCard({
     setCopiedAll(true);
     setTimeout(() => setCopiedAll(false), 1500);
   }
+
+  const ideaTasks: NewTask[] = ideas.map((idea, i) => ({
+    key: String(i),
+    title: `Grabar video: ${idea.title}`,
+    note: [idea.topic, idea.why].filter(Boolean).join(" — ") || undefined,
+  }));
 
   return (
     <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
@@ -181,6 +190,11 @@ export function VideoIdeasCard({
             </button>
           </div>
           <div className="flex flex-col gap-2">
+            <PickerToolbar
+              projectId={project.id}
+              picker={picker}
+              items={ideaTasks.filter((tk) => !ideas[Number(tk.key)]?.done)}
+            />
             {ideas.map((idea, i) => (
               <label
                 key={`${i}-${idea.title}`}
@@ -190,6 +204,7 @@ export function VideoIdeasCard({
                     : "bg-neutral-50 border-neutral-200 hover:border-neutral-300"
                 }`}
               >
+                {!idea.done && <PickBox projectId={project.id} picker={picker} task={ideaTasks[i]} />}
                 <input
                   type="checkbox"
                   checked={Boolean(idea.done)}
@@ -221,6 +236,7 @@ export function VideoIdeasCard({
                 >
                   {copiedIndex === i ? t("content.copied") : t("videos.copy")}
                 </button>
+                {!idea.done && <AddToTasksButton projectId={project.id} task={ideaTasks[i]} />}
               </label>
             ))}
           </div>

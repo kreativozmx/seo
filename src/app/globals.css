@@ -55,6 +55,10 @@ body.presentation-cursor-none * {
   cursor: none !important;
 }
 
+body.presentation-cursor-none canvas[data-pen] {
+  cursor: crosshair !important;
+}
+
 .presentation-laser-dot {
   position: fixed;
   top: 0;

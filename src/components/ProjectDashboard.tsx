@@ -30,6 +30,8 @@ import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { TopBar } from "@/components/TopBar";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { AddToTasksButton, PickBox, PickerToolbar, useTaskPicker } from "@/components/dashboard/AddToTasks";
+import { CanAddTasksContext, NewTask } from "@/lib/tasksClient";
 import { METRIC_HELP } from "@/lib/metricHelp";
 import { ReleaseNotes } from "@/components/ReleaseNotes";
 import { ChangelogSection } from "@/components/dashboard/ChangelogSection";
@@ -923,6 +925,7 @@ export default function ProjectDashboard({
 
   return (
     <SyncStatusContext.Provider value={syncStatus}>
+    <CanAddTasksContext.Provider value={!readOnly}>
     <div className="min-h-screen bg-[#F4F5F7] flex flex-col">
       {/* Global bar — light so the green logo stands out. Never
           unmounts, so the sync pill keeps showing (and the underlying
@@ -1468,6 +1471,7 @@ export default function ProjectDashboard({
         </div>
       </div>
     </div>
+    </CanAddTasksContext.Provider>
     </SyncStatusContext.Provider>
   );
 }
@@ -2650,12 +2654,19 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
   const [error, setError] = useState<string | null>(null);
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
   const [resolvedIssueIds, setResolvedIssueIds] = useState<Set<string>>(new Set());
+  const picker = useTaskPicker();
   const sync = useSyncStatus();
 
   const hasResult = project.psiUpdatedAt != null;
   const verdict = overallVerdict(project.psiPerformanceScore);
   const issues: { id: string; title: string; description: string; displayValue: string | null; score: number | null }[] =
     project.psiIssuesJson ? JSON.parse(project.psiIssuesJson) : [];
+
+  const issueTasks: NewTask[] = issues.map((i) => ({
+    key: i.id,
+    title: `Velocidad: ${i.title}`,
+    note: `${i.description}${i.displayValue ? `\n\nAhorro estimado / valor: ${i.displayValue}` : ""}\n\nDetectado por PageSpeed Insights (movil).`,
+  }));
 
   function toggleResolved(id: string) {
     setResolvedIssueIds((prev) => {
@@ -2778,9 +2789,12 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
 
           {issues.length > 0 && (
             <div>
-              <h3 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-                Que corregir ({resolvedIssueIds.size}/{issues.length})
-              </h3>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <h3 className="text-xs font-medium text-neutral-400 uppercase tracking-wide">
+                  Que corregir ({resolvedIssueIds.size}/{issues.length})
+                </h3>
+                <PickerToolbar projectId={project.id} picker={picker} items={issueTasks} />
+              </div>
               <div className="flex flex-col gap-2">
                 {issues.map((issue) => {
                   const resolved = resolvedIssueIds.has(issue.id);
@@ -2789,13 +2803,14 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                       key={issue.id}
                       className="flex items-start gap-2.5 bg-white border border-neutral-200 rounded-lg px-3 py-2.5 cursor-pointer"
                     >
+                      <PickBox projectId={project.id} picker={picker} task={issueTasks.find((t) => t.key === issue.id) as NewTask} />
                       <input
                         type="checkbox"
                         checked={resolved}
                         onChange={() => toggleResolved(issue.id)}
                         className="mt-0.5 w-4 h-4 accent-[#228449] cursor-pointer shrink-0"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <p
                             className={`text-sm font-medium ${
@@ -2814,6 +2829,9 @@ function PageSpeedSection({ project }: { project: ProjectDTO }) {
                           {issue.description}
                         </p>
                       </div>
+                      {!picker.mode && (
+                        <AddToTasksButton projectId={project.id} task={issueTasks.find((t) => t.key === issue.id) as NewTask} />
+                      )}
                     </label>
                   );
                 })}
@@ -3215,6 +3233,7 @@ function ContentStrategySection({
   const { t, dateLocale } = useLocale();
   const langName = (code: string) => t(`lang.${code}` as TranslationKey);
   const [showExisting, setShowExisting] = useState(false);
+  const picker = useTaskPicker();
   const existing: { title: string; url: string }[] | null = project.contentExistingJson
     ? JSON.parse(project.contentExistingJson)
     : null;
@@ -3272,6 +3291,12 @@ function ContentStrategySection({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  const ideaTasks: NewTask[] = ideas.map((idea, i) => ({
+    key: String(i),
+    title: `Escribir blog: ${idea.title}`,
+    note: `Keywords a trabajar: ${idea.keywords.join(", ")}`,
+  }));
 
   if (!connected) {
     return (
@@ -3381,6 +3406,11 @@ function ContentStrategySection({
         <p className="text-neutral-400 text-sm">{t("content.empty")}</p>
       ) : (
         <div className="flex flex-col gap-2">
+          <PickerToolbar
+            projectId={project.id}
+            picker={picker}
+            items={ideaTasks.filter((tk) => !ideas[Number(tk.key)]?.done)}
+          />
           {ideas.map((idea, i) => (
             <label
               key={i}
@@ -3390,13 +3420,16 @@ function ContentStrategySection({
                   : "bg-neutral-50 border-neutral-200 hover:border-neutral-300"
               }`}
             >
+              {!idea.done && (
+                <PickBox projectId={project.id} picker={picker} task={ideaTasks[i]} />
+              )}
               <input
                 type="checkbox"
                 checked={Boolean(idea.done)}
                 onChange={() => handleToggle(i)}
                 className="mt-1 w-4 h-4 accent-[#228449] shrink-0 cursor-pointer"
               />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p>
                   <span className="text-[13px] text-neutral-400 uppercase tracking-wide mr-1.5">
                     {t("content.titleLabel")}
@@ -3423,6 +3456,7 @@ function ContentStrategySection({
                   ))}
                 </div>
               </div>
+              {!idea.done && <AddToTasksButton projectId={project.id} task={ideaTasks[i]} />}
             </label>
           ))}
         </div>
@@ -3436,11 +3470,15 @@ function AuditChecklistRow({
   checked,
   auto,
   onToggle,
+  pickBox,
+  addButton,
 }: {
   item: { id: string; label: string; hint: string };
   checked: boolean;
   auto: boolean;
   onToggle: () => void;
+  pickBox?: React.ReactNode;
+  addButton?: React.ReactNode;
 }) {
   return (
     <label
@@ -3448,6 +3486,7 @@ function AuditChecklistRow({
         auto ? "cursor-default" : "cursor-pointer hover:bg-neutral-50"
       }`}
     >
+      {pickBox && <span className="mt-0.5 shrink-0">{pickBox}</span>}
       <input
         type="checkbox"
         checked={checked}
@@ -3468,6 +3507,7 @@ function AuditChecklistRow({
         </div>
         <p className="text-neutral-400 text-[14px] mt-0.5">{item.hint}</p>
       </div>
+      {addButton && <span className="ml-auto shrink-0">{addButton}</span>}
     </label>
   );
 }
@@ -3479,10 +3519,16 @@ function BrokenLinksSection({ project }: { project: ProjectDTO }) {
   const { percent: progress, start: startProgress, finish: finishProgress } = useSimulatedProgress();
   const sync = useSyncStatus();
 
+  const picker = useTaskPicker();
   const hasResult = project.brokenLinksCheckedAt != null;
   const broken: { url: string; path: string; status: number }[] = project.brokenLinksJson
     ? JSON.parse(project.brokenLinksJson)
     : [];
+  const brokenTasks: NewTask[] = broken.map((b) => ({
+    key: b.url,
+    title: `Corregir el enlace roto ${b.path} (error ${b.status})`,
+    note: `URL: ${b.url}\nRespondio con error ${b.status}. Crea una redireccion 301 hacia una pagina que exista, o restaura la pagina.`,
+  }));
 
   async function handleRun() {
     setLoading(true);
@@ -3556,6 +3602,11 @@ function BrokenLinksSection({ project }: { project: ProjectDTO }) {
           </div>
 
           {broken.length > 0 && (
+            <div className="mb-2">
+              <PickerToolbar projectId={project.id} picker={picker} items={brokenTasks} />
+            </div>
+          )}
+          {broken.length > 0 && (
             <div className="flex flex-col gap-1 bg-white border border-neutral-200 rounded-lg p-1.5">
               {broken.map((b) => (
                 <div
@@ -3563,6 +3614,7 @@ function BrokenLinksSection({ project }: { project: ProjectDTO }) {
                   className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
                 >
                   <div className="min-w-0 flex items-center gap-2">
+                    <PickBox projectId={project.id} picker={picker} task={brokenTasks.find((t) => t.key === b.url) as NewTask} />
                     <span className="text-[13px] font-semibold text-red-600 shrink-0">{b.status}</span>
                     <a
                       href={b.url}
@@ -3574,6 +3626,10 @@ function BrokenLinksSection({ project }: { project: ProjectDTO }) {
                       {b.path}
                     </a>
                   </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                  {!picker.mode && (
+                    <AddToTasksButton projectId={project.id} task={brokenTasks.find((t) => t.key === b.url) as NewTask} />
+                  )}
                   <a
                     href={`https://${project.domain}/admin/settings/redirects/new?path=${encodeURIComponent(b.path)}`}
                     target="_blank"
@@ -3582,6 +3638,7 @@ function BrokenLinksSection({ project }: { project: ProjectDTO }) {
                   >
                     Crear redireccion →
                   </a>
+                  </div>
                 </div>
               ))}
             </div>
@@ -3594,6 +3651,7 @@ function BrokenLinksSection({ project }: { project: ProjectDTO }) {
 
 function AuditSection({ project }: { project: ProjectDTO }) {
   const router = useRouter();
+  const picker = useTaskPicker();
   const [manualChecks, setManualChecks] = useState<Record<string, boolean>>(() =>
     project.auditManualChecksJson ? JSON.parse(project.auditManualChecksJson) : {}
   );
@@ -3632,6 +3690,14 @@ function AuditSection({ project }: { project: ProjectDTO }) {
     auto: item.auto != null,
     checked: item.auto ? item.auto(project) : manualChecks[item.id] === true,
   }));
+
+  const pendingTasks: NewTask[] = results
+    .filter((r) => !r.checked)
+    .map((r) => ({
+      key: r.item.id,
+      title: r.item.label,
+      note: `${r.item.hint}\n\nCategoria de la auditoria: ${r.item.category}`,
+    }));
 
   const completedCount = results.filter((r) => r.checked).length;
   const totalCount = results.length;
@@ -3702,6 +3768,9 @@ function AuditSection({ project }: { project: ProjectDTO }) {
             style={{ width: `${percent}%` }}
           />
         </div>
+        <div className="mt-3">
+          <PickerToolbar projectId={project.id} picker={picker} items={pendingTasks} />
+        </div>
       </div>
 
       <UrlInspectionCard project={project} />
@@ -3724,6 +3793,23 @@ function AuditSection({ project }: { project: ProjectDTO }) {
                   checked={checked}
                   auto={auto}
                   onToggle={() => handleToggle(item.id, !checked)}
+                  pickBox={
+                    checked ? null : (
+                      <PickBox
+                        projectId={project.id}
+                        picker={picker}
+                        task={pendingTasks.find((t) => t.key === item.id) as NewTask}
+                      />
+                    )
+                  }
+                  addButton={
+                    checked || picker.mode ? null : (
+                      <AddToTasksButton
+                        projectId={project.id}
+                        task={pendingTasks.find((t) => t.key === item.id) as NewTask}
+                      />
+                    )
+                  }
                 />
               ))}
             </div>
@@ -5630,6 +5716,7 @@ function CompetitorComparisonOverview({
   >({});
   const [checkedTasks, setCheckedTasks] = useState<Set<string>>(new Set());
   const captureRef = useRef<HTMLDivElement>(null);
+  const taskPicker = useTaskPicker();
 
   const [comparison, setComparison] = useState<ComparisonValue>("none");
   const [previousByDomain, setPreviousByDomain] = useState<Record<string, TrafficSnapshotDTO> | null>(null);
@@ -5840,6 +5927,15 @@ function CompetitorComparisonOverview({
         .filter((t) => t.ownPosition == null || t.ownPosition > t.competitorPosition)
         .sort((a, b) => (b.searchVolume ?? 0) - (a.searchVolume ?? 0))
         .slice(0, 15)
+    : [];
+  const beatNewTasks: NewTask[] = nextCompetitor
+    ? beatTasks.map((t) => ({
+        key: t.keyword,
+        title: beatTaskLabel(t, nextCompetitor.domain),
+        note: `Keyword: "${t.keyword}"${t.searchVolume ? ` — ${t.searchVolume.toLocaleString("es-MX")} busquedas/mes` : ""}.\nTu posicion: ${
+          t.ownPosition ?? "fuera del top 100"
+        }. ${nextCompetitor.domain}: #${t.competitorPosition}.`,
+      }))
     : [];
 
   if (!ownHasData && competitorsWithData.length === 0) {
@@ -6370,7 +6466,8 @@ function CompetitorComparisonOverview({
             )}
           </p>
           {beatTasks.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <PickerToolbar projectId={project.id} picker={taskPicker} items={beatNewTasks} />
               <button
                 onClick={() => exportBeatTasksCsv(beatTasks, nextCompetitor.domain, checkedTasks)}
                 className="text-[11px] bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 rounded-md px-2 py-1 transition-colors"
@@ -6413,6 +6510,11 @@ function CompetitorComparisonOverview({
                       done ? "bg-neutral-50 border-neutral-200" : "bg-white border-neutral-200 hover:border-neutral-300"
                     }`}
                   >
+                    <PickBox
+                      projectId={project.id}
+                      picker={taskPicker}
+                      task={beatNewTasks.find((n) => n.key === t.keyword) as NewTask}
+                    />
                     <input
                       type="checkbox"
                       checked={done}
@@ -6435,6 +6537,14 @@ function CompetitorComparisonOverview({
                         </>
                       )}
                     </span>
+                    {!taskPicker.mode && (
+                      <span className="ml-auto shrink-0">
+                        <AddToTasksButton
+                          projectId={project.id}
+                          task={beatNewTasks.find((n) => n.key === t.keyword) as NewTask}
+                        />
+                      </span>
+                    )}
                   </label>
                 </li>
               );
