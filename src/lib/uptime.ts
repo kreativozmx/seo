@@ -30,11 +30,18 @@ export async function checkSite(domain: string): Promise<{ up: boolean; error: s
   }
 }
 
+// Emails are opened on the recipient's machine, so localhost URLs (dev/test
+// sends) would break the logo image and links — fall back to the public site.
+function publicUrl(baseUrl: string) {
+  return /localhost|127\.0\.0\.1/.test(baseUrl) ? "https://shopifyaudit.com" : baseUrl;
+}
+
 function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function emailShell(baseUrl: string, accent: string, title: string, bodyHtml: string, projectUrl: string) {
+function emailShell(rawBaseUrl: string, accent: string, title: string, bodyHtml: string, projectUrl: string) {
+  const baseUrl = publicUrl(rawBaseUrl);
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:24px 0;">
@@ -77,8 +84,20 @@ function buildDownEmail(baseUrl: string, domain: string, fails: number, error: s
     "#B91C1C",
     "Tu sitio no esta respondiendo",
     `${testBanner(isTest)}<p style="margin:0 0 8px;font-size:14px;color:#374151;">No pudimos abrir <strong>${escapeHtml(domain)}</strong> en ${fails} revisiones seguidas (cada 10 min).</p>
-     <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Motivo: ${escapeHtml(error ?? "desconocido")}</p>
-     <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Te avisaremos cuando vuelva a estar en linea.</p>`,
+     <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">Motivo tecnico: ${escapeHtml(error ?? "desconocido")}</p>
+     <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#374151;">Posibles razones</p>
+     <ul style="margin:0 0 16px;padding-left:18px;font-size:13px;line-height:1.6;color:#4b5563;">
+       <li><strong>Falla o mantenimiento de Shopify:</strong> revisa el estado de la plataforma con los botones de abajo.</li>
+       <li><strong>Una actualizacion reciente:</strong> un cambio de tema, una app instalada o actualizada, o una actualizacion de Shopify puede romper la tienda.</li>
+       <li><strong>Dominio o SSL:</strong> dominio vencido, DNS mal configurado o certificado SSL con problemas.</li>
+       <li><strong>Tienda pausada o plan vencido</strong>, o un pico de trafico inesperado.</li>
+     </ul>
+     <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Verifica si el problema es de Shopify en general:</p>
+     <p style="margin:0 0 16px;">
+       <a href="https://www.shopifystatus.com/" style="display:inline-block;margin:0 8px 8px 0;background:#ffffff;color:#14171C;border:1px solid #d1d5db;text-decoration:none;font-size:13px;font-weight:600;padding:9px 16px;border-radius:6px;">Estado de Shopify</a>
+       <a href="https://downdetector.mx/en/status/shopify/" style="display:inline-block;margin:0 8px 8px 0;background:#ffffff;color:#14171C;border:1px solid #d1d5db;text-decoration:none;font-size:13px;font-weight:600;padding:9px 16px;border-radius:6px;">Downdetector (reportes de usuarios)</a>
+     </p>
+     <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Te avisaremos cuando tu sitio vuelva a estar en linea.</p>`,
     projectUrl
   );
 }

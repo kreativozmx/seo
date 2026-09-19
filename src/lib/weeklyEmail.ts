@@ -382,7 +382,7 @@ export async function sendWeeklyEmailForProject(project: ProjectWithKeywords, to
     domain: project.domain,
     projectUrl: `${baseUrl}/projects/${project.id}`,
     homeUrl: baseUrl,
-    logoUrl: `${baseUrl}/logo.png`,
+    logoUrl: `${/localhost|127\.0\.0\.1/.test(baseUrl) ? "https://shopifyaudit.com" : baseUrl}/logo.png`,
     dateRangeLabel: dateRangeLabel || "ultimos 7 dias",
     sections,
     stats,
