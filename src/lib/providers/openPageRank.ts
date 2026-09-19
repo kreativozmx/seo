@@ -10,7 +10,7 @@ export async function fetchDomainAuthority(domains: string[]): Promise<Record<st
   const key = process.env.OPEN_PAGERANK_API_KEY;
   if (!key) {
     throw new Error(
-      "Falta OPEN_PAGERANK_API_KEY: crea una llave gratis en openpagerank.com y agregala a las variables de entorno."
+      "Falta OPEN_PAGERANK_API_KEY: crea una llave gratis en https://www.domcop.com/openpagerank/ y agregala a las variables de entorno."
     );
   }
   const params = domains.slice(0, 100).map((d) => `domains[]=${encodeURIComponent(d)}`).join("&");
