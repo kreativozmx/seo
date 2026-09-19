@@ -222,6 +222,13 @@ const es = {
   "tasks.error": "No se pudo guardar. Intenta de nuevo.",
 
   // Consulta de dominio (top bar)
+  "whois.pageTitle": "Consultar dominio",
+  "whois.pageDescription": "Descubre quien esta detras de cualquier dominio: registrador, fechas, servidores DNS y hosting. Sirve para revisar competidores, proveedores o un sitio antes de comprarle o trabajar con el.",
+  "whois.back": "Volver",
+  "whois.sectionRegistration": "Registro",
+  "whois.sectionDates": "Fechas",
+  "whois.sectionDns": "DNS y hosting",
+  "whois.recent": "Consultas recientes",
   "whois.button": "Consultar dominio",
   "whois.placeholder": "ejemplo.com",
   "whois.search": "Buscar",
@@ -556,6 +563,13 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "tasks.error": "Couldn't save. Try again.",
 
   // Domain lookup (top bar)
+  "whois.pageTitle": "Domain lookup",
+  "whois.pageDescription": "Find out who is behind any domain: registrar, dates, nameservers and hosting. Useful to vet competitors, suppliers or a site before buying from or working with it.",
+  "whois.back": "Back",
+  "whois.sectionRegistration": "Registration",
+  "whois.sectionDates": "Dates",
+  "whois.sectionDns": "DNS & hosting",
+  "whois.recent": "Recent lookups",
   "whois.button": "Look up domain",
   "whois.placeholder": "example.com",
   "whois.search": "Search",
