@@ -29,6 +29,7 @@ import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { TopBar } from "@/components/TopBar";
+import { ReleaseNotes } from "@/components/ReleaseNotes";
 import { ChangelogSection } from "@/components/dashboard/ChangelogSection";
 import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
 import { WaybackCard } from "@/components/dashboard/WaybackCard";
@@ -963,6 +964,7 @@ export default function ProjectDashboard({
               <span className="hidden md:inline text-neutral-400 shrink-0">· puedes seguir navegando</span>
             </span>
           )}
+          {!readOnly && <ReleaseNotes />}
           {readOnly ? (
             <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-600 rounded-md px-2.5 py-1 shrink-0">
               {t("chrome.readonly")}

@@ -7,6 +7,7 @@ import { computeProjectStats } from "@/lib/projectStats";
 import { cookies } from "next/headers";
 import { LOCALE_COOKIE, translate } from "@/lib/i18n/dictionaries";
 import { TopBar } from "@/components/TopBar";
+import { ReleaseNotes } from "@/components/ReleaseNotes";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,7 @@ export default async function Home() {
           project list reads as part of the same app instead of a
           different, older screen. */}
       <TopBar>
+        <ReleaseNotes />
         <a
           href="/api/logout"
           className="text-xs bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
