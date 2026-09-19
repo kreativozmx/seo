@@ -6244,7 +6244,7 @@ function CompetitorComparisonOverview({
                 </tr>
                 {expandedDomain === p.domain && !p.isOwn && (
                   <tr>
-                    <td colSpan={4} className="bg-neutral-50 px-3 py-3">
+                    <td colSpan={5} className="bg-neutral-50 px-3 py-3">
                       {intersection === "loading" && (
                         <p className="text-neutral-400 text-xs">Cargando keywords en comun...</p>
                       )}
