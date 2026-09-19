@@ -261,6 +261,8 @@ model Project {
   urlInspectionsUpdatedAt DateTime?
   waybackJson             String? // cached Wayback Machine report (history + URLs that used to exist)
   waybackUpdatedAt        DateTime?
+  authorityJson           String? // cached Open PageRank scores {domain: {score, globalRank}} for the project + its competitors
+  authorityUpdatedAt      DateTime?
   uptimeEmailsJson        String? // extra alert recipients (JSON array of emails)
   uptimeUseReportEmail    Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
   taskMembers             TaskMember[]

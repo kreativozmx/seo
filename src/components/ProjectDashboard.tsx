@@ -19,7 +19,7 @@ import CompetitorScatterChart, {
 import { useSimulatedProgress } from "@/lib/useSimulatedProgress";
 import { ProjectDTO, KeywordDTO } from "@/lib/types";
 import { normalizeDomain } from "@/lib/domain";
-import { LOCATIONS, LANGUAGES } from "@/lib/locations";
+import { LOCATIONS, LANGUAGES, LOCATION_CURRENCY } from "@/lib/locations";
 import { ProjectStats } from "@/lib/projectStats";
 import { AUDIT_ITEMS } from "@/lib/auditItems";
 import { ExpertBanner } from "@/components/dashboard/shared";
@@ -5751,6 +5751,42 @@ function CompetitorComparisonOverview({
   const [previousByDomain, setPreviousByDomain] = useState<Record<string, TrafficSnapshotDTO> | null>(null);
   const [loadingComparison, setLoadingComparison] = useState(false);
 
+  // Optional local-currency view of the (USD) traffic value, via Frankfurter.
+  const localCurrency = LOCATION_CURRENCY[project.locationCode] ?? "USD";
+  const [fx, setFx] = useState<{ code: string; rate: number } | null>(null);
+  const [showLocal, setShowLocal] = useState(false);
+  useEffect(() => {
+    if (localCurrency === "USD") return;
+    fetch(`/api/fx?to=${localCurrency}`)
+      .then((r) => r.json())
+      .then((d) => d.rate && setFx({ code: localCurrency, rate: d.rate }))
+      .catch(() => {});
+  }, [localCurrency]);
+  const fxRate = showLocal && fx ? fx.rate : 1;
+
+  // Open PageRank domain authority (0-10), cached on the project.
+  const [authority, setAuthority] = useState<Record<string, { score: number | null; globalRank: number | null }>>(
+    project.authorityJson ? JSON.parse(project.authorityJson) : {}
+  );
+  const [loadingAuthority, setLoadingAuthority] = useState(false);
+  const [authorityError, setAuthorityError] = useState<string | null>(null);
+  async function handleRefreshAuthority() {
+    setLoadingAuthority(true);
+    setAuthorityError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/authority`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      setAuthority(data.authority);
+    } catch (err) {
+      setAuthorityError(err instanceof Error ? err.message : "Error");
+    } finally {
+      setLoadingAuthority(false);
+    }
+  }
+  const money = (usd: number) =>
+    showLocal && fx ? `${fx.code} $${Math.round(usd * fx.rate).toLocaleString("es-MX")}` : `$${usd.toLocaleString("es-MX")}`;
+
   useEffect(() => {
     if (comparison === "none") {
       setPreviousByDomain(null);
@@ -6063,7 +6099,40 @@ function CompetitorComparisonOverview({
             {opt.label}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={handleRefreshAuthority}
+          disabled={loadingAuthority}
+          title="Autoridad de dominio 0-10 (Open PageRank, gratis)"
+          className="text-xs px-2.5 py-1 rounded-full border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 disabled:opacity-50 transition-colors whitespace-nowrap"
+        >
+          {loadingAuthority ? "Consultando..." : "Actualizar autoridad"}
+        </button>
+        {fx && (
+          <div className="ml-auto flex items-center gap-1.5 text-xs text-neutral-500" title="Tipo de cambio del Banco Central Europeo (Frankfurter)">
+            <span>Valores en:</span>
+            <div className="flex bg-neutral-100 rounded-md p-0.5">
+              {[
+                { on: false, label: "USD" },
+                { on: true, label: fx.code },
+              ].map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={() => setShowLocal(o.on)}
+                  className={`px-2 py-0.5 rounded-md transition-colors ${
+                    showLocal === o.on ? "bg-white shadow-sm text-neutral-900 font-medium" : "text-neutral-500"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {authorityError && <p className="text-xs text-red-600 mb-2">{authorityError}</p>}
 
       {loadingComparison && (
         <p className="text-xs text-neutral-400 mb-2">Buscando datos de esa fecha...</p>
@@ -6081,11 +6150,14 @@ function CompetitorComparisonOverview({
         </p>
       )}
       <CompetitorScatterChart
-        points={visiblePoints}
-        previousPoints={previousPoints}
+        points={visiblePoints.map((p) => ({ ...p, trafficValue: p.trafficValue * fxRate }))}
+        previousPoints={previousPoints?.map((p) => ({ ...p, trafficValue: p.trafficValue * fxRate }))}
         previousLabel={previousLabel}
         xMetric={xMetric}
         colorFor={colorFor}
+        formatX={(v) =>
+          showLocal && fx ? `${fx.code} $${Math.round(v).toLocaleString("es-MX")}` : `$${v.toLocaleString("es-MX")}`
+        }
       />
 
       <div className="overflow-x-auto mt-3">
@@ -6098,6 +6170,12 @@ function CompetitorComparisonOverview({
                 <span className="inline-flex items-center gap-1 justify-end">
                   Trafico organico est.
                   <InfoTooltip text="Visitas mensuales estimadas que recibe ese sitio desde resultados gratuitos de Google, sin pagar anuncios." />
+                </span>
+              </th>
+              <th className="text-right font-normal px-2 py-1.5">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Autoridad
+                  <InfoTooltip text="Puntaje 0-10 de Open PageRank (gratis): que tan reconocido es el dominio segun los enlaces que recibe. Sirve para comparar, no es el 'Domain Rating' de Ahrefs." />
                 </span>
               </th>
               <th className="text-right font-normal px-2 py-1.5">
@@ -6146,7 +6224,22 @@ function CompetitorComparisonOverview({
                     {p.organicTraffic.toLocaleString("es-MX")}/mes
                   </td>
                   <td className="px-2 py-1.5 text-right text-neutral-600">
-                    ${p.trafficValue.toLocaleString("es-MX")}/mes
+                    {authority[p.domain]?.score != null ? (
+                      <span className="inline-flex items-center gap-1.5 justify-end">
+                        <span className="w-10 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                          <span
+                            className="block h-full bg-[#228449]"
+                            style={{ width: `${((authority[p.domain].score as number) / 10) * 100}%` }}
+                          />
+                        </span>
+                        {(authority[p.domain].score as number).toFixed(1)}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-neutral-600">
+                    {money(p.trafficValue)}/mes
                   </td>
                 </tr>
                 {expandedDomain === p.domain && !p.isOwn && (

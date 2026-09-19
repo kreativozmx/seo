@@ -75,12 +75,14 @@ export default function CompetitorScatterChart({
   previousLabel,
   xMetric,
   colorFor,
+  formatX,
 }: {
   points: CompetitorPoint[];
   previousPoints?: CompetitorPoint[];
   previousLabel?: string;
   xMetric: XMetricKey;
   colorFor: (domain: string) => string;
+  formatX?: (v: number) => string;
 }) {
   if (points.length === 0) {
     return (
@@ -91,6 +93,7 @@ export default function CompetitorScatterChart({
   }
 
   const xConfig = X_METRICS[xMetric];
+  const formatXValue = formatX ?? xConfig.format;
   const xValue = (p: CompetitorPoint) => p[xMetric];
 
   const fit = linearRegression(points.map((p) => ({ x: xValue(p), y: p.organicTraffic })));
@@ -128,7 +131,7 @@ export default function CompetitorScatterChart({
           name={xConfig.shortLabel}
           stroke="#a3a3a3"
           fontSize={11}
-          tickFormatter={xConfig.format}
+          tickFormatter={formatXValue}
           label={{ value: xConfig.label, position: "insideBottom", offset: -5, fontSize: 11, fill: "#a3a3a3" }}
         />
         <YAxis
@@ -164,7 +167,7 @@ export default function CompetitorScatterChart({
                   const isX = entry.name === xConfig.shortLabel;
                   return (
                     <p key={entry.name} style={{ margin: 0 }}>
-                      {entry.name} : {isX ? xConfig.format(n) : n.toLocaleString("es-MX")}
+                      {entry.name} : {isX ? formatXValue(n) : n.toLocaleString("es-MX")}
                     </p>
                   );
                 })}

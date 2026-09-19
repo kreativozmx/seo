@@ -122,6 +122,8 @@ export interface ProjectDTO {
   urlInspectionsUpdatedAt: string | null;
   waybackJson: string | null;
   waybackUpdatedAt: string | null;
+  authorityJson: string | null;
+  authorityUpdatedAt: string | null;
   brokenLinksJson: string | null;
   brokenLinksChecked: number | null;
   brokenLinksCheckedAt: string | null;
