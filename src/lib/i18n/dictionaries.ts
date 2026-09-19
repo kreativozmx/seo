@@ -285,6 +285,18 @@ const es = {
   "wb.partial": "Wayback respondio incompleto; los resultados pueden ser parciales.",
   "wb.last": "Ultimo analisis:",
 
+  // Autocompletado (Keywords)
+  "ac.title": "Ideas del autocompletado de Google (gratis)",
+  "ac.description": "Lo que Google sugiere mientras la gente escribe: busquedas reales y de cola larga, sin gastar creditos. No trae volumen de busqueda.",
+  "ac.placeholder": "labial indeleble",
+  "ac.search": "Buscar",
+  "ac.expand": "Expandir A-Z",
+  "ac.searching": "Buscando...",
+  "ac.add": "Rastrear",
+  "ac.added": "Ya rastreada",
+  "ac.empty": "Sin sugerencias para esa busqueda.",
+  "ac.unofficial": "El autocompletado no es una API oficial: puede cambiar o limitarse sin aviso.",
+
   // Monitoreo > uptime
   "uptime.chartTitle": "Disponibilidad de {domain}",
   "uptime.chartDescription": "Revisamos tu sitio cada 10 minutos y guardamos el historial.",
@@ -590,6 +602,18 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "wb.tip": "Tip: create a 301 redirect from each broken URL to its current equivalent page (Shopify: Content > Navigation > View URL redirects) to keep its rankings.",
   "wb.partial": "Wayback answered incompletely; results may be partial.",
   "wb.last": "Last analysis:",
+
+  // Autocomplete (Keywords)
+  "ac.title": "Google autocomplete ideas (free)",
+  "ac.description": "What Google suggests as people type: real, long-tail searches at no credit cost. It doesn't include search volume.",
+  "ac.placeholder": "waterproof lipstick",
+  "ac.search": "Search",
+  "ac.expand": "Expand A-Z",
+  "ac.searching": "Searching...",
+  "ac.add": "Track",
+  "ac.added": "Already tracked",
+  "ac.empty": "No suggestions for that search.",
+  "ac.unofficial": "Autocomplete isn't an official API: it may change or be throttled without notice.",
 
   "uptime.chartTitle": "{domain} availability",
   "uptime.chartDescription": "We check your site every 10 minutes and keep the history.",

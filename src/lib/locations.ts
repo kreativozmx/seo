@@ -48,3 +48,20 @@ export const LANGUAGE_PROMPT_NAMES: Record<string, string> = {
   de: "alemán",
   it: "italiano",
 };
+
+// DataForSEO location code -> Google "gl" country code (for autocomplete etc.).
+export const LOCATION_GL: Record<string, string> = {
+  "2484": "mx", "2840": "us", "2724": "es", "2032": "ar", "2076": "br", "2152": "cl", "2170": "co",
+  "2604": "pe", "2218": "ec", "2862": "ve", "2320": "gt", "2188": "cr", "2591": "pa", "2214": "do",
+  "2068": "bo", "2600": "py", "2858": "uy", "2222": "sv", "2340": "hn", "2558": "ni", "2826": "gb",
+  "2124": "ca", "2250": "fr", "2276": "de", "2380": "it", "2620": "pt",
+};
+
+// Location -> local currency code. Frankfurter (ECB rates) only covers some
+// of these; the rest fall back to showing USD.
+export const LOCATION_CURRENCY: Record<string, string> = {
+  "2484": "MXN", "2840": "USD", "2724": "EUR", "2032": "ARS", "2076": "BRL", "2152": "CLP", "2170": "COP",
+  "2604": "PEN", "2218": "USD", "2862": "VES", "2320": "GTQ", "2188": "CRC", "2591": "USD", "2214": "DOP",
+  "2068": "BOB", "2600": "PYG", "2858": "UYU", "2222": "USD", "2340": "HNL", "2558": "NIO", "2826": "GBP",
+  "2124": "CAD", "2250": "EUR", "2276": "EUR", "2380": "EUR", "2620": "EUR",
+};

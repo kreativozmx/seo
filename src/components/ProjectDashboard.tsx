@@ -31,6 +31,7 @@ import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection"
 import { WhoisLookup } from "@/components/WhoisLookup";
 import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
 import { WaybackCard } from "@/components/dashboard/WaybackCard";
+import { AutocompleteIdeasCard } from "@/components/dashboard/AutocompleteIdeasCard";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
 import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
@@ -1772,6 +1773,7 @@ function PlanningSection({ project }: { project: ProjectDTO }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <AutocompleteIdeasCard project={project} />
       <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
         <p className="text-sm font-medium text-neutral-900">Planificacion de keywords</p>
         <p className="text-neutral-500 text-xs mt-0.5 mb-3">
