@@ -65,6 +65,56 @@ function fmtDuration(ms: number) {
   return `${h} h ${min % 60} min`;
 }
 
+function testBanner(isTest: boolean) {
+  return isTest
+    ? `<p style="margin:0 0 16px;padding:8px 12px;background:#FEF3C7;border-radius:6px;font-size:12px;color:#92400E;">Este es un correo de <strong>prueba</strong> para que veas como te llegara. Tu sitio esta funcionando con normalidad.</p>`
+    : "";
+}
+
+function buildDownEmail(baseUrl: string, domain: string, fails: number, error: string | null, projectUrl: string, isTest = false) {
+  return emailShell(
+    baseUrl,
+    "#B91C1C",
+    "Tu sitio no esta respondiendo",
+    `${testBanner(isTest)}<p style="margin:0 0 8px;font-size:14px;color:#374151;">No pudimos abrir <strong>${escapeHtml(domain)}</strong> en ${fails} revisiones seguidas (cada 10 min).</p>
+     <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Motivo: ${escapeHtml(error ?? "desconocido")}</p>
+     <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Te avisaremos cuando vuelva a estar en linea.</p>`,
+    projectUrl
+  );
+}
+
+function buildRecoveryEmail(baseUrl: string, domain: string, duration: string | null, projectUrl: string, isTest = false) {
+  return emailShell(
+    baseUrl,
+    "#155D34",
+    "Tu sitio ya responde de nuevo",
+    `${testBanner(isTest)}<p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>${escapeHtml(domain)}</strong> volvio a estar en linea${
+      duration ? ` despues de aproximadamente <strong>${duration}</strong> de caida` : ""
+    }.</p>`,
+    projectUrl
+  );
+}
+
+// Sends both alert emails with sample data so the user can see exactly what
+// they'll receive, without touching any real monitoring state.
+export async function sendUptimeTestEmails(projectId: string, baseUrl: string) {
+  const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
+  const to = project.weeklyEmailTo || process.env.AUTH_EMAIL;
+  if (!to) throw new Error("Agrega un correo destino en Notificaciones (o configura AUTH_EMAIL).");
+  const projectUrl = `${baseUrl}/projects/${project.id}`;
+  await sendEmail({
+    to,
+    subject: `[Prueba] Tu sitio ${project.domain} esta caido`,
+    html: buildDownEmail(baseUrl, project.domain, 2, "HTTP 503", projectUrl, true),
+  });
+  await sendEmail({
+    to,
+    subject: `[Prueba] Tu sitio ${project.domain} volvio a estar en linea`,
+    html: buildRecoveryEmail(baseUrl, project.domain, "14 min", projectUrl, true),
+  });
+  return to;
+}
+
 export async function runUptimeChecks(baseUrl: string) {
   const projects = await prisma.project.findMany({ where: { uptimeEnabled: true } });
 
@@ -87,15 +137,7 @@ export async function runUptimeChecks(baseUrl: string) {
               await sendEmail({
                 to,
                 subject: `Tu sitio ${project.domain} volvio a estar en linea`,
-                html: emailShell(
-                  baseUrl,
-                  "#155D34",
-                  "Tu sitio ya responde de nuevo",
-                  `<p style="margin:0 0 12px;font-size:14px;color:#374151;"><strong>${escapeHtml(project.domain)}</strong> volvio a estar en linea${
-                    duration ? ` despues de aproximadamente <strong>${duration}</strong> de caida` : ""
-                  }.</p>`,
-                  projectUrl
-                ),
+                html: buildRecoveryEmail(baseUrl, project.domain, duration, projectUrl),
               });
             }
             if (incident) {
@@ -116,15 +158,7 @@ export async function runUptimeChecks(baseUrl: string) {
             await sendEmail({
               to,
               subject: `Tu sitio ${project.domain} esta caido`,
-              html: emailShell(
-                baseUrl,
-                "#B91C1C",
-                "Tu sitio no esta respondiendo",
-                `<p style="margin:0 0 8px;font-size:14px;color:#374151;">No pudimos abrir <strong>${escapeHtml(project.domain)}</strong> en ${fails} revisiones seguidas (cada 10 min).</p>
-                 <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Motivo: ${escapeHtml(check.error ?? "desconocido")}</p>
-                 <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Te avisaremos cuando vuelva a estar en linea.</p>`,
-                projectUrl
-              ),
+              html: buildDownEmail(baseUrl, project.domain, fails, check.error, projectUrl),
             });
           }
           await prisma.uptimeIncident.create({ data: { projectId: project.id, lastError: check.error } });

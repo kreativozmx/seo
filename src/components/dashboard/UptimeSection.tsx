@@ -18,6 +18,8 @@ export function UptimeSection({ project }: { project: ProjectDTO }) {
   const [status, setStatus] = useState<string | null>(project.uptimeStatus);
   const [lastChecked, setLastChecked] = useState<string | null>(project.uptimeLastCheckedAt);
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/projects/${project.id}/uptime`)
@@ -40,6 +42,21 @@ export function UptimeSection({ project }: { project: ProjectDTO }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: next }),
     }).catch(() => setEnabled(!next));
+  }
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/uptime/test`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al enviar");
+      setTestResult(`Enviamos 2 correos de prueba a ${data.to} ✓`);
+    } catch (err) {
+      setTestResult(err instanceof Error ? err.message : "Error al enviar");
+    } finally {
+      setTesting(false);
+    }
   }
 
   const fmt = (iso: string) =>
@@ -75,6 +92,16 @@ export function UptimeSection({ project }: { project: ProjectDTO }) {
             )}
             {lastChecked && <span className="text-neutral-400"> · ultima revision {fmt(lastChecked)}</span>}
           </p>
+          <button
+            onClick={handleTest}
+            disabled={testing}
+            className="self-start text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+          >
+            {testing ? "Enviando..." : "Enviar correos de prueba"}
+          </button>
+          {testResult && (
+            <p className={`text-xs ${testResult.includes("✓") ? "text-[#155D34]" : "text-red-600"}`}>{testResult}</p>
+          )}
           {incidents.length > 0 && (
             <div className="flex flex-col gap-1">
               <p className="text-[13px] text-neutral-400 uppercase tracking-wide">Caidas recientes</p>
