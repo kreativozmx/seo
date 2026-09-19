@@ -164,7 +164,9 @@ export async function sendUptimeTestEmails(projectId: string, baseUrl: string) {
 }
 
 export async function runUptimeChecks(baseUrl: string) {
-  const projects = await prisma.project.findMany({ where: { uptimeEnabled: true } });
+  // Every project is checked and recorded (feeds the availability chart);
+  // only projects with alerts turned on (uptimeEnabled) get emails.
+  const projects = await prisma.project.findMany();
 
   const results = await Promise.all(
     projects.map(async (project) => {
@@ -183,7 +185,7 @@ export async function runUptimeChecks(baseUrl: string) {
               where: { projectId: project.id, endedAt: null },
               orderBy: { startedAt: "desc" },
             });
-            if (to.length > 0) {
+            if (project.uptimeEnabled && to.length > 0) {
               const duration = incident ? fmtDuration(now.getTime() - incident.startedAt.getTime()) : null;
               await sendEmail({
                 to,
@@ -205,7 +207,7 @@ export async function runUptimeChecks(baseUrl: string) {
         const fails = project.uptimeFailCount + 1;
         if (fails >= FAILS_BEFORE_ALERT && project.uptimeStatus !== "down") {
           // Email first: if it fails we leave state untouched so the next run retries the alert.
-          if (to.length > 0) {
+          if (project.uptimeEnabled && to.length > 0) {
             await sendEmail({
               to,
               subject: `Tu sitio ${project.domain} esta caido`,

@@ -132,6 +132,7 @@ export interface ProjectDTO {
   contentIdeasJson: string | null;
   contentIdeasUpdatedAt: string | null;
   contentIdeasLanguage: string | null;
+  contentExistingJson: string | null;
   shopifyShopDomain: string | null;
   shopifyConnectedAt: string | null;
   shopifyOrders28d: number | null;

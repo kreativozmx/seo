@@ -69,17 +69,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const body = await req.json();
   const data: {
     uptimeEnabled?: boolean;
-    uptimeStatus?: null;
-    uptimeFailCount?: number;
     uptimeEmailsJson?: string | null;
     uptimeUseReportEmail?: boolean;
   } = {};
 
   if (typeof body.enabled === "boolean") {
+    // Only controls email alerts — checks are always recorded, so the
+    // status/history must not be reset when alerts are toggled.
     data.uptimeEnabled = body.enabled;
-    // Fresh start whenever it's toggled so stale state can't trigger a bogus alert.
-    data.uptimeStatus = null;
-    data.uptimeFailCount = 0;
   }
   if (typeof body.useReportEmail === "boolean") {
     data.uptimeUseReportEmail = body.useReportEmail;

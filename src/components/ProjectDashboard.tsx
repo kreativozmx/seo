@@ -3249,6 +3249,10 @@ function ContentStrategySection({
 }) {
   const { t, dateLocale } = useLocale();
   const langName = (code: string) => t(`lang.${code}` as TranslationKey);
+  const [showExisting, setShowExisting] = useState(false);
+  const existing: { title: string; url: string }[] | null = project.contentExistingJson
+    ? JSON.parse(project.contentExistingJson)
+    : null;
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -3333,6 +3337,39 @@ function ContentStrategySection({
                 {t("content.changeLanguage")}
               </button>
             </p>
+            <p className="text-xs text-neutral-500 mt-1">
+              {existing === null
+                ? t("content.existingNote")
+                : existing.length === 0
+                ? t("content.existingNone")
+                : t("content.existingCount", { count: existing.length })}
+              {existing && existing.length > 0 && (
+                <>
+                  {" "}
+                  <button
+                    onClick={() => setShowExisting((v) => !v)}
+                    className="text-[#228449] hover:underline underline-offset-2"
+                  >
+                    {showExisting ? t("content.hideList") : t("content.viewList")}
+                  </button>
+                </>
+              )}
+            </p>
+            {showExisting && existing && (
+              <div className="mt-2 max-h-56 overflow-y-auto flex flex-col gap-1 pr-1">
+                {existing.map((a) => (
+                  <a
+                    key={a.url}
+                    href={a.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-neutral-600 hover:text-[#228449] hover:underline truncate"
+                  >
+                    {a.title}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {ideas.length > 0 && (

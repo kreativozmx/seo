@@ -63,6 +63,11 @@ const es = {
   "content.changeLanguage": "Cambiar idioma del proyecto",
   "content.staleLanguage":
     "Estas ideas se generaron en {old}. Dale a \"Generar de nuevo\" para tenerlas en {current}.",
+  "content.existingNote": "Al generar, leemos el sitemap de tu sitio para no repetir articulos que ya publicaste.",
+  "content.existingCount": "Revisamos {count} articulos ya publicados en tu blog (desde tu sitemap) para no repetir temas.",
+  "content.existingNone": "No encontramos articulos de blog en el sitemap de tu sitio, asi que no hay nada que excluir.",
+  "content.viewList": "Ver lista",
+  "content.hideList": "Ocultar lista",
   "content.copyAll": "Copiar todo",
   "content.copied": "Copiado ✓",
   "content.generate": "Generar ideas",
@@ -106,9 +111,11 @@ const es = {
   "notif.testError": "Error al enviar el correo de prueba",
 
   // Monitoreo > uptime
-  "uptime.title": "Alerta si {domain} se cae",
+  "uptime.chartTitle": "Disponibilidad de {domain}",
+  "uptime.chartDescription": "Revisamos tu sitio cada 10 minutos y guardamos el historial.",
+  "uptime.title": "Avisarme por correo si {domain} se cae",
   "uptime.description":
-    "Revisamos tu sitio cada 10 minutos y te mandamos un correo si no responde en 2 revisiones seguidas, y otro cuando vuelve.",
+    "Te mandamos un correo si no responde en 2 revisiones seguidas, y otro cuando vuelve.",
   "uptime.down": "● Caido ahora mismo",
   "uptime.up": "● En linea",
   "uptime.waiting": "Esperando la primera revision (max. 10 min)...",
@@ -188,6 +195,11 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "content.changeLanguage": "Change project language",
   "content.staleLanguage":
     "These ideas were generated in {old}. Click \"Generate again\" to get them in {current}.",
+  "content.existingNote": "When generating, we read your site's sitemap so we don't repeat articles you've already published.",
+  "content.existingCount": "We checked {count} articles already published on your blog (from your sitemap) to avoid repeating topics.",
+  "content.existingNone": "We couldn't find blog articles in your site's sitemap, so there's nothing to exclude.",
+  "content.viewList": "View list",
+  "content.hideList": "Hide list",
   "content.copyAll": "Copy all",
   "content.copied": "Copied ✓",
   "content.generate": "Generate ideas",
@@ -229,9 +241,11 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "notif.testSent": "Test email sent ✓",
   "notif.testError": "Error sending the test email",
 
-  "uptime.title": "Alert if {domain} goes down",
+  "uptime.chartTitle": "{domain} availability",
+  "uptime.chartDescription": "We check your site every 10 minutes and keep the history.",
+  "uptime.title": "Email me if {domain} goes down",
   "uptime.description":
-    "We check your site every 10 minutes and email you if it doesn't respond in 2 consecutive checks, and again when it comes back.",
+    "We email you if it doesn't respond in 2 consecutive checks, and again when it comes back.",
   "uptime.down": "● Down right now",
   "uptime.up": "● Online",
   "uptime.waiting": "Waiting for the first check (max. 10 min)...",

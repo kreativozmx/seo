@@ -117,6 +117,7 @@ model Project {
   contentIdeasJson      String? // cached array of {title, keywords: string[]}
   contentIdeasUpdatedAt DateTime?
   contentIdeasLanguage  String? // languageCode the cached ideas were written in
+  contentExistingJson   String? // cached array of {title, url} — blog articles already published, read from the sitemap at generation time
   gaAnalyticsUpdatedAt  DateTime?
 
   // Shopify Admin API (own store only) — one-click OAuth install, not a
