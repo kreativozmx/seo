@@ -19,6 +19,7 @@ interface Member {
   id: string;
   name: string;
   email: string;
+  accessToken?: string;
 }
 interface Comment {
   id: string;
@@ -29,7 +30,7 @@ interface Comment {
 
 const AVATAR_COLORS = ["#579bfc", "#a25ddc", "#00c875", "#fdab3d", "#df2f4a", "#037f4c", "#7e3b8a"];
 const INVITE_VALUE = "__invite__";
-const GRID = "grid grid-cols-[minmax(220px,1fr)_52px_190px_170px_150px] items-center";
+const GRID = "grid grid-cols-[28px_minmax(220px,1fr)_52px_190px_170px_150px] items-center";
 
 function Avatar({ name, size = 24 }: { name: string; size?: number }) {
   const initials = name
@@ -81,6 +82,9 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [datesOpenFor, setDatesOpenFor] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [copiedLinkFor, setCopiedLinkFor] = useState<string | null>(null);
 
   const flash = useCallback((text: string, error = false) => {
     setNotice({ text, error });
@@ -159,6 +163,8 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
     setMembers((prev) => [...prev, data.member]);
     setInviteName("");
     setInviteEmail("");
+    if (data.emailed) flash(t("tasks.inviteSent", { email: data.member.email }));
+    else flash(t("tasks.inviteNotSent"), true);
   }
 
   async function removeMember(id: string) {
@@ -172,6 +178,39 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
     await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     setTasks((prev) => prev.filter((x) => x.id !== id));
     setSelectedId(null);
+  }
+
+  async function handleDrop(targetId: string) {
+    const from = dragId;
+    setDragId(null);
+    setOverId(null);
+    if (!from || from === targetId) return;
+    const before = tasks;
+    const next = [...tasks];
+    const fromIndex = next.findIndex((x) => x.id === from);
+    const toIndex = next.findIndex((x) => x.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    setTasks(next);
+    try {
+      const res = await fetch(`${base}/tasks/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: next.map((x) => x.id) }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setTasks(before);
+      flash(t("tasks.error"), true);
+    }
+  }
+
+  async function copyMemberLink(m: Member) {
+    if (!m.accessToken) return;
+    await navigator.clipboard.writeText(`${window.location.origin}/tareas/${m.accessToken}`);
+    setCopiedLinkFor(m.id);
+    setTimeout(() => setCopiedLinkFor(null), 1800);
   }
 
   const selected = tasks.find((x) => x.id === selectedId) ?? null;
@@ -209,6 +248,12 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
                     <Avatar name={m.name} size={20} />
                     <span className="text-neutral-700">{m.name}</span>
                     <span className="text-neutral-400">{m.email}</span>
+                    <button
+                      onClick={() => copyMemberLink(m)}
+                      className="text-[#228449] hover:underline underline-offset-2"
+                    >
+                      {copiedLinkFor === m.id ? t("tasks.linkCopied") : t("tasks.copyLink")}
+                    </button>
                     <button
                       onClick={() => removeMember(m.id)}
                       aria-label={t("tasks.invite.remove")}
@@ -257,6 +302,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
       <div className="bg-white border border-neutral-200 rounded-xl overflow-x-auto">
         <div className="min-w-[780px]">
           <div className={`${GRID} text-[13px] text-neutral-500 border-b border-neutral-200 bg-neutral-50`}>
+            <span />
             <span className="px-3 py-2">{t("tasks.col.task")}</span>
             <span />
             <span className="px-3 py-2 text-center">{t("tasks.col.owner")}</span>
@@ -280,6 +326,15 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
                 onPatch={(patch) => patchTask(task.id, patch)}
                 onOpen={() => setSelectedId(task.id)}
                 onInvite={() => setShowPeople(true)}
+                dragging={dragId === task.id}
+                dropTarget={overId === task.id && dragId !== null && dragId !== task.id}
+                onDragStart={() => setDragId(task.id)}
+                onDragOver={() => setOverId(task.id)}
+                onDrop={() => handleDrop(task.id)}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setOverId(null);
+                }}
               />
             ))
           )}
@@ -299,7 +354,8 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
         <TaskDrawer
           key={selected.id}
           task={selected}
-          members={members}
+          ownerName={members.find((m) => m.id === selected.ownerId)?.name ?? null}
+          commentsUrl={`/api/tasks/${selected.id}/comments`}
           onClose={() => setSelectedId(null)}
           onDelete={() => deleteTask(selected.id)}
           onCommentAdded={() =>
@@ -320,6 +376,13 @@ function TaskRow({
   onPatch,
   onOpen,
   onInvite,
+  guest = false,
+  dragging = false,
+  dropTarget = false,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
 }: {
   task: Task;
   members: Member[];
@@ -328,11 +391,19 @@ function TaskRow({
   onToggleDates: () => void;
   onPatch: (patch: Record<string, unknown>) => void;
   onOpen: () => void;
-  onInvite: () => void;
+  onInvite?: () => void;
+  guest?: boolean;
+  dragging?: boolean;
+  dropTarget?: boolean;
+  onDragStart?: () => void;
+  onDragOver?: () => void;
+  onDrop?: () => void;
+  onDragEnd?: () => void;
 }) {
   const { t } = useLocale();
   const [title, setTitle] = useState(task.title);
   const titleRef = useRef<HTMLInputElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const status = TASK_STATUSES.find((s) => s.id === task.status) ?? TASK_STATUSES[3];
   const owner = members.find((m) => m.id === task.ownerId) ?? null;
   const range = formatRange(task.startDate, task.endDate, dateLocale);
@@ -346,15 +417,63 @@ function TaskRow({
   }
 
   return (
-    <div className={`${GRID} border-b border-neutral-100 hover:bg-neutral-50/60 transition-colors`}>
-      <input
-        ref={titleRef}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onBlur={commitTitle}
-        onKeyDown={(e) => e.key === "Enter" && titleRef.current?.blur()}
-        className="px-3 py-2.5 text-sm text-neutral-800 bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-[#228449]/40 rounded"
-      />
+    <div
+      ref={rowRef}
+      onDragOver={
+        guest
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              onDragOver?.();
+            }
+      }
+      onDrop={
+        guest
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              onDrop?.();
+            }
+      }
+      className={`${GRID} border-b border-neutral-100 hover:bg-neutral-50/60 transition-colors ${
+        dragging ? "opacity-40" : ""
+      } ${dropTarget ? "shadow-[inset_0_2px_0_0_#228449]" : ""}`}
+    >
+      {guest ? (
+        <span />
+      ) : (
+        <span
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", task.id);
+            if (rowRef.current) e.dataTransfer.setDragImage(rowRef.current, 12, 16);
+            onDragStart?.();
+          }}
+          onDragEnd={onDragEnd}
+          title={t("tasks.dragHint")}
+          aria-label={t("tasks.dragHint")}
+          className="flex items-center justify-center h-full text-neutral-300 hover:text-neutral-500 cursor-grab active:cursor-grabbing select-none"
+        >
+          <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+            <circle cx="3" cy="3" r="1.3" /><circle cx="9" cy="3" r="1.3" />
+            <circle cx="3" cy="8" r="1.3" /><circle cx="9" cy="8" r="1.3" />
+            <circle cx="3" cy="13" r="1.3" /><circle cx="9" cy="13" r="1.3" />
+          </svg>
+        </span>
+      )}
+      {guest ? (
+        <p className="px-3 py-2.5 text-sm text-neutral-800 break-words">{task.title}</p>
+      ) : (
+        <input
+          ref={titleRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => e.key === "Enter" && titleRef.current?.blur()}
+          className="px-3 py-2.5 text-sm text-neutral-800 bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-[#228449]/40 rounded"
+        />
+      )}
 
       <button
         onClick={onOpen}
@@ -372,10 +491,13 @@ function TaskRow({
 
       <div className="px-3 flex items-center justify-center gap-2">
         {owner ? <Avatar name={owner.name} /> : <span className="w-6 h-6 rounded-full border border-dashed border-neutral-300 shrink-0" />}
+        {guest ? (
+          <span className="text-xs text-neutral-700 truncate max-w-[120px]">{owner?.name}</span>
+        ) : (
         <select
           value={task.ownerId ?? ""}
           onChange={(e) => {
-            if (e.target.value === INVITE_VALUE) return onInvite();
+            if (e.target.value === INVITE_VALUE) return onInvite?.();
             onPatch({ ownerId: e.target.value || null });
           }}
           className="text-xs text-neutral-700 bg-transparent outline-none cursor-pointer max-w-[120px] truncate"
@@ -388,6 +510,7 @@ function TaskRow({
           ))}
           <option value={INVITE_VALUE}>{t("tasks.owner.invite")}</option>
         </select>
+        )}
       </div>
 
       <div className="px-2">
@@ -452,15 +575,17 @@ function TaskRow({
 
 function TaskDrawer({
   task,
-  members,
+  ownerName,
+  commentsUrl,
   onClose,
   onDelete,
   onCommentAdded,
 }: {
   task: Task;
-  members: Member[];
+  ownerName: string | null;
+  commentsUrl: string;
   onClose: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   onCommentAdded: () => void;
 }) {
   const { t, dateLocale } = useLocale();
@@ -468,14 +593,12 @@ function TaskDrawer({
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
   const status = TASK_STATUSES.find((s) => s.id === task.status) ?? TASK_STATUSES[3];
-  const owner = members.find((m) => m.id === task.ownerId);
-
   useEffect(() => {
-    fetch(`/api/tasks/${task.id}/comments`)
+    fetch(commentsUrl)
       .then((r) => r.json())
       .then((d) => setComments(d.comments ?? []))
       .catch(() => setComments([]));
-  }, [task.id]);
+  }, [commentsUrl]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -489,7 +612,7 @@ function TaskDrawer({
     if (!body) return;
     setPosting(true);
     try {
-      const res = await fetch(`/api/tasks/${task.id}/comments`, {
+      const res = await fetch(commentsUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body }),
@@ -518,9 +641,9 @@ function TaskDrawer({
               <span className="text-xs font-medium rounded px-2 py-0.5" style={{ background: status.bg, color: status.fg }}>
                 {t(`tasks.status.${status.id}` as TranslationKey)}
               </span>
-              {owner && (
+              {ownerName && (
                 <span className="flex items-center gap-1.5 text-xs text-neutral-600">
-                  <Avatar name={owner.name} size={20} /> {owner.name}
+                  <Avatar name={ownerName} size={20} /> {ownerName}
                 </span>
               )}
             </div>
@@ -569,9 +692,13 @@ function TaskDrawer({
             className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#228449] transition-colors resize-none"
           />
           <div className="flex items-center justify-between">
-            <button type="button" onClick={onDelete} className="text-xs text-neutral-400 hover:text-red-600 transition-colors">
-              {t("tasks.delete")}
-            </button>
+            {onDelete ? (
+              <button type="button" onClick={onDelete} className="text-xs text-neutral-400 hover:text-red-600 transition-colors">
+                {t("tasks.delete")}
+              </button>
+            ) : (
+              <span />
+            )}
             <button
               type="submit"
               disabled={posting || !text.trim()}
@@ -582,6 +709,109 @@ function TaskDrawer({
           </div>
         </form>
       </aside>
+    </div>
+  );
+}
+
+// Guest view (/tareas/{token}): the invited person's own tasks. They can
+// change status and dates and post in the conversation — nothing else.
+export function GuestTasksBoard({ token }: { token: string }) {
+  const { t, dateLocale } = useLocale();
+  const base = `/api/guest/${token}`;
+  const [data, setData] = useState<{ member: { name: string }; project: { name: string; domain: string } } | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [invalid, setInvalid] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [datesOpenFor, setDatesOpenFor] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(base)
+      .then(async (r) => {
+        if (!r.ok) return setInvalid(true);
+        const d = await r.json();
+        setData({ member: d.member, project: d.project });
+        setTasks(d.tasks);
+      })
+      .catch(() => setInvalid(true))
+      .finally(() => setLoading(false));
+  }, [base]);
+
+  async function patchTask(id: string, patch: Record<string, unknown>) {
+    const before = tasks;
+    setError(null);
+    setTasks((prev) => prev.map((x) => (x.id === id ? ({ ...x, ...patch } as Task) : x)));
+    try {
+      const res = await fetch(`${base}/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || t("tasks.error"));
+      setTasks((prev) => prev.map((x) => (x.id === id ? json.task : x)));
+    } catch (err) {
+      setTasks(before);
+      setError(err instanceof Error ? err.message : t("tasks.error"));
+    }
+  }
+
+  if (loading) return <p className="text-sm text-neutral-400">…</p>;
+  if (invalid || !data) {
+    return <p className="text-sm text-neutral-600 bg-white border border-neutral-200 rounded-xl px-4 py-6">{t("tasks.guest.invalid")}</p>;
+  }
+
+  const selected = tasks.find((x) => x.id === selectedId) ?? null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="text-lg font-semibold text-neutral-900">{t("tasks.guest.hello", { name: data.member.name })}</p>
+        <p className="text-sm text-neutral-500 mt-0.5">{t("tasks.guest.subtitle", { project: data.project.name })}</p>
+      </div>
+      {error && <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className="min-w-[780px]">
+          <div className={`${GRID} text-[13px] text-neutral-500 border-b border-neutral-200 bg-neutral-50`}>
+            <span />
+            <span className="px-3 py-2">{t("tasks.col.task")}</span>
+            <span />
+            <span className="px-3 py-2 text-center">{t("tasks.col.owner")}</span>
+            <span className="px-3 py-2 text-center">{t("tasks.col.status")}</span>
+            <span className="px-3 py-2 text-center">{t("tasks.col.timeline")}</span>
+          </div>
+          {tasks.length === 0 ? (
+            <p className="text-xs text-neutral-400 px-3 py-4">{t("tasks.guest.empty")}</p>
+          ) : (
+            tasks.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                guest
+                members={[{ id: task.ownerId ?? "", name: data.member.name, email: "" }]}
+                dateLocale={dateLocale}
+                datesOpen={datesOpenFor === task.id}
+                onToggleDates={() => setDatesOpenFor(datesOpenFor === task.id ? null : task.id)}
+                onPatch={(patch) => patchTask(task.id, patch)}
+                onOpen={() => setSelectedId(task.id)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+      {selected && (
+        <TaskDrawer
+          key={selected.id}
+          task={selected}
+          ownerName={data.member.name}
+          commentsUrl={`${base}/tasks/${selected.id}/comments`}
+          onClose={() => setSelectedId(null)}
+          onCommentAdded={() =>
+            setTasks((prev) => prev.map((x) => (x.id === selected.id ? { ...x, commentCount: x.commentCount + 1 } : x)))
+          }
+        />
+      )}
     </div>
   );
 }

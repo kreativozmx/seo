@@ -14,6 +14,8 @@ const PUBLIC_PREFIXES = [
   "/legal/terminos",
   "/api/changelog",
   "/share/",
+  "/tareas/",
+  "/api/guest/",
   "/api/cron/",
 ];
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { toTaskDTO } from "@/lib/tasks";
+import { ensureAccessToken, toTaskDTO } from "@/lib/tasks";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const [tasks, members] = await Promise.all([
@@ -13,7 +13,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   ]);
   return NextResponse.json({
     tasks: tasks.map(toTaskDTO),
-    members: members.map((m) => ({ id: m.id, name: m.name, email: m.email })),
+    members: await Promise.all(
+      members.map(async (m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        accessToken: m.accessToken ?? (await ensureAccessToken(m.id)),
+      }))
+    ),
   });
 }
 

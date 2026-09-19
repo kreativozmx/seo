@@ -1,6 +1,7 @@
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
-import { emailShell, escapeHtml, publicUrl } from "@/lib/emailTemplate";
+import { emailShell, escapeHtml } from "@/lib/emailTemplate";
 import { TASK_STATUSES } from "@/lib/taskStatus";
 
 const STATUS_LABELS_ES: Record<string, string> = {
@@ -92,9 +93,49 @@ export async function sendTaskAssignedEmail(params: {
       "#111827",
       "Tienes una nueva tarea",
       body,
-      publicUrl(params.baseUrl),
-      "Abrir Shopify Audit →",
-      "Recibes esto porque alguien te asigno una tarea en Shopify Audit."
+      guestLink(params.baseUrl, await ensureAccessToken(member.id)),
+      "Ver mis tareas →",
+      "Recibes esto porque alguien te asigno una tarea en Shopify Audit. Este enlace es personal."
+    ),
+  });
+}
+
+export function newAccessToken() {
+  return randomBytes(24).toString("hex");
+}
+
+export function guestLink(baseUrl: string, token: string) {
+  return `${baseUrl}/tareas/${token}`;
+}
+
+// Returns the member's guest token, creating it if it doesn't exist yet.
+export async function ensureAccessToken(memberId: string): Promise<string> {
+  const member = await prisma.taskMember.findUniqueOrThrow({ where: { id: memberId } });
+  if (member.accessToken) return member.accessToken;
+  const token = newAccessToken();
+  await prisma.taskMember.update({ where: { id: memberId }, data: { accessToken: token } });
+  return token;
+}
+
+// Welcome email sent when someone is added to a project's people list.
+export async function sendMemberInviteEmail(params: { memberId: string; baseUrl: string }) {
+  const member = await prisma.taskMember.findUniqueOrThrow({
+    where: { id: params.memberId },
+    include: { project: { select: { name: true, domain: true } } },
+  });
+  const token = await ensureAccessToken(member.id);
+  await sendEmail({
+    to: member.email,
+    subject: `Te invitaron al proyecto ${member.project.name}`,
+    html: emailShell(
+      params.baseUrl,
+      "#111827",
+      "Te invitaron a colaborar",
+      `<p style="margin:0 0 12px;font-size:14px;color:#374151;">Hola ${escapeHtml(member.name)}, te sumaron al proyecto <strong>${escapeHtml(member.project.name)}</strong> (${escapeHtml(member.project.domain)}).</p>
+       <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">Con tu enlace personal puedes ver las tareas que te asignen, cambiar su estado, poner fechas y dejar comentarios. No necesitas crear una cuenta.</p>`,
+      guestLink(params.baseUrl, token),
+      "Abrir mis tareas →",
+      "Este enlace es personal: no lo compartas con otras personas."
     ),
   });
 }
