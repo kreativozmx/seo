@@ -1,5 +1,6 @@
 import { ProjectDTO } from "@/lib/types";
 import type { SiteChecks } from "@/lib/providers/siteChecks";
+import type { UrlInspection } from "@/lib/providers/gsc";
 
 export interface AuditItem {
   id: string;
@@ -26,6 +27,10 @@ function sc(p: ProjectDTO): SiteChecks | null {
     scCache = { raw: p.siteChecksJson, parsed: p.siteChecksJson ? (JSON.parse(p.siteChecksJson) as SiteChecks) : null };
   }
   return scCache.parsed;
+}
+
+function inspections(p: ProjectDTO): UrlInspection[] {
+  return p.urlInspectionsJson ? (JSON.parse(p.urlInspectionsJson) as UrlInspection[]) : [];
 }
 
 function daysSince(dateStr: string | null): number | null {
@@ -148,8 +153,28 @@ export const AUDIT_ITEMS: AuditItem[] = [
   {
     id: "seo-crawl-errors",
     category: "SEO tecnico",
-    label: "Sin errores de rastreo importantes en Search Console",
-    hint: "Revisa el reporte de cobertura de paginas en Search Console.",
+    label: "Sin errores de rastreo en tus paginas clave",
+    hint: "Segun la inspeccion de URLs de Search Console (ninguna pagina inspeccionada con error).",
+    auto: (p) => {
+      const list = inspections(p).filter((i) => i.verdict !== "ERROR");
+      return list.length > 0 && list.every((i) => i.verdict !== "FAIL");
+    },
+  },
+  {
+    id: "seo-home-indexed",
+    category: "SEO tecnico",
+    label: "Pagina de inicio indexada en Google",
+    hint: "Confirmado por la inspeccion de URLs de Search Console (pestaña Auditoria).",
+    auto: (p) => {
+      const home = inspections(p).find((i) => {
+        try {
+          return new URL(i.url).pathname === "/";
+        } catch {
+          return false;
+        }
+      });
+      return home?.verdict === "PASS";
+    },
   },
   {
     id: "seo-structured-data",

@@ -29,6 +29,7 @@ import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { WhoisLookup } from "@/components/WhoisLookup";
+import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
 import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
@@ -3815,6 +3816,8 @@ function AuditSection({ project }: { project: ProjectDTO }) {
           />
         </div>
       </div>
+
+      <UrlInspectionCard project={project} />
 
       {categories.map((category) => {
         const rows = results.filter((r) => r.item.category === category);

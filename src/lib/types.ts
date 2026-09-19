@@ -118,6 +118,8 @@ export interface ProjectDTO {
   uptimeUseReportEmail: boolean;
   siteChecksJson: string | null;
   siteChecksUpdatedAt: string | null;
+  urlInspectionsJson: string | null;
+  urlInspectionsUpdatedAt: string | null;
   brokenLinksJson: string | null;
   brokenLinksChecked: number | null;
   brokenLinksCheckedAt: string | null;

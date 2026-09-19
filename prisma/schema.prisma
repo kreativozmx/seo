@@ -249,18 +249,20 @@ model Project {
   // Uptime monitoring (Monitoreo tab): pinged every 10 min by a GitHub
   // Actions workflow hitting /api/cron/uptime. An alert email goes out only
   // after 2 consecutive failures, and a recovery email when it's back.
-  uptimeEnabled        Boolean          @default(false)
-  uptimeStatus         String? // "up" | "down"
-  uptimeFailCount      Int              @default(0)
-  uptimeLastCheckedAt  DateTime?
-  uptimeIncidents      UptimeIncident[]
-  uptimeChecks         UptimeCheck[]
-  siteChecksJson       String? // latest automatic site checks (SSL, robots, meta tags, policies...) — see siteChecks.ts
-  siteChecksUpdatedAt  DateTime?
-  uptimeEmailsJson     String? // extra alert recipients (JSON array of emails)
-  uptimeUseReportEmail Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
-  taskMembers          TaskMember[]
-  tasks                Task[]
+  uptimeEnabled           Boolean          @default(false)
+  uptimeStatus            String? // "up" | "down"
+  uptimeFailCount         Int              @default(0)
+  uptimeLastCheckedAt     DateTime?
+  uptimeIncidents         UptimeIncident[]
+  uptimeChecks            UptimeCheck[]
+  siteChecksJson          String? // latest automatic site checks (SSL, robots, meta tags, policies...) — see siteChecks.ts
+  siteChecksUpdatedAt     DateTime?
+  urlInspectionsJson      String? // cached array of URL Inspection results (Search Console)
+  urlInspectionsUpdatedAt DateTime?
+  uptimeEmailsJson        String? // extra alert recipients (JSON array of emails)
+  uptimeUseReportEmail    Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
+  taskMembers             TaskMember[]
+  tasks                   Task[]
 }
 
 // One row per uptime check (every ~10 min) — feeds the availability chart

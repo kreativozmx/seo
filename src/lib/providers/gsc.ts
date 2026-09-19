@@ -381,3 +381,69 @@ export async function fetchPagesForRange(
     }))
     .sort((a, b) => b.clicks - a.clicks);
 }
+
+export interface UrlInspection {
+  url: string;
+  verdict: string; // PASS | PARTIAL | NEUTRAL | FAIL | VERDICT_UNSPECIFIED
+  coverageState: string | null;
+  indexingState: string | null;
+  robotsTxtState: string | null;
+  pageFetchState: string | null;
+  lastCrawlTime: string | null;
+  googleCanonical: string | null;
+  userCanonical: string | null;
+  mobileVerdict: string | null;
+  richResultsVerdict: string | null;
+  inspectedAt: string;
+  error?: string | null;
+}
+
+// Search Console URL Inspection API — what Google itself says about a URL
+// (indexed? crawled when? which canonical did it pick?). Free with the
+// existing OAuth token; quota is ~2,000 inspections/day per property.
+export async function inspectUrl(
+  auth: OAuth2Client,
+  siteUrl: string,
+  url: string,
+  languageCode = "es"
+): Promise<UrlInspection> {
+  const searchconsole = google.searchconsole({ version: "v1", auth });
+  const inspectedAt = new Date().toISOString();
+  try {
+    const res = await searchconsole.urlInspection.index.inspect({
+      requestBody: { inspectionUrl: url, siteUrl, languageCode },
+    });
+    const r = res.data.inspectionResult;
+    const idx = r?.indexStatusResult;
+    return {
+      url,
+      verdict: idx?.verdict ?? "VERDICT_UNSPECIFIED",
+      coverageState: idx?.coverageState ?? null,
+      indexingState: idx?.indexingState ?? null,
+      robotsTxtState: idx?.robotsTxtState ?? null,
+      pageFetchState: idx?.pageFetchState ?? null,
+      lastCrawlTime: idx?.lastCrawlTime ?? null,
+      googleCanonical: idx?.googleCanonical ?? null,
+      userCanonical: idx?.userCanonical ?? null,
+      mobileVerdict: r?.mobileUsabilityResult?.verdict ?? null,
+      richResultsVerdict: r?.richResultsResult?.verdict ?? null,
+      inspectedAt,
+    };
+  } catch (err) {
+    return {
+      url,
+      verdict: "ERROR",
+      coverageState: null,
+      indexingState: null,
+      robotsTxtState: null,
+      pageFetchState: null,
+      lastCrawlTime: null,
+      googleCanonical: null,
+      userCanonical: null,
+      mobileVerdict: null,
+      richResultsVerdict: null,
+      inspectedAt,
+      error: err instanceof Error ? err.message : "Error",
+    };
+  }
+}
