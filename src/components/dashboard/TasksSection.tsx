@@ -91,8 +91,8 @@ function useColumnWidths() {
   }
 
   const w = state.widths;
-  const template = `28px ${state.taskFixed ? `${w.task}px` : `minmax(${w.task}px,1fr)`} 52px ${w.owner}px ${w.status}px ${w.timeline}px`;
-  const minWidth = 28 + w.task + 52 + w.owner + w.status + w.timeline;
+  const template = `28px ${state.taskFixed ? `${w.task}px` : `minmax(${w.task}px,1fr)`} 52px ${w.owner}px ${w.status}px ${w.timeline}px 40px`;
+  const minWidth = 28 + w.task + 52 + w.owner + w.status + w.timeline + 40;
   const isCustom =
     state.taskFixed || (Object.keys(DEFAULT_WIDTHS) as ColKey[]).some((k) => w[k] !== DEFAULT_WIDTHS[k]);
   return { template, minWidth, startResize, reset, isCustom };
@@ -108,8 +108,10 @@ function TableHeader({ cols }: { cols: ColumnsApi }) {
       <span
         onPointerDown={(e) => cols.startResize(key, e)}
         title={t("tasks.resizeColumn")}
-        className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-[#228449]/30 active:bg-[#228449]/50 transition-colors"
-      />
+        className="group absolute -right-1.5 top-0 z-10 h-full w-3 cursor-col-resize flex items-center justify-center"
+      >
+        <span className="block h-4 w-[2px] rounded-full bg-neutral-300 group-hover:h-full group-hover:bg-[#228449] group-active:bg-[#228449] transition-all" />
+      </span>
     </span>
   );
   return (
@@ -123,6 +125,7 @@ function TableHeader({ cols }: { cols: ColumnsApi }) {
       {cell("owner", t("tasks.col.owner"), "center")}
       {cell("status", t("tasks.col.status"), "center")}
       {cell("timeline", t("tasks.col.timeline"), "center")}
+      <span />
     </div>
   );
 }
@@ -424,6 +427,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
                 onPatch={(patch) => patchTask(task.id, patch)}
                 onOpen={() => setSelectedId(task.id)}
                 onInvite={() => setShowPeople(true)}
+                onDelete={() => deleteTask(task.id)}
                 dragging={dragId === task.id}
                 dropTarget={overId === task.id && dragId !== null && dragId !== task.id}
                 onDragStart={() => setDragId(task.id)}
@@ -476,6 +480,7 @@ function TaskRow({
   onOpen,
   onInvite,
   guest = false,
+  onDelete,
   dragging = false,
   dropTarget = false,
   onDragStart,
@@ -493,6 +498,7 @@ function TaskRow({
   onOpen: () => void;
   onInvite?: () => void;
   guest?: boolean;
+  onDelete?: () => void;
   dragging?: boolean;
   dropTarget?: boolean;
   onDragStart?: () => void;
@@ -537,7 +543,7 @@ function TaskRow({
             }
       }
       style={{ gridTemplateColumns: template }}
-      className={`grid items-center border-b border-neutral-100 hover:bg-neutral-50/60 transition-colors ${
+      className={`group/row grid items-center border-b border-neutral-100 hover:bg-neutral-50/60 transition-colors ${
         dragging ? "opacity-40" : ""
       } ${dropTarget ? "shadow-[inset_0_2px_0_0_#228449]" : ""}`}
     >
@@ -650,6 +656,20 @@ function TaskRow({
           />
         )}
       </div>
+      {onDelete ? (
+        <button
+          onClick={onDelete}
+          title={t("tasks.delete")}
+          aria-label={t("tasks.delete")}
+          className="mx-auto w-7 h-7 flex items-center justify-center rounded-md text-neutral-300 hover:text-red-600 hover:bg-red-50 group-hover/row:text-neutral-400 transition-colors"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" />
+          </svg>
+        </button>
+      ) : (
+        <span />
+      )}
     </div>
   );
 }
@@ -761,7 +781,7 @@ function TaskDrawer({
           )}
         </div>
 
-        <form onSubmit={post} className="px-5 py-4 border-t border-neutral-100 flex flex-col gap-2">
+        <form onSubmit={post} className="px-5 pt-4 pb-20 border-t border-neutral-100 flex flex-col gap-2">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
