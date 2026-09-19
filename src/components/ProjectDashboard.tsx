@@ -29,7 +29,7 @@ import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
-import { TasksSection } from "@/components/dashboard/TasksSection";
+import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
@@ -752,6 +752,12 @@ export default function ProjectDashboard({
   const router = useRouter();
   const { t, dateLocale } = useLocale();
   const [activeTab, setActiveTab] = useState<NavId>("panel");
+
+  // Warm the Tareas data (and the API route/DB connection) in the background
+  // so opening the tab is instant instead of waiting on a cold request.
+  useEffect(() => {
+    if (!readOnly) prefetchTasks(project.id);
+  }, [project.id, readOnly]);
 
   // Lives here (not inside the section that starts the sync) specifically
   // so it survives the user switching tabs — see SyncStatusContext above.

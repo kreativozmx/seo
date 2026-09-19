@@ -6,6 +6,7 @@ import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
 import { TASK_STATUSES } from "@/lib/taskStatus";
 import { DateRangePopover } from "@/components/dashboard/DateRangePopover";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Task {
   id: string;
@@ -164,14 +165,31 @@ function formatRange(start: string | null, end: string | null, locale: string): 
   return `${month(only)} ${day(only)}`;
 }
 
+// Stale-while-revalidate cache: re-entering the tab shows the last known
+// tasks instantly while a fresh copy loads, and the dashboard prefetches on
+// mount (see prefetchTasks) so even the first visit is usually instant.
+const tasksCache = new Map<string, { tasks: Task[]; members: Member[] }>();
+
+export async function prefetchTasks(projectId: string) {
+  try {
+    const res = await fetch(`/api/projects/${projectId}/tasks`);
+    if (!res.ok) return;
+    const d = await res.json();
+    tasksCache.set(projectId, { tasks: d.tasks ?? [], members: d.members ?? [] });
+  } catch {
+    // best-effort warm-up
+  }
+}
+
 // Tareas tab: a monday-style task list per project — owner (incl. external
 // people invited by email), status, timeline, and a conversation per task.
 export function TasksSection({ project }: { project: ProjectDTO }) {
   const { t, dateLocale } = useLocale();
   const base = `/api/projects/${project.id}`;
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = tasksCache.get(project.id);
+  const [tasks, setTasks] = useState<Task[]>(cached?.tasks ?? []);
+  const [members, setMembers] = useState<Member[]>(cached?.members ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [showPeople, setShowPeople] = useState(false);
@@ -180,10 +198,15 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [datesOpenFor, setDatesOpenFor] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Task | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [copiedLinkFor, setCopiedLinkFor] = useState<string | null>(null);
   const cols = useColumnWidths();
+
+  useEffect(() => {
+    if (!loading) tasksCache.set(project.id, { tasks, members });
+  }, [tasks, members, loading, project.id]);
 
   const flash = useCallback((text: string, error = false) => {
     setNotice({ text, error });
@@ -196,6 +219,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
       .then((d) => {
         setTasks(d.tasks ?? []);
         setMembers(d.members ?? []);
+        tasksCache.set(project.id, { tasks: d.tasks ?? [], members: d.members ?? [] });
       })
       .catch(() => flash(t("tasks.error"), true))
       .finally(() => setLoading(false));
@@ -273,7 +297,6 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
   }
 
   async function deleteTask(id: string) {
-    if (!confirm(t("tasks.deleteConfirm"))) return;
     await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     setTasks((prev) => prev.filter((x) => x.id !== id));
     setSelectedId(null);
@@ -411,7 +434,16 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
           <TableHeader cols={cols} />
 
           {loading ? (
-            <p className="text-xs text-neutral-400 px-3 py-4">…</p>
+            <div className="animate-pulse">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 px-3 py-3 border-b border-neutral-100">
+                  <span className="h-3 rounded bg-neutral-100 flex-1 max-w-[46%]" />
+                  <span className="h-6 w-6 rounded-full bg-neutral-100" />
+                  <span className="h-6 w-28 rounded-md bg-neutral-100" />
+                  <span className="h-6 w-24 rounded-full bg-neutral-100" />
+                </div>
+              ))}
+            </div>
           ) : tasks.length === 0 ? (
             <p className="text-xs text-neutral-400 px-3 py-4">{t("tasks.empty")}</p>
           ) : (
@@ -427,7 +459,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
                 onPatch={(patch) => patchTask(task.id, patch)}
                 onOpen={() => setSelectedId(task.id)}
                 onInvite={() => setShowPeople(true)}
-                onDelete={() => deleteTask(task.id)}
+                onDelete={() => setPendingDelete(task)}
                 dragging={dragId === task.id}
                 dropTarget={overId === task.id && dragId !== null && dragId !== task.id}
                 onDragStart={() => setDragId(task.id)}
@@ -452,6 +484,20 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
         </div>
       </div>
 
+      {pendingDelete && (
+        <ConfirmDialog
+          title={t("tasks.deleteTitle")}
+          message={t("tasks.deleteBody", { title: pendingDelete.title })}
+          confirmLabel={t("tasks.delete")}
+          cancelLabel={t("common.cancel")}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={async () => {
+            await deleteTask(pendingDelete.id);
+            setPendingDelete(null);
+          }}
+        />
+      )}
+
       {selected && (
         <TaskDrawer
           key={selected.id}
@@ -459,7 +505,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
           ownerName={members.find((m) => m.id === selected.ownerId)?.name ?? null}
           commentsUrl={`/api/tasks/${selected.id}/comments`}
           onClose={() => setSelectedId(null)}
-          onDelete={() => deleteTask(selected.id)}
+          onDelete={() => setPendingDelete(selected)}
           onCommentAdded={() =>
             setTasks((prev) => prev.map((x) => (x.id === selected.id ? { ...x, commentCount: x.commentCount + 1 } : x)))
           }

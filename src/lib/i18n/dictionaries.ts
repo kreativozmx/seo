@@ -215,6 +215,9 @@ const es = {
   "tasks.detail.noComments": "Aun no hay actualizaciones en esta tarea.",
   "tasks.delete": "Eliminar tarea",
   "tasks.deleteConfirm": "¿Eliminar esta tarea y toda su conversacion?",
+  "tasks.deleteTitle": "Eliminar tarea",
+  "tasks.deleteBody": "Se eliminara \"{title}\" junto con toda su conversacion. Esta accion no se puede deshacer.",
+  "common.cancel": "Cancelar",
   "tasks.close": "Cerrar",
   "tasks.error": "No se pudo guardar. Intenta de nuevo.",
 
@@ -454,6 +457,9 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "tasks.detail.noComments": "No updates on this task yet.",
   "tasks.delete": "Delete task",
   "tasks.deleteConfirm": "Delete this task and its whole conversation?",
+  "tasks.deleteTitle": "Delete task",
+  "tasks.deleteBody": "\"{title}\" will be deleted along with its whole conversation. This can't be undone.",
+  "common.cancel": "Cancel",
   "tasks.close": "Close",
   "tasks.error": "Couldn't save. Try again.",
 
