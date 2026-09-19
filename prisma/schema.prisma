@@ -257,6 +257,8 @@ model Project {
   uptimeChecks         UptimeCheck[]
   uptimeEmailsJson     String? // extra alert recipients (JSON array of emails)
   uptimeUseReportEmail Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
+  taskMembers          TaskMember[]
+  tasks                Task[]
 }
 
 // One row per uptime check (every ~10 min) — feeds the availability chart
@@ -418,4 +420,49 @@ model ShopifyChangelogEntry {
   fetchedAt   DateTime @default(now())
 
   @@index([publishedAt])
+}
+
+// Tareas tab (monday-style task manager per project). "Members" are people
+// tasks can be assigned to — including external ones invited by email; they
+// don't log in (yet), they get an email when a task is assigned to them.
+model TaskMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  createdAt DateTime @default(now())
+  tasks     Task[]
+
+  @@unique([projectId, email])
+}
+
+model Task {
+  id        String        @id @default(cuid())
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  // working | done | blocked | planned | review | waiting | material
+  status    String        @default("planned")
+  ownerId   String?
+  owner     TaskMember?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  startDate DateTime?
+  endDate   DateTime?
+  position  Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  comments  TaskComment[]
+
+  @@index([projectId, position])
+}
+
+model TaskComment {
+  id         String   @id @default(cuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorName String
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([taskId, createdAt])
 }

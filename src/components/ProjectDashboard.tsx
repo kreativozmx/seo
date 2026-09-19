@@ -29,6 +29,7 @@ import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
+import { TasksSection } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
@@ -164,6 +165,7 @@ const NAV_ITEMS = [
   { id: "videos", label: "Videos" },
   { id: "planificacion", label: "Keywords" },
   { id: "changelog", label: "Actualizaciones Shopify" },
+  { id: "tareas", label: "Tareas" },
   { id: "contenidos", label: "Contenidos" },
   { id: "competencia", label: "Competencia" },
   { id: "monitoreo", label: "Monitoreo" },
@@ -185,6 +187,7 @@ const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
   { id: "analiticas" },
   { id: "rankings", children: ["seo-ia"] },
   { id: null, label: "Planificacion", children: ["planificacion", "changelog"] },
+  { id: "tareas" },
   { id: null, label: "Estrategia", children: ["contenidos", "videos"] },
   { id: "competencia" },
   { id: "monitoreo" },
@@ -235,6 +238,12 @@ const NAV_ICON_PATHS: Record<NavId, React.ReactNode> = {
   ),
   velocidad: <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />,
   monitoreo: <path d="M3 12h4l2-7 4 14 2-7h6" />,
+  tareas: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="m8 12 3 3 5-6" />
+    </>
+  ),
   videos: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="3" />
@@ -966,7 +975,7 @@ export default function ProjectDashboard({
             {NAV_GROUPS.filter(
               (group) =>
                 !readOnly ||
-                (group.id !== "conexiones" && group.id !== "configuracion")
+                (group.id !== "conexiones" && group.id !== "configuracion" && group.id !== "tareas")
             ).map((group, gi) => (
               <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-0.5 md:mb-0.5">
                 {group.id === null ? (
@@ -1385,6 +1394,12 @@ export default function ProjectDashboard({
             <section className="flex flex-col gap-4">
               {!readOnly && <UptimeSection project={project} />}
               <ShopifyStatusSection />
+            </section>
+          )}
+
+          {activeTab === "tareas" && (
+            <section>
+              <TasksSection project={project} />
             </section>
           )}
 
