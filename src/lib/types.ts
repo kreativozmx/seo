@@ -177,6 +177,8 @@ export interface ProjectDTO {
   youtubeIdeasJson: string | null;
   youtubeIdeasOptionsJson: string | null;
   youtubeIdeasUpdatedAt: string | null;
+  youtubeResearchJson: string | null;
+  youtubeQuestionsJson: string | null;
   ecommercePlatform: string | null;
   ecommerceIsShopify: boolean | null;
   ecommerceProductCount: number | null;

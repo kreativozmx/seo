@@ -275,8 +275,11 @@ export async function generateYoutubeTitleIdeas(params: {
   languageCode: string;
   count?: number;
   avoidTitles?: string[];
+  competitorVideos?: { title: string; views: number }[];
+  researchQuery?: string;
+  audienceQuestions?: string[];
 }): Promise<YoutubeTitleIdea[]> {
-  const { channelTitle, channelDescription, videos, videoType, virality, languageCode, count = 5, avoidTitles = [] } = params;
+  const { channelTitle, channelDescription, videos, videoType, virality, languageCode, count = 5, avoidTitles = [], competitorVideos = [], researchQuery, audienceQuestions = [] } = params;
   const languageName = LANGUAGE_PROMPT_NAMES[languageCode] ?? "español";
   const level = Math.min(5, Math.max(1, Math.round(virality)));
 
@@ -293,6 +296,7 @@ Descripcion del canal: "${channelDescription || "(sin descripcion)"}"
 Videos actuales del canal (con sus vistas):
 ${videoLines || "(el canal aun no tiene videos publicados)"}
 
+${competitorVideos.length > 0 ? `\nVideos que hoy funcionan en YouTube para "${researchQuery ?? "el tema"}" (usalos como inspiracion de formato y angulo, NO los copies):\n${competitorVideos.slice(0, 10).map((v) => `- "${v.title}" (${v.views.toLocaleString("en-US")} vistas)`).join("\n")}\n` : ""}${audienceQuestions.length > 0 ? `\nPreguntas reales que tu audiencia hizo en los comentarios (excelentes fuentes de tema):\n${audienceQuestions.slice(0, 15).map((q) => `- ${q}`).join("\n")}\n` : ""}
 Genera hasta ${count} ideas de titulos para NUEVOS videos, escritos en ${languageName}.
 Tipo de video: ${videoType}.
 ${VIRALITY_GUIDE[level]}

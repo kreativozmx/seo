@@ -297,6 +297,22 @@ const es = {
   "ac.empty": "Sin sugerencias para esa busqueda.",
   "ac.unofficial": "El autocompletado no es una API oficial: puede cambiar o limitarse sin aviso.",
 
+  // Videos > investigacion
+  "vr.title": "Investigacion de YouTube",
+  "vr.description": "Mira que funciona hoy en YouTube para una palabra clave y que preguntan tus espectadores. Todo esto se usa al generar titulos.",
+  "vr.placeholder": "ej. tutorial shopify",
+  "vr.search": "Buscar en YouTube",
+  "vr.searching": "Buscando...",
+  "vr.results": "Videos que funcionan para \"{query}\"",
+  "vr.views": "vistas",
+  "vr.clear": "Quitar",
+  "vr.questionsTitle": "Preguntas de tu audiencia",
+  "vr.questionsDescription": "Preguntas reales en los comentarios de tus videos mas vistos: cada una es un tema que ya quieren.",
+  "vr.questionsButton": "Buscar preguntas",
+  "vr.questionsNone": "No encontramos preguntas en los comentarios de tus videos (o tienen los comentarios desactivados).",
+  "vr.usedNote": "Se usan en \"Generar titulos\": {videos} videos de la competencia y {questions} preguntas.",
+  "vr.quota": "La busqueda gasta cuota de la API de YouTube (limite diario gratuito): usala con criterio.",
+
   // Monitoreo > uptime
   "uptime.chartTitle": "Disponibilidad de {domain}",
   "uptime.chartDescription": "Revisamos tu sitio cada 10 minutos y guardamos el historial.",
@@ -614,6 +630,22 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "ac.added": "Already tracked",
   "ac.empty": "No suggestions for that search.",
   "ac.unofficial": "Autocomplete isn't an official API: it may change or be throttled without notice.",
+
+  // Videos > research
+  "vr.title": "YouTube research",
+  "vr.description": "See what works on YouTube today for a keyword and what your viewers ask. All of it feeds the title generator.",
+  "vr.placeholder": "e.g. shopify tutorial",
+  "vr.search": "Search YouTube",
+  "vr.searching": "Searching...",
+  "vr.results": "Videos that work for \"{query}\"",
+  "vr.views": "views",
+  "vr.clear": "Clear",
+  "vr.questionsTitle": "Your audience's questions",
+  "vr.questionsDescription": "Real questions from the comments on your most-viewed videos: each one is a topic they already want.",
+  "vr.questionsButton": "Find questions",
+  "vr.questionsNone": "We found no questions in your videos' comments (or comments are disabled).",
+  "vr.usedNote": "Used by \"Generate titles\": {videos} competitor videos and {questions} questions.",
+  "vr.quota": "Search uses YouTube API quota (free daily limit): use it wisely.",
 
   "uptime.chartTitle": "{domain} availability",
   "uptime.chartDescription": "We check your site every 10 minutes and keep the history.",

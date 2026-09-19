@@ -152,3 +152,103 @@ export async function fetchRecentVideos(
       };
     });
 }
+
+export interface ResearchVideo {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  publishedAt: string;
+  viewCount: number;
+  likeCount: number;
+  thumbnailUrl: string | null;
+}
+
+// YouTube search for a keyword: what already ranks/performs for it. Costs
+// 100 quota units per call (free daily quota is 10,000) — keep it manual.
+export async function searchVideos(
+  query: string,
+  opts: { languageCode?: string; regionCode?: string; limit?: number } = {}
+): Promise<ResearchVideo[]> {
+  const { languageCode, regionCode, limit = 12 } = opts;
+  const params = new URLSearchParams({
+    part: "snippet",
+    type: "video",
+    q: query,
+    maxResults: String(limit),
+    key: apiKey(),
+  });
+  if (languageCode) params.set("relevanceLanguage", languageCode);
+  if (regionCode) params.set("regionCode", regionCode.toUpperCase());
+
+  const res = await fetch(`${BASE_URL}/search?${params.toString()}`);
+  if (!res.ok) throw new Error(`YouTube request failed (${res.status}): ${await res.text()}`);
+  const items: {
+    id?: { videoId?: string };
+    snippet?: { title?: string; channelTitle?: string; publishedAt?: string; thumbnails?: { default?: { url?: string } } };
+  }[] = (await res.json())?.items ?? [];
+
+  const ids = items.map((i) => i.id?.videoId).filter((v): v is string => Boolean(v));
+  const stats = new Map<string, { views: number; likes: number }>();
+  if (ids.length > 0) {
+    const sRes = await fetch(
+      `${BASE_URL}/videos?${new URLSearchParams({ part: "statistics", id: ids.join(","), key: apiKey() }).toString()}`
+    );
+    if (sRes.ok) {
+      for (const v of (await sRes.json())?.items ?? []) {
+        stats.set(v.id, { views: Number(v.statistics?.viewCount ?? 0), likes: Number(v.statistics?.likeCount ?? 0) });
+      }
+    }
+  }
+
+  return items
+    .filter((i) => i.id?.videoId)
+    .map((i) => ({
+      videoId: i.id!.videoId as string,
+      title: i.snippet?.title ?? "",
+      channelTitle: i.snippet?.channelTitle ?? "",
+      publishedAt: i.snippet?.publishedAt ?? "",
+      viewCount: stats.get(i.id!.videoId as string)?.views ?? 0,
+      likeCount: stats.get(i.id!.videoId as string)?.likes ?? 0,
+      thumbnailUrl: i.snippet?.thumbnails?.default?.url ?? null,
+    }))
+    .sort((a, b) => b.viewCount - a.viewCount);
+}
+
+export interface AudienceQuestion {
+  question: string;
+  videoId: string;
+  videoTitle: string;
+  likes: number;
+}
+
+// Real viewer comments that are questions ("?" / "¿") — each one is a topic
+// people already want a video about. commentThreads.list costs 1 unit; videos
+// with comments disabled just answer 403 and are skipped.
+export async function fetchAudienceQuestions(
+  videos: { videoId: string; title: string }[],
+  perVideo = 40
+): Promise<AudienceQuestion[]> {
+  const out: AudienceQuestion[] = [];
+  for (const v of videos) {
+    const params = new URLSearchParams({
+      part: "snippet",
+      videoId: v.videoId,
+      maxResults: String(perVideo),
+      order: "relevance",
+      textFormat: "plainText",
+      key: apiKey(),
+    });
+    const res = await fetch(`${BASE_URL}/commentThreads?${params.toString()}`);
+    if (!res.ok) continue;
+    for (const item of (await res.json())?.items ?? []) {
+      const c = item.snippet?.topLevelComment?.snippet;
+      const text: string = (c?.textDisplay ?? "").replace(/\s+/g, " ").trim();
+      // A "?" inside a URL (…?si=abc) is not a question — judge the text without links.
+      const bare = text.replace(/https?:\/\/\S+/g, "").trim();
+      if (bare.length >= 15 && text.length <= 220 && /[?¿]/.test(bare)) {
+        out.push({ question: bare, videoId: v.videoId, videoTitle: v.title, likes: Number(c?.likeCount ?? 0) });
+      }
+    }
+  }
+  return out.sort((a, b) => b.likes - a.likes).slice(0, 25);
+}

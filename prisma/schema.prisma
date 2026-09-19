@@ -175,6 +175,8 @@ model Project {
   youtubeIdeasJson          String? // cached array of {title, why} — AI title ideas for new videos
   youtubeIdeasOptionsJson   String? // {videoType, virality, languageCode} used for the cached ideas
   youtubeIdeasUpdatedAt     DateTime?
+  youtubeResearchJson       String? // {query, videos[], searchedAt} — what ranks on YouTube for a keyword
+  youtubeQuestionsJson      String? // {questions[], updatedAt} — viewer questions from the channel's comments
 
   // Ecommerce catalog audit (Ecommerce tab) — free, reads the store's
   // public product endpoints (Shopify /products.json or WooCommerce's

@@ -33,6 +33,7 @@ import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
 import { WaybackCard } from "@/components/dashboard/WaybackCard";
 import { AutocompleteIdeasCard } from "@/components/dashboard/AutocompleteIdeasCard";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
+import { VideoResearchCard } from "@/components/dashboard/VideoResearchCard";
 import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
@@ -3173,6 +3174,8 @@ function YoutubeSection({
           />
         </div>
       </div>
+
+      <VideoResearchCard project={project} />
 
       <VideoIdeasCard project={project} videoCount={videos.length} onGoToSettings={onGoToSettings} />
 

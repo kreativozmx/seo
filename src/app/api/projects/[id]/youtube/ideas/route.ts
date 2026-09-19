@@ -32,6 +32,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const previous: { title: string; topic?: string; why?: string; done?: boolean }[] = project.youtubeIdeasJson
       ? JSON.parse(project.youtubeIdeasJson)
       : [];
+    const research: { query: string; videos: { title: string; viewCount: number }[] } | null = project.youtubeResearchJson
+      ? JSON.parse(project.youtubeResearchJson)
+      : null;
+    const questionsData: { questions: { question: string }[] } | null = project.youtubeQuestionsJson
+      ? JSON.parse(project.youtubeQuestionsJson)
+      : null;
     const generated = await generateYoutubeTitleIdeas({
       channelTitle: project.youtubeChannelTitle ?? project.name,
       channelDescription: project.youtubeDescription,
@@ -41,6 +47,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       languageCode: project.languageCode,
       count: 5,
       avoidTitles: previous.map((p) => p.title),
+      competitorVideos: research?.videos.map((v) => ({ title: v.title, views: v.viewCount })) ?? [],
+      researchQuery: research?.query,
+      audienceQuestions: questionsData?.questions.map((q) => q.question) ?? [],
     });
 
     // Checked ideas are kept (so the user's progress isn't lost); unchecked
