@@ -9,7 +9,35 @@ import { sendEmail } from "@/lib/email";
 const FAILS_BEFORE_ALERT = 2;
 const CHECK_TIMEOUT_MS = 10_000;
 
-export async function checkSite(domain: string): Promise<{ up: boolean; error: string | null }> {
+export interface SiteCheck {
+  up: boolean;
+  error: string | null;
+  responseMs: number | null;
+}
+
+// Who gets uptime alerts: the report recipient (unless turned off) plus any
+// extra addresses the user added for this project.
+export function uptimeRecipients(project: {
+  weeklyEmailTo: string | null;
+  uptimeEmailsJson: string | null;
+  uptimeUseReportEmail: boolean;
+}): string[] {
+  const list: string[] = [];
+  if (project.uptimeUseReportEmail) {
+    const base = project.weeklyEmailTo || process.env.AUTH_EMAIL;
+    if (base) list.push(base);
+  }
+  try {
+    const extra = project.uptimeEmailsJson ? JSON.parse(project.uptimeEmailsJson) : [];
+    if (Array.isArray(extra)) for (const e of extra) if (typeof e === "string") list.push(e);
+  } catch {
+    // ignore malformed JSON
+  }
+  return Array.from(new Set(list.map((e) => e.trim().toLowerCase()))).filter(Boolean);
+}
+
+export async function checkSite(domain: string): Promise<SiteCheck> {
+  const startedAt = Date.now();
   try {
     const res = await fetch(`https://${domain}`, {
       redirect: "follow",
@@ -19,14 +47,15 @@ export async function checkSite(domain: string): Promise<{ up: boolean; error: s
     });
     // 4xx (e.g. bot-blocking 403) still means the server is alive; only
     // 5xx and network-level failures count as down.
-    if (res.status >= 500) return { up: false, error: `HTTP ${res.status}` };
-    return { up: true, error: null };
+    const responseMs = Date.now() - startedAt;
+    if (res.status >= 500) return { up: false, error: `HTTP ${res.status}`, responseMs };
+    return { up: true, error: null, responseMs };
   } catch (err) {
     const name = err instanceof Error ? err.name : "";
     if (name === "TimeoutError" || name === "AbortError") {
-      return { up: false, error: `Sin respuesta en ${CHECK_TIMEOUT_MS / 1000}s` };
+      return { up: false, error: `Sin respuesta en ${CHECK_TIMEOUT_MS / 1000}s`, responseMs: null };
     }
-    return { up: false, error: err instanceof Error ? err.message : "Error de conexion" };
+    return { up: false, error: err instanceof Error ? err.message : "Error de conexion", responseMs: null };
   }
 }
 
@@ -118,8 +147,8 @@ function buildRecoveryEmail(baseUrl: string, domain: string, duration: string | 
 // they'll receive, without touching any real monitoring state.
 export async function sendUptimeTestEmails(projectId: string, baseUrl: string) {
   const project = await prisma.project.findUniqueOrThrow({ where: { id: projectId } });
-  const to = project.weeklyEmailTo || process.env.AUTH_EMAIL;
-  if (!to) throw new Error("Agrega un correo destino en Notificaciones (o configura AUTH_EMAIL).");
+  const to = uptimeRecipients(project);
+  if (to.length === 0) throw new Error("Agrega al menos un correo destino para las alertas de caida.");
   const projectUrl = `${baseUrl}/projects/${project.id}`;
   await sendEmail({
     to,
@@ -131,7 +160,7 @@ export async function sendUptimeTestEmails(projectId: string, baseUrl: string) {
     subject: `[Prueba] Tu sitio ${project.domain} volvio a estar en linea`,
     html: buildRecoveryEmail(baseUrl, project.domain, "14 min", projectUrl, true),
   });
-  return to;
+  return to.join(", ");
 }
 
 export async function runUptimeChecks(baseUrl: string) {
@@ -140,18 +169,21 @@ export async function runUptimeChecks(baseUrl: string) {
   const results = await Promise.all(
     projects.map(async (project) => {
       const check = await checkSite(project.domain);
-      const to = project.weeklyEmailTo || process.env.AUTH_EMAIL;
+      const to = uptimeRecipients(project);
       const projectUrl = `${baseUrl}/projects/${project.id}`;
       const now = new Date();
 
       try {
+        await prisma.uptimeCheck.create({
+          data: { projectId: project.id, up: check.up, responseMs: check.responseMs, error: check.error },
+        });
         if (check.up) {
           if (project.uptimeStatus === "down") {
             const incident = await prisma.uptimeIncident.findFirst({
               where: { projectId: project.id, endedAt: null },
               orderBy: { startedAt: "desc" },
             });
-            if (to) {
+            if (to.length > 0) {
               const duration = incident ? fmtDuration(now.getTime() - incident.startedAt.getTime()) : null;
               await sendEmail({
                 to,
@@ -173,7 +205,7 @@ export async function runUptimeChecks(baseUrl: string) {
         const fails = project.uptimeFailCount + 1;
         if (fails >= FAILS_BEFORE_ALERT && project.uptimeStatus !== "down") {
           // Email first: if it fails we leave state untouched so the next run retries the alert.
-          if (to) {
+          if (to.length > 0) {
             await sendEmail({
               to,
               subject: `Tu sitio ${project.domain} esta caido`,
@@ -198,6 +230,9 @@ export async function runUptimeChecks(baseUrl: string) {
       }
     })
   );
+
+  // Keep the history table small: the chart only shows up to 30 days.
+  await prisma.uptimeCheck.deleteMany({ where: { checkedAt: { lt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) } } });
 
   return { checked: projects.length, results };
 }

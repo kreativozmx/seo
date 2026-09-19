@@ -114,6 +114,8 @@ export interface ProjectDTO {
   uptimeEnabled: boolean;
   uptimeStatus: string | null;
   uptimeLastCheckedAt: string | null;
+  uptimeEmailsJson: string | null;
+  uptimeUseReportEmail: boolean;
   brokenLinksJson: string | null;
   brokenLinksChecked: number | null;
   brokenLinksCheckedAt: string | null;

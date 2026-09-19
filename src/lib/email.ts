@@ -8,7 +8,7 @@
 const RESEND_API_URL = "https://api.resend.com/emails";
 
 export interface SendEmailParams {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
 }

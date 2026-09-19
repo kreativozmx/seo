@@ -244,11 +244,28 @@ model Project {
   // Uptime monitoring (Monitoreo tab): pinged every 10 min by a GitHub
   // Actions workflow hitting /api/cron/uptime. An alert email goes out only
   // after 2 consecutive failures, and a recovery email when it's back.
-  uptimeEnabled       Boolean          @default(false)
-  uptimeStatus        String? // "up" | "down"
-  uptimeFailCount     Int              @default(0)
-  uptimeLastCheckedAt DateTime?
-  uptimeIncidents     UptimeIncident[]
+  uptimeEnabled        Boolean          @default(false)
+  uptimeStatus         String? // "up" | "down"
+  uptimeFailCount      Int              @default(0)
+  uptimeLastCheckedAt  DateTime?
+  uptimeIncidents      UptimeIncident[]
+  uptimeChecks         UptimeCheck[]
+  uptimeEmailsJson     String? // extra alert recipients (JSON array of emails)
+  uptimeUseReportEmail Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
+}
+
+// One row per uptime check (every ~10 min) — feeds the availability chart
+// in the Monitoreo tab; pruned after 30 days.
+model UptimeCheck {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  checkedAt  DateTime @default(now())
+  up         Boolean
+  responseMs Int?
+  error      String?
+
+  @@index([projectId, checkedAt])
 }
 
 model UptimeIncident {
