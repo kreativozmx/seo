@@ -268,6 +268,23 @@ const es = {
   "insp.mobileIssues": "Problemas en movil",
   "insp.summary": "{ok} de {total} indexadas",
 
+  // Wayback (Auditoria)
+  "wb.title": "Historial del sitio (Wayback Machine)",
+  "wb.description": "Revisamos el archivo de internet: desde cuando existe tu sitio y que paginas que existieron antes hoy dan error (candidatas a una redireccion 301).",
+  "wb.run": "Analizar historial",
+  "wb.running": "Analizando (puede tardar ~30 s)...",
+  "wb.empty": "Aun no se ha analizado. Es una consulta lenta y limitada, por eso es manual.",
+  "wb.first": "Primera captura:",
+  "wb.years": "{count} años con capturas",
+  "wb.checked": "Revisamos {count} paginas historicas; {lost} ya no funcionan.",
+  "wb.noneLost": "Ninguna de las {count} paginas historicas revisadas esta rota. Bien.",
+  "wb.gone": "Ya no existe",
+  "wb.toHome": "Redirige al inicio",
+  "wb.viewArchive": "Ver version archivada",
+  "wb.tip": "Tip: crea una redireccion 301 desde cada URL rota hacia la pagina equivalente actual (Shopify: Contenido > Navegacion > Ver redirecciones de URL) para conservar su posicionamiento.",
+  "wb.partial": "Wayback respondio incompleto; los resultados pueden ser parciales.",
+  "wb.last": "Ultimo analisis:",
+
   // Monitoreo > uptime
   "uptime.chartTitle": "Disponibilidad de {domain}",
   "uptime.chartDescription": "Revisamos tu sitio cada 10 minutos y guardamos el historial.",
@@ -556,6 +573,23 @@ const en: Partial<Record<keyof typeof es, string>> = {
   "insp.mobileOk": "Mobile OK",
   "insp.mobileIssues": "Mobile issues",
   "insp.summary": "{ok} of {total} indexed",
+
+  // Wayback (Audit)
+  "wb.title": "Site history (Wayback Machine)",
+  "wb.description": "We check the internet archive: how long your site has existed and which pages that used to exist now return errors (candidates for a 301 redirect).",
+  "wb.run": "Analyze history",
+  "wb.running": "Analyzing (may take ~30 s)...",
+  "wb.empty": "Not analyzed yet. It's a slow, rate-limited query, so it's manual.",
+  "wb.first": "First capture:",
+  "wb.years": "{count} years with captures",
+  "wb.checked": "We checked {count} historical pages; {lost} no longer work.",
+  "wb.noneLost": "None of the {count} historical pages checked are broken. Nice.",
+  "wb.gone": "No longer exists",
+  "wb.toHome": "Redirects to homepage",
+  "wb.viewArchive": "View archived version",
+  "wb.tip": "Tip: create a 301 redirect from each broken URL to its current equivalent page (Shopify: Content > Navigation > View URL redirects) to keep its rankings.",
+  "wb.partial": "Wayback answered incompletely; results may be partial.",
+  "wb.last": "Last analysis:",
 
   "uptime.chartTitle": "{domain} availability",
   "uptime.chartDescription": "We check your site every 10 minutes and keep the history.",

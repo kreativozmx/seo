@@ -30,6 +30,7 @@ import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { WhoisLookup } from "@/components/WhoisLookup";
 import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
+import { WaybackCard } from "@/components/dashboard/WaybackCard";
 import { VideoIdeasCard } from "@/components/dashboard/VideoIdeasCard";
 import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection";
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
@@ -3818,6 +3819,8 @@ function AuditSection({ project }: { project: ProjectDTO }) {
       </div>
 
       <UrlInspectionCard project={project} />
+
+      <WaybackCard project={project} />
 
       {categories.map((category) => {
         const rows = results.filter((r) => r.item.category === category);

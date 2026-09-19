@@ -120,6 +120,8 @@ export interface ProjectDTO {
   siteChecksUpdatedAt: string | null;
   urlInspectionsJson: string | null;
   urlInspectionsUpdatedAt: string | null;
+  waybackJson: string | null;
+  waybackUpdatedAt: string | null;
   brokenLinksJson: string | null;
   brokenLinksChecked: number | null;
   brokenLinksCheckedAt: string | null;

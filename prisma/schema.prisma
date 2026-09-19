@@ -259,6 +259,8 @@ model Project {
   siteChecksUpdatedAt     DateTime?
   urlInspectionsJson      String? // cached array of URL Inspection results (Search Console)
   urlInspectionsUpdatedAt DateTime?
+  waybackJson             String? // cached Wayback Machine report (history + URLs that used to exist)
+  waybackUpdatedAt        DateTime?
   uptimeEmailsJson        String? // extra alert recipients (JSON array of emails)
   uptimeUseReportEmail    Boolean          @default(true) // also alert the report recipient (weeklyEmailTo / AUTH_EMAIL)
   taskMembers             TaskMember[]
