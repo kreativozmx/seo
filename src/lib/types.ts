@@ -111,6 +111,9 @@ export interface ProjectDTO {
   gaEngagementByPageJson: string | null;
   gaInternalReferrersJson: string | null;
   gaBehaviorUpdatedAt: string | null;
+  uptimeEnabled: boolean;
+  uptimeStatus: string | null;
+  uptimeLastCheckedAt: string | null;
   brokenLinksJson: string | null;
   brokenLinksChecked: number | null;
   brokenLinksCheckedAt: string | null;

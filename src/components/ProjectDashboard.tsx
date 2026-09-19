@@ -26,6 +26,7 @@ import { ExpertBanner } from "@/components/dashboard/shared";
 import { ChartCaptureButton } from "@/components/dashboard/ChartCaptureButton";
 import { ShopifyStatusSection } from "@/components/dashboard/ShopifyStatusSection";
 import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
+import { UptimeSection } from "@/components/dashboard/UptimeSection";
 
 // Small "?" badge with a native browser tooltip (title attribute) —
 // used to explain jargon-y metrics (trafico organico, valor del trafico,
@@ -1367,7 +1368,8 @@ export default function ProjectDashboard({
           )}
 
           {activeTab === "monitoreo" && (
-            <section>
+            <section className="flex flex-col gap-4">
+              {!readOnly && <UptimeSection project={project} />}
               <ShopifyStatusSection />
             </section>
           )}

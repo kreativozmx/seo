@@ -1,0 +1,20 @@
+name: Uptime check
+
+# Pings /api/cron/uptime every 10 minutes. GitHub schedules can drift by a
+# few minutes under load, which is fine for this purpose.
+# Required repo secrets: APP_URL (e.g. https://shopifyaudit.com) and CRON_SECRET
+# (same value as the CRON_SECRET env var in Vercel).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call uptime endpoint
+        run: |
+          curl --fail --silent --show-error --max-time 55 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/uptime"
