@@ -5,6 +5,7 @@ import { ProjectDTO } from "@/lib/types";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
 import { TASK_STATUSES } from "@/lib/taskStatus";
+import { DateRangePopover } from "@/components/dashboard/DateRangePopover";
 
 interface Task {
   id: string;
@@ -30,7 +31,101 @@ interface Comment {
 
 const AVATAR_COLORS = ["#579bfc", "#a25ddc", "#00c875", "#fdab3d", "#df2f4a", "#037f4c", "#7e3b8a"];
 const INVITE_VALUE = "__invite__";
-const GRID = "grid grid-cols-[28px_minmax(220px,1fr)_52px_190px_170px_150px] items-center";
+type ColKey = "task" | "owner" | "status" | "timeline";
+const DEFAULT_WIDTHS: Record<ColKey, number> = { task: 320, owner: 190, status: 170, timeline: 150 };
+const MIN_WIDTHS: Record<ColKey, number> = { task: 160, owner: 110, status: 110, timeline: 100 };
+const WIDTHS_KEY = "tasks.colWidths.v1";
+
+// Column widths the user can drag to resize (saved per browser). Until the
+// task column is dragged it stays flexible and fills leftover space.
+function useColumnWidths() {
+  const [state, setState] = useState<{ widths: Record<ColKey, number>; taskFixed: boolean }>({
+    widths: DEFAULT_WIDTHS,
+    taskFixed: false,
+  });
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WIDTHS_KEY) ?? "null");
+      if (saved?.widths) setState({ widths: { ...DEFAULT_WIDTHS, ...saved.widths }, taskFixed: Boolean(saved.taskFixed) });
+    } catch {
+      // ignore corrupt/blocked storage — defaults are fine
+    }
+  }, []);
+
+  function persist(next: typeof state) {
+    try {
+      localStorage.setItem(WIDTHS_KEY, JSON.stringify(next));
+    } catch {
+      // storage unavailable — the widths just won't persist
+    }
+  }
+
+  function startResize(key: ColKey, e: React.PointerEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect().width;
+    let latest = state;
+    const onMove = (ev: PointerEvent) => {
+      const width = Math.max(MIN_WIDTHS[key], Math.round(startW + ev.clientX - startX));
+      latest = {
+        widths: { ...latest.widths, [key]: width },
+        taskFixed: latest.taskFixed || key === "task",
+      };
+      setState(latest);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      persist(latest);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  function reset() {
+    const next = { widths: DEFAULT_WIDTHS, taskFixed: false };
+    setState(next);
+    persist(next);
+  }
+
+  const w = state.widths;
+  const template = `28px ${state.taskFixed ? `${w.task}px` : `minmax(${w.task}px,1fr)`} 52px ${w.owner}px ${w.status}px ${w.timeline}px`;
+  const minWidth = 28 + w.task + 52 + w.owner + w.status + w.timeline;
+  const isCustom =
+    state.taskFixed || (Object.keys(DEFAULT_WIDTHS) as ColKey[]).some((k) => w[k] !== DEFAULT_WIDTHS[k]);
+  return { template, minWidth, startResize, reset, isCustom };
+}
+
+type ColumnsApi = ReturnType<typeof useColumnWidths>;
+
+function TableHeader({ cols }: { cols: ColumnsApi }) {
+  const { t } = useLocale();
+  const cell = (key: ColKey, label: string, align: "left" | "center") => (
+    <span className={`relative px-3 py-2 ${align === "center" ? "text-center" : ""}`}>
+      {label}
+      <span
+        onPointerDown={(e) => cols.startResize(key, e)}
+        title={t("tasks.resizeColumn")}
+        className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-[#228449]/30 active:bg-[#228449]/50 transition-colors"
+      />
+    </span>
+  );
+  return (
+    <div
+      className="grid items-center text-[13px] text-neutral-500 border-b border-neutral-200 bg-neutral-50"
+      style={{ gridTemplateColumns: cols.template }}
+    >
+      <span />
+      {cell("task", t("tasks.col.task"), "left")}
+      <span />
+      {cell("owner", t("tasks.col.owner"), "center")}
+      {cell("status", t("tasks.col.status"), "center")}
+      {cell("timeline", t("tasks.col.timeline"), "center")}
+    </div>
+  );
+}
 
 function Avatar({ name, size = 24 }: { name: string; size?: number }) {
   const initials = name
@@ -85,6 +180,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [copiedLinkFor, setCopiedLinkFor] = useState<string | null>(null);
+  const cols = useColumnWidths();
 
   const flash = useCallback((text: string, error = false) => {
     setNotice({ text, error });
@@ -223,6 +319,14 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
             <p className="text-sm font-medium text-neutral-900">{t("tasks.title")}</p>
             <p className="text-neutral-500 text-xs mt-0.5 max-w-2xl">{t("tasks.description")}</p>
           </div>
+          {cols.isCustom && (
+            <button
+              onClick={cols.reset}
+              className="text-xs text-neutral-400 hover:text-neutral-700 underline-offset-2 hover:underline transition-colors ml-auto mr-3 self-center"
+            >
+              {t("tasks.resetWidths")}
+            </button>
+          )}
           <button
             onClick={() => setShowPeople((v) => !v)}
             className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
@@ -300,15 +404,8 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
       )}
 
       <div className="bg-white border border-neutral-200 rounded-xl overflow-x-auto">
-        <div className="min-w-[780px]">
-          <div className={`${GRID} text-[13px] text-neutral-500 border-b border-neutral-200 bg-neutral-50`}>
-            <span />
-            <span className="px-3 py-2">{t("tasks.col.task")}</span>
-            <span />
-            <span className="px-3 py-2 text-center">{t("tasks.col.owner")}</span>
-            <span className="px-3 py-2 text-center">{t("tasks.col.status")}</span>
-            <span className="px-3 py-2 text-center">{t("tasks.col.timeline")}</span>
-          </div>
+        <div style={{ minWidth: cols.minWidth }}>
+          <TableHeader cols={cols} />
 
           {loading ? (
             <p className="text-xs text-neutral-400 px-3 py-4">…</p>
@@ -320,6 +417,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
                 key={task.id}
                 task={task}
                 members={members}
+                template={cols.template}
                 dateLocale={dateLocale}
                 datesOpen={datesOpenFor === task.id}
                 onToggleDates={() => setDatesOpenFor(datesOpenFor === task.id ? null : task.id)}
@@ -370,6 +468,7 @@ export function TasksSection({ project }: { project: ProjectDTO }) {
 function TaskRow({
   task,
   members,
+  template,
   dateLocale,
   datesOpen,
   onToggleDates,
@@ -386,6 +485,7 @@ function TaskRow({
 }: {
   task: Task;
   members: Member[];
+  template: string;
   dateLocale: string;
   datesOpen: boolean;
   onToggleDates: () => void;
@@ -404,6 +504,7 @@ function TaskRow({
   const [title, setTitle] = useState(task.title);
   const titleRef = useRef<HTMLInputElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  const dateBtnRef = useRef<HTMLButtonElement>(null);
   const status = TASK_STATUSES.find((s) => s.id === task.status) ?? TASK_STATUSES[3];
   const owner = members.find((m) => m.id === task.ownerId) ?? null;
   const range = formatRange(task.startDate, task.endDate, dateLocale);
@@ -435,7 +536,8 @@ function TaskRow({
               onDrop?.();
             }
       }
-      className={`${GRID} border-b border-neutral-100 hover:bg-neutral-50/60 transition-colors ${
+      style={{ gridTemplateColumns: template }}
+      className={`grid items-center border-b border-neutral-100 hover:bg-neutral-50/60 transition-colors ${
         dragging ? "opacity-40" : ""
       } ${dropTarget ? "shadow-[inset_0_2px_0_0_#228449]" : ""}`}
     >
@@ -528,8 +630,9 @@ function TaskRow({
         </select>
       </div>
 
-      <div className="px-2 relative">
+      <div className="px-2">
         <button
+          ref={dateBtnRef}
           onClick={onToggleDates}
           className={`w-full h-7 rounded-full text-xs font-medium transition-colors ${
             range ? "bg-[#323338] text-white hover:bg-black" : "bg-neutral-100 text-neutral-400 hover:bg-neutral-200"
@@ -538,35 +641,13 @@ function TaskRow({
           {range ?? t("tasks.timeline.none")}
         </button>
         {datesOpen && (
-          <div className="absolute right-2 top-9 z-20 w-56 bg-white border border-neutral-200 rounded-lg shadow-lg p-3 flex flex-col gap-2">
-            <label className="text-[12px] text-neutral-500 flex flex-col gap-1">
-              {t("tasks.timeline.start")}
-              <input
-                type="date"
-                value={task.startDate ?? ""}
-                onChange={(e) => onPatch({ startDate: e.target.value || null })}
-                className="border border-neutral-200 rounded-md px-2 py-1 text-xs text-neutral-800"
-              />
-            </label>
-            <label className="text-[12px] text-neutral-500 flex flex-col gap-1">
-              {t("tasks.timeline.end")}
-              <input
-                type="date"
-                value={task.endDate ?? ""}
-                min={task.startDate ?? undefined}
-                onChange={(e) => onPatch({ endDate: e.target.value || null })}
-                className="border border-neutral-200 rounded-md px-2 py-1 text-xs text-neutral-800"
-              />
-            </label>
-            {(task.startDate || task.endDate) && (
-              <button
-                onClick={() => onPatch({ startDate: null, endDate: null })}
-                className="text-xs text-neutral-400 hover:text-red-600 text-left transition-colors"
-              >
-                {t("tasks.timeline.clear")}
-              </button>
-            )}
-          </div>
+          <DateRangePopover
+            anchor={dateBtnRef.current}
+            start={task.startDate}
+            end={task.endDate}
+            onChange={(r) => onPatch(r)}
+            onClose={onToggleDates}
+          />
         )}
       </div>
     </div>
@@ -725,6 +806,7 @@ export function GuestTasksBoard({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   const [datesOpenFor, setDatesOpenFor] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const cols = useColumnWidths();
 
   useEffect(() => {
     fetch(base)
@@ -772,15 +854,8 @@ export function GuestTasksBoard({ token }: { token: string }) {
       </div>
       {error && <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
       <div className="bg-white border border-neutral-200 rounded-xl overflow-x-auto">
-        <div className="min-w-[780px]">
-          <div className={`${GRID} text-[13px] text-neutral-500 border-b border-neutral-200 bg-neutral-50`}>
-            <span />
-            <span className="px-3 py-2">{t("tasks.col.task")}</span>
-            <span />
-            <span className="px-3 py-2 text-center">{t("tasks.col.owner")}</span>
-            <span className="px-3 py-2 text-center">{t("tasks.col.status")}</span>
-            <span className="px-3 py-2 text-center">{t("tasks.col.timeline")}</span>
-          </div>
+        <div style={{ minWidth: cols.minWidth }}>
+          <TableHeader cols={cols} />
           {tasks.length === 0 ? (
             <p className="text-xs text-neutral-400 px-3 py-4">{t("tasks.guest.empty")}</p>
           ) : (
@@ -790,6 +865,7 @@ export function GuestTasksBoard({ token }: { token: string }) {
                 task={task}
                 guest
                 members={[{ id: task.ownerId ?? "", name: data.member.name, email: "" }]}
+                template={cols.template}
                 dateLocale={dateLocale}
                 datesOpen={datesOpenFor === task.id}
                 onToggleDates={() => setDatesOpenFor(datesOpenFor === task.id ? null : task.id)}
