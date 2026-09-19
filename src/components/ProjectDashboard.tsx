@@ -931,14 +931,14 @@ export default function ProjectDashboard({
   return (
     <SyncStatusContext.Provider value={syncStatus}>
     <div className="min-h-screen bg-[#F4F5F7] flex flex-col">
-      {/* Global bar — mirrors Ahrefs' dark top-level nav strip. Never
+      {/* Global bar — light so the green logo stands out. Never
           unmounts, so the sync pill keeps showing (and the underlying
           fetch keeps running) no matter which tab the user switches to. */}
-      <div className="h-12 shrink-0 bg-[#14171C] flex items-center justify-between px-3 sm:px-4 sticky top-0 z-30 gap-3">
+      <div className="h-12 shrink-0 bg-white border-b border-neutral-200 flex items-center justify-between px-3 sm:px-4 sticky top-0 z-30 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={22} height={22} className="shrink-0 rounded" />
-          <span className="text-white text-sm font-medium tracking-tight truncate hidden sm:inline">
+          <img src="/logo.png" alt="" width={30} height={30} className="shrink-0" />
+          <span className="text-neutral-900 text-sm font-semibold tracking-tight truncate hidden sm:inline">
             Shopify Audit
           </span>
         </div>
@@ -946,25 +946,25 @@ export default function ProjectDashboard({
           {activeSyncLabels.length > 0 && (
             <span
               title={`${activeSyncLabels.join(", ")} — puedes seguir navegando, esto sigue corriendo en segundo plano`}
-              className="flex items-center gap-2 text-[11px] text-slate-300 bg-white/5 border border-white/10 rounded-md px-2.5 py-1 min-w-0"
+              className="flex items-center gap-2 text-[11px] text-neutral-600 bg-neutral-100 border border-neutral-200 rounded-md px-2.5 py-1 min-w-0"
             >
-              <span className="w-3 h-3 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
+              <span className="w-3 h-3 shrink-0 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
               <span className="truncate max-w-[140px] sm:max-w-[280px]">
                 {activeSyncLabels.length === 1
                   ? activeSyncLabels[0]
                   : `Sincronizando ${activeSyncLabels.length}: ${activeSyncLabels.join(", ")}`}
               </span>
-              <span className="hidden md:inline text-slate-500 shrink-0">· puedes seguir navegando</span>
+              <span className="hidden md:inline text-neutral-400 shrink-0">· puedes seguir navegando</span>
             </span>
           )}
           {readOnly ? (
-            <span className="text-[11px] uppercase tracking-wide bg-white/10 text-slate-300 rounded-md px-2.5 py-1 shrink-0">
+            <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-600 rounded-md px-2.5 py-1 shrink-0">
               {t("chrome.readonly")}
             </span>
           ) : (
             <a
               href="/api/logout"
-              className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
+              className="text-xs bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
             >
               {t("chrome.logout")}
             </a>

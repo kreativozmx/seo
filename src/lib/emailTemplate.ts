@@ -25,10 +25,10 @@ export function emailShell(
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:24px 0;">
     <tr><td align="center">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-        <tr><td style="background:#14171C;padding:14px 24px;">
+        <tr><td style="background:#ffffff;border-bottom:1px solid #e5e7eb;padding:14px 24px;">
           <a href="${baseUrl}" style="text-decoration:none;">
-            <img src="${baseUrl}/logo.png" width="28" height="28" alt="" style="vertical-align:middle;border-radius:6px;" />
-            <span style="color:#ffffff;font-size:15px;font-weight:600;vertical-align:middle;margin-left:8px;">Shopify Audit</span>
+            <img src="${baseUrl}/logo.png" width="34" height="34" alt="" style="vertical-align:middle;" />
+            <span style="color:#111827;font-size:16px;font-weight:700;vertical-align:middle;margin-left:8px;">Shopify Audit</span>
           </a>
         </td></tr>
         <tr><td style="padding:24px;">

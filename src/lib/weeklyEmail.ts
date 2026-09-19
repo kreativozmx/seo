@@ -242,10 +242,10 @@ function buildEmailHtml(d: EmailData): string {
         <td align="center">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
             <tr>
-              <td style="background:#14171C;padding:14px 24px;">
+              <td style="background:#ffffff;border-bottom:1px solid #e5e7eb;padding:14px 24px;">
                 <a href="${d.homeUrl}" style="text-decoration:none;display:inline-flex;align-items:center;">
-                  <img src="${d.logoUrl}" width="28" height="28" alt="" style="vertical-align:middle;border-radius:6px;display:inline-block;" />
-                  <span style="color:#ffffff;font-size:15px;font-weight:600;vertical-align:middle;margin-left:8px;">Shopify Audit</span>
+                  <img src="${d.logoUrl}" width="34" height="34" alt="" style="vertical-align:middle;display:inline-block;" />
+                  <span style="color:#111827;font-size:16px;font-weight:700;vertical-align:middle;margin-left:8px;">Shopify Audit</span>
                 </a>
               </td>
             </tr>

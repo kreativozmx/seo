@@ -94,20 +94,20 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
-      {/* Global bar — same dark strip as the project dashboard, so the
+      {/* Global bar — same light strip as the project dashboard, so the
           project list reads as part of the same app instead of a
           different, older screen. */}
-      <div className="h-12 bg-[#14171C] flex items-center justify-between px-3 sm:px-4">
+      <div className="h-12 bg-white border-b border-neutral-200 flex items-center justify-between px-3 sm:px-4">
         <div className="flex items-center gap-2 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={22} height={22} className="shrink-0 rounded" />
-          <span className="text-white text-sm font-medium tracking-tight truncate">
+          <img src="/logo.png" alt="" width={30} height={30} className="shrink-0" />
+          <span className="text-neutral-900 text-sm font-semibold tracking-tight truncate">
             Shopify Audit
           </span>
         </div>
         <a
           href="/api/logout"
-          className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
+          className="text-xs bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
         >
           {translate(cookies().get(LOCALE_COOKIE)?.value === "en" ? "en" : "es", "chrome.logout")}
         </a>
