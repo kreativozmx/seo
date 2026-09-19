@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { TopBar } from "@/components/TopBar";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 
 interface Lookup {
@@ -103,19 +103,7 @@ export function DomainLookupTool() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
-      <div className="h-12 bg-white border-b border-neutral-200 flex items-center justify-between px-3 sm:px-4">
-        <Link href="/" className="flex items-center gap-2 min-w-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={30} height={30} className="shrink-0" />
-          <span className="text-neutral-900 text-sm font-semibold tracking-tight truncate">Shopify Audit</span>
-        </Link>
-        <Link
-          href="/"
-          className="text-xs bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors"
-        >
-          ← {t("whois.back")}
-        </Link>
-      </div>
+      <TopBar />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-5">
         <div>

@@ -10,6 +10,7 @@ export const LOCALE_COOKIE = "ui_lang";
 // translated incrementally without breaking anything.
 const es = {
   // Sidebar / chrome
+  "nav.projects": "Proyectos",
   "nav.panel": "Panel",
   "nav.auditoria": "Auditoria",
   "nav.velocidad": "Velocidad",
@@ -355,6 +356,7 @@ const es = {
 };
 
 const en: Partial<Record<keyof typeof es, string>> = {
+  "nav.projects": "Projects",
   "nav.panel": "Dashboard",
   "nav.auditoria": "Audit",
   "nav.velocidad": "Speed",

@@ -6,7 +6,7 @@ import MiniTrendSparkline from "@/components/MiniTrendSparkline";
 import { computeProjectStats } from "@/lib/projectStats";
 import { cookies } from "next/headers";
 import { LOCALE_COOKIE, translate } from "@/lib/i18n/dictionaries";
-import { WhoisLookup } from "@/components/WhoisLookup";
+import { TopBar } from "@/components/TopBar";
 
 export const dynamic = "force-dynamic";
 
@@ -98,24 +98,14 @@ export default async function Home() {
       {/* Global bar — same light strip as the project dashboard, so the
           project list reads as part of the same app instead of a
           different, older screen. */}
-      <div className="h-12 bg-white border-b border-neutral-200 flex items-center justify-between px-3 sm:px-4">
-        <div className="flex items-center gap-2 min-w-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={30} height={30} className="shrink-0" />
-          <span className="text-neutral-900 text-sm font-semibold tracking-tight truncate">
-            Shopify Audit
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-        <WhoisLookup />
+      <TopBar>
         <a
           href="/api/logout"
           className="text-xs bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
         >
           {translate(cookies().get(LOCALE_COOKIE)?.value === "en" ? "en" : "es", "chrome.logout")}
         </a>
-        </div>
-      </div>
+      </TopBar>
 
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-3 sm:py-4">
         <header className="mb-2.5 flex items-baseline gap-2">

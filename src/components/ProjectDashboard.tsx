@@ -28,7 +28,8 @@ import { ShopifyStatusSection } from "@/components/dashboard/ShopifyStatusSectio
 import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
-import { WhoisLookup } from "@/components/WhoisLookup";
+import { TopBar } from "@/components/TopBar";
+import { ChangelogSection } from "@/components/dashboard/ChangelogSection";
 import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
 import { WaybackCard } from "@/components/dashboard/WaybackCard";
 import { AutocompleteIdeasCard } from "@/components/dashboard/AutocompleteIdeasCard";
@@ -191,7 +192,7 @@ const NAV_GROUPS: { id: NavId | null; label?: string; children?: NavId[] }[] = [
   { id: "auditoria", children: ["velocidad"] },
   { id: "analiticas" },
   { id: "rankings", children: ["seo-ia"] },
-  { id: null, label: "Planificacion", children: ["planificacion", "changelog"] },
+  { id: null, label: "Planificacion", children: ["planificacion"] },
   { id: "tareas" },
   { id: null, label: "Estrategia", children: ["contenidos", "videos"] },
   { id: "competencia" },
@@ -939,14 +940,14 @@ export default function ProjectDashboard({
       {/* Global bar — light so the green logo stands out. Never
           unmounts, so the sync pill keeps showing (and the underlying
           fetch keeps running) no matter which tab the user switches to. */}
-      <div className="h-12 shrink-0 bg-white border-b border-neutral-200 flex items-center justify-between px-3 sm:px-4 sticky top-0 z-30 gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" width={30} height={30} className="shrink-0" />
-          <span className="text-neutral-900 text-sm font-semibold tracking-tight truncate hidden sm:inline">
-            Shopify Audit
-          </span>
-        </div>
+      <TopBar
+        sticky
+        links={[
+          ...(readOnly ? [] : [{ key: "projects", label: t("nav.projects"), href: "/" }]),
+          { key: "changelog", label: t("nav.changelog"), onClick: () => setActiveTab("changelog"), active: activeTab === "changelog" },
+          ...(readOnly ? [] : [{ key: "domain", label: t("whois.button"), href: "/dominio", newTab: true }]),
+        ]}
+      >
         <div className="flex items-center gap-3 min-w-0">
           {activeSyncLabels.length > 0 && (
             <span
@@ -962,7 +963,6 @@ export default function ProjectDashboard({
               <span className="hidden md:inline text-neutral-400 shrink-0">· puedes seguir navegando</span>
             </span>
           )}
-          {!readOnly && <WhoisLookup />}
           {readOnly ? (
             <span className="text-[11px] uppercase tracking-wide bg-neutral-100 text-neutral-600 rounded-md px-2.5 py-1 shrink-0">
               {t("chrome.readonly")}
@@ -976,7 +976,7 @@ export default function ProjectDashboard({
             </a>
           )}
         </div>
-      </div>
+      </TopBar>
 
       <div className="flex flex-1 min-h-0 md:flex">
         <aside
@@ -3211,16 +3211,6 @@ function YoutubeSection({
   );
 }
 
-interface ChangelogEntryDTO {
-  id: string;
-  sourceUrl: string;
-  title: string;
-  titleEs: string;
-  summaryEs: string;
-  category: string;
-  publishedAt: string;
-}
-
 interface ContentIdeaRow {
   title: string;
   keywords: string[];
@@ -3446,103 +3436,6 @@ function ContentStrategySection({
                 </div>
               </div>
             </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ChangelogSection() {
-  const [entries, setEntries] = useState<ChangelogEntryDTO[] | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function loadEntries() {
-    const res = await fetch("/api/changelog");
-    const data = await res.json();
-    setEntries(data.entries ?? []);
-  }
-
-  useEffect(() => {
-    loadEntries();
-  }, []);
-
-  async function handleSync() {
-    setSyncing(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/changelog/sync", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al actualizar");
-      await loadEntries();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al actualizar");
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <p className="text-sm font-medium text-neutral-900">Changelog de Shopify</p>
-          <p className="text-neutral-500 text-xs mt-0.5">
-            Novedades oficiales de Shopify (changelog.shopify.com), traducidas
-            al español. Se actualiza solo todos los dias.
-          </p>
-        </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="text-xs bg-white border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-700 font-medium rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
-        >
-          {syncing ? "Actualizando..." : "Actualizar ahora"}
-        </button>
-      </div>
-
-      {error && <p className="text-red-600 text-xs">{error}</p>}
-
-      {entries === null ? (
-        <p className="text-neutral-400 text-sm">Cargando...</p>
-      ) : entries.length === 0 ? (
-        <p className="text-neutral-400 text-sm">
-          Aun no hay entradas. Dale clic a &ldquo;Actualizar ahora&rdquo; para traer las
-          mas recientes.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="bg-white border border-neutral-200 rounded-xl px-4 py-3.5"
-            >
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[12px] uppercase tracking-wide bg-white border border-neutral-200 rounded-md px-2 py-0.5 text-neutral-500">
-                  {entry.category}
-                </span>
-                <span className="text-[12px] text-neutral-400">
-                  {new Date(entry.publishedAt).toLocaleDateString("es-MX", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
-              <p className="text-sm font-medium text-neutral-900">{entry.titleEs}</p>
-              {entry.summaryEs && (
-                <p className="text-neutral-600 text-sm mt-1">{entry.summaryEs}</p>
-              )}
-              <a
-                href={entry.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#228449] hover:underline mt-2 inline-block"
-              >
-                Ver original en changelog.shopify.com ↗
-              </a>
-            </div>
           ))}
         </div>
       )}
