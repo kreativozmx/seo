@@ -29,6 +29,8 @@ import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
 import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
 import { TopBar } from "@/components/TopBar";
+import { InfoTooltip } from "@/components/InfoTooltip";
+import { METRIC_HELP } from "@/lib/metricHelp";
 import { ReleaseNotes } from "@/components/ReleaseNotes";
 import { ChangelogSection } from "@/components/dashboard/ChangelogSection";
 import { UrlInspectionCard } from "@/components/dashboard/UrlInspectionCard";
@@ -40,22 +42,6 @@ import { TasksSection, prefetchTasks } from "@/components/dashboard/TasksSection
 import { YoutubeConnectionCard } from "@/components/dashboard/YoutubeConnectionCard";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { TranslationKey } from "@/lib/i18n/dictionaries";
-
-// Small "?" badge with a native browser tooltip (title attribute) —
-// used to explain jargon-y metrics (trafico organico, valor del trafico,
-// etc.) to merchants who aren't SEO-savvy, without pulling in a tooltip
-// library.
-function InfoTooltip({ text }: { text: string }) {
-  return (
-    <span
-      title={text}
-      tabIndex={0}
-      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 text-neutral-500 text-[12px] font-semibold leading-none cursor-help shrink-0 align-middle"
-    >
-      ?
-    </span>
-  );
-}
 
 function SortHeader({
   label,
@@ -6063,23 +6049,28 @@ function CompetitorComparisonOverview({
           <thead>
             <tr className="text-neutral-400 border-b border-neutral-200">
               <th className="text-left font-normal px-2 py-1.5">Dominio</th>
-              <th className="text-right font-normal px-2 py-1.5">Keywords organicas</th>
+              <th className="text-right font-normal px-2 py-1.5">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Keywords organicas
+                  <InfoTooltip text={METRIC_HELP.organicKeywords} />
+                </span>
+              </th>
               <th className="text-right font-normal px-2 py-1.5">
                 <span className="inline-flex items-center gap-1 justify-end">
                   Trafico organico est.
-                  <InfoTooltip text="Visitas mensuales estimadas que recibe ese sitio desde resultados gratuitos de Google, sin pagar anuncios." />
+                  <InfoTooltip text={METRIC_HELP.organicTraffic} />
                 </span>
               </th>
               <th className="text-right font-normal px-2 py-1.5">
                 <span className="inline-flex items-center gap-1 justify-end">
                   Autoridad
-                  <InfoTooltip text="Puntaje 0-10 de Open PageRank (gratis): que tan reconocido es el dominio segun los enlaces que recibe. Sirve para comparar, no es el 'Domain Rating' de Ahrefs." />
+                  <InfoTooltip text={METRIC_HELP.authority} />
                 </span>
               </th>
               <th className="text-right font-normal px-2 py-1.5">
                 <span className="inline-flex items-center gap-1 justify-end">
                   Valor est.
-                  <InfoTooltip text="Lo que costaria comprar ese mismo trafico con anuncios de pago (Google Ads) en vez de salir gratis en resultados organicos." />
+                  <InfoTooltip text={METRIC_HELP.trafficValue} />
                 </span>
               </th>
             </tr>
@@ -6232,12 +6223,22 @@ function CompetitorComparisonOverview({
                 <th className="text-left font-normal px-2 py-1.5"></th>
                 <th className="text-right font-normal px-2 py-1.5 text-[#228449]">Tu ({project.domain})</th>
                 <th className="text-right font-normal px-2 py-1.5 text-neutral-700">{nextCompetitor.domain}</th>
-                <th className="text-right font-normal px-2 py-1.5">Brecha</th>
+                <th className="text-right font-normal px-2 py-1.5">
+                  <span className="inline-flex items-center gap-1 justify-end">
+                    Brecha
+                    <InfoTooltip text={METRIC_HELP.gap} />
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-t border-neutral-100">
-                <td className="px-2 py-1.5 text-neutral-500">Keywords organicas</td>
+                <td className="px-2 py-1.5 text-neutral-500">
+                  <span className="inline-flex items-center gap-1">
+                    Keywords organicas
+                    <InfoTooltip text={METRIC_HELP.organicKeywords} />
+                  </span>
+                </td>
                 <td className="px-2 py-1.5 text-right text-neutral-700">
                   {(project.domainOrganicKeywords ?? 0).toLocaleString("es-MX")}
                 </td>
@@ -6249,7 +6250,12 @@ function CompetitorComparisonOverview({
                 </td>
               </tr>
               <tr className="border-t border-neutral-100">
-                <td className="px-2 py-1.5 text-neutral-500">Trafico organico est./mes</td>
+                <td className="px-2 py-1.5 text-neutral-500">
+                  <span className="inline-flex items-center gap-1">
+                    Trafico organico est./mes
+                    <InfoTooltip text={METRIC_HELP.organicTraffic} />
+                  </span>
+                </td>
                 <td className="px-2 py-1.5 text-right text-neutral-700">
                   {ownTraffic.toLocaleString("es-MX")}
                 </td>
@@ -6261,7 +6267,12 @@ function CompetitorComparisonOverview({
                 </td>
               </tr>
               <tr className="border-t border-neutral-100">
-                <td className="px-2 py-1.5 text-neutral-500">Valor del trafico est./mes</td>
+                <td className="px-2 py-1.5 text-neutral-500">
+                  <span className="inline-flex items-center gap-1">
+                    Valor del trafico est./mes
+                    <InfoTooltip text={METRIC_HELP.trafficValue} />
+                  </span>
+                </td>
                 <td className="px-2 py-1.5 text-right text-neutral-700">
                   ${(project.domainTrafficValueEstimate ?? 0).toLocaleString("es-MX")}
                 </td>
@@ -6586,9 +6597,24 @@ const CompetitorDiscoverySection = forwardRef(function CompetitorDiscoverySectio
                     />
                   </th>
                   <th className="text-left font-normal px-2 py-1.5">Dominio</th>
-                  <th className="text-right font-normal px-2 py-1.5">Keywords en comun</th>
-                  <th className="text-right font-normal px-2 py-1.5">Keywords organicas</th>
-                  <th className="text-right font-normal px-2 py-1.5">Trafico organico est.</th>
+                  <th className="text-right font-normal px-2 py-1.5">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      Keywords en comun
+                      <InfoTooltip text={METRIC_HELP.commonKeywords} />
+                    </span>
+                  </th>
+<th className="text-right font-normal px-2 py-1.5">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      Keywords organicas
+                      <InfoTooltip text={METRIC_HELP.organicKeywords} />
+                    </span>
+                  </th>
+                  <th className="text-right font-normal px-2 py-1.5">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      Trafico organico est.
+                      <InfoTooltip text={METRIC_HELP.organicTraffic} />
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
