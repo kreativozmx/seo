@@ -4,6 +4,8 @@ import NewProjectForm from "@/components/NewProjectForm";
 import FaviconThumb from "@/components/FaviconThumb";
 import MiniTrendSparkline from "@/components/MiniTrendSparkline";
 import { computeProjectStats } from "@/lib/projectStats";
+import { cookies } from "next/headers";
+import { LOCALE_COOKIE, translate } from "@/lib/i18n/dictionaries";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +109,7 @@ export default async function Home() {
           href="/api/logout"
           className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
         >
-          Cerrar sesión
+          {translate(cookies().get(LOCALE_COOKIE)?.value === "en" ? "en" : "es", "chrome.logout")}
         </a>
       </div>
 

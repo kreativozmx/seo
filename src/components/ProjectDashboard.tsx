@@ -27,6 +27,9 @@ import { ChartCaptureButton } from "@/components/dashboard/ChartCaptureButton";
 import { ShopifyStatusSection } from "@/components/dashboard/ShopifyStatusSection";
 import { WeeklyEmailSection } from "@/components/dashboard/WeeklyEmailSection";
 import { UptimeSection } from "@/components/dashboard/UptimeSection";
+import { ToolLanguageSection } from "@/components/dashboard/ToolLanguageSection";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
+import { TranslationKey } from "@/lib/i18n/dictionaries";
 
 // Small "?" badge with a native browser tooltip (title attribute) —
 // used to explain jargon-y metrics (trafico organico, valor del trafico,
@@ -320,6 +323,7 @@ function NavButton({
   indent?: boolean;
   onClick: () => void;
 }) {
+  const { t } = useLocale();
   return (
     <button
       onClick={onClick}
@@ -332,7 +336,7 @@ function NavButton({
       }`}
     >
       <NavIcon id={item.id} />
-      {item.label}
+      {t(`nav.${item.id}` as TranslationKey)}
       {item.comingSoon && <ComingSoonBadge />}
     </button>
   );
@@ -735,6 +739,7 @@ export default function ProjectDashboard({
   readOnly?: boolean;
 }) {
   const router = useRouter();
+  const { t, dateLocale } = useLocale();
   const [activeTab, setActiveTab] = useState<NavId>("panel");
 
   // Lives here (not inside the section that starts the sync) specifically
@@ -937,14 +942,14 @@ export default function ProjectDashboard({
           )}
           {readOnly ? (
             <span className="text-[11px] uppercase tracking-wide bg-white/10 text-slate-300 rounded-md px-2.5 py-1 shrink-0">
-              Vista de solo lectura
+              {t("chrome.readonly")}
             </span>
           ) : (
             <a
               href="/api/logout"
               className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap shrink-0"
             >
-              Cerrar sesión
+              {t("chrome.logout")}
             </a>
           )}
         </div>
@@ -964,7 +969,7 @@ export default function ProjectDashboard({
               <div key={group.id ?? `group-${gi}`} className="flex md:flex-col gap-0.5 md:mb-0.5">
                 {group.id === null ? (
                   <p className="px-2.5 py-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                    {group.label}
+                    {t(`nav.group.${(group.label ?? "").toLowerCase()}` as TranslationKey)}
                   </p>
                 ) : (
                   <NavButton
@@ -1155,23 +1160,29 @@ export default function ProjectDashboard({
             <section className="flex flex-col gap-5">
               <div>
                 <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-                  Ubicacion e idioma
+                  {t("settings.locationLanguage")}
                 </h2>
                 <LocationSection project={project} />
               </div>
               <div>
                 <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-                  Proyecto
+                  {t("settings.toolLanguage")}
+                </h2>
+                <ToolLanguageSection />
+              </div>
+              <div>
+                <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
+                  {t("settings.project")}
                 </h2>
                 <div className="bg-white border border-neutral-200 rounded-xl px-4 py-3.5 text-sm text-neutral-600">
-                  <p><span className="text-neutral-400">Nombre:</span> {project.name}</p>
-                  <p className="mt-1"><span className="text-neutral-400">Dominio:</span> {project.domain}</p>
-                  <p className="mt-1"><span className="text-neutral-400">Creado:</span> {new Date(project.createdAt).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
+                  <p><span className="text-neutral-400">{t("settings.name")}</span> {project.name}</p>
+                  <p className="mt-1"><span className="text-neutral-400">{t("settings.domain")}</span> {project.domain}</p>
+                  <p className="mt-1"><span className="text-neutral-400">{t("settings.created")}</span> {new Date(project.createdAt).toLocaleDateString(dateLocale, { year: "numeric", month: "long", day: "numeric" })}</p>
                 </div>
               </div>
               <div>
                 <h2 className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-                  Compartir con el cliente
+                  {t("settings.share")}
                 </h2>
                 <ShareLinkSection project={project} />
               </div>
@@ -1401,7 +1412,7 @@ export default function ProjectDashboard({
 
           {activeTab === "contenidos" && (
             <section>
-              <ContentStrategySection project={project} />
+              <ContentStrategySection project={project} onGoToSettings={() => setActiveTab("configuracion")} />
             </section>
           )}
 
@@ -3229,7 +3240,15 @@ interface ContentIdeaRow {
   done?: boolean;
 }
 
-function ContentStrategySection({ project }: { project: ProjectDTO }) {
+function ContentStrategySection({
+  project,
+  onGoToSettings,
+}: {
+  project: ProjectDTO;
+  onGoToSettings: () => void;
+}) {
+  const { t, dateLocale } = useLocale();
+  const langName = (code: string) => t(`lang.${code}` as TranslationKey);
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -3267,10 +3286,10 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
         method: "POST",
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al generar ideas");
+      if (!res.ok) throw new Error(data.error || t("content.errorGenerate"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al generar ideas");
+      setError(err instanceof Error ? err.message : t("content.errorGenerate"));
     } finally {
       setGenerating(false);
     }
@@ -3278,7 +3297,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
 
   async function handleCopyAll() {
     const text = ideas
-      .map((idea) => `Titulo: ${idea.title}\nKeywords: ${idea.keywords.join(", ")}`)
+      .map((idea) => `${t("content.titleLabel")} ${idea.title}\n${t("content.keywordsLabel")} ${idea.keywords.join(", ")}`)
       .join("\n\n");
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -3289,11 +3308,8 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
     return (
       <div className="flex items-center justify-between flex-wrap gap-3 bg-neutral-100 border border-neutral-200 rounded-xl px-4 py-3.5">
         <div>
-          <p className="text-sm font-medium text-neutral-900">Contenidos</p>
-          <p className="text-neutral-500 text-xs mt-0.5">
-            Necesitas Search Console conectado para generar ideas basadas en
-            busquedas reales — conectalo desde &ldquo;Conexiones&rdquo;.
-          </p>
+          <p className="text-sm font-medium text-neutral-900">{t("nav.contenidos")}</p>
+          <p className="text-neutral-500 text-xs mt-0.5">{t("content.needGsc")}</p>
         </div>
       </div>
     );
@@ -3304,13 +3320,18 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
       <div className="bg-white border border-neutral-200 rounded-xl px-4 py-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <p className="text-sm font-medium text-neutral-900">
-              Ideas de contenido para el blog
-            </p>
-            <p className="text-neutral-500 text-xs mt-0.5">
-              12 titulos generados con IA a partir de las busquedas reales
-              en Google de los ultimos 7 dias (Search Console), pensados
-              para ayudarte a posicionar.
+            <p className="text-sm font-medium text-neutral-900">{t("content.title")}</p>
+            <p className="text-neutral-500 text-xs mt-0.5">{t("content.description")}</p>
+            <p className="text-xs text-neutral-500 mt-1.5">
+              {t("content.language")}{" "}
+              <strong className="text-neutral-800">{langName(project.languageCode)}</strong>
+              {" · "}
+              <button
+                onClick={onGoToSettings}
+                className="text-[#228449] hover:underline underline-offset-2"
+              >
+                {t("content.changeLanguage")}
+              </button>
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -3319,7 +3340,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
                 onClick={handleCopyAll}
                 className="text-sm bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
               >
-                {copied ? "Copiado ✓" : "Copiar todo"}
+                {copied ? t("content.copied") : t("content.copyAll")}
               </button>
             )}
             <button
@@ -3327,14 +3348,14 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
               disabled={generating}
               className="text-sm bg-[#228449] hover:bg-[#1B6B3A] disabled:opacity-50 text-white font-medium rounded-md px-4 py-2 transition-colors whitespace-nowrap"
             >
-              {generating ? "Generando..." : ideas.length > 0 ? "Generar de nuevo" : "Generar ideas"}
+              {generating ? t("content.generating") : ideas.length > 0 ? t("content.regenerate") : t("content.generate")}
             </button>
           </div>
         </div>
         {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
         {project.contentIdeasUpdatedAt && (
           <p className="text-[14px] text-neutral-400 mt-3">
-            Ultima vez: {new Date(project.contentIdeasUpdatedAt).toLocaleDateString("es-MX", {
+            {t("content.lastTime")} {new Date(project.contentIdeasUpdatedAt).toLocaleDateString(dateLocale, {
               year: "numeric",
               month: "long",
               day: "numeric",
@@ -3345,10 +3366,17 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
         )}
       </div>
 
-      {ideas.length === 0 ? (
-        <p className="text-neutral-400 text-sm">
-          Aun no hay ideas generadas. Dale clic a &ldquo;Generar ideas&rdquo; arriba.
+      {ideas.length > 0 && project.contentIdeasLanguage && project.contentIdeasLanguage !== project.languageCode && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+          {t("content.staleLanguage", {
+            old: langName(project.contentIdeasLanguage),
+            current: langName(project.languageCode),
+          })}
         </p>
+      )}
+
+      {ideas.length === 0 ? (
+        <p className="text-neutral-400 text-sm">{t("content.empty")}</p>
       ) : (
         <div className="flex flex-col gap-2">
           {ideas.map((idea, i) => (
@@ -3369,7 +3397,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
               <div className="min-w-0">
                 <p>
                   <span className="text-[13px] text-neutral-400 uppercase tracking-wide mr-1.5">
-                    Titulo:
+                    {t("content.titleLabel")}
                   </span>
                   <span
                     className={`text-sm font-medium ${
@@ -3381,7 +3409,7 @@ function ContentStrategySection({ project }: { project: ProjectDTO }) {
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                   <span className="text-[13px] text-neutral-400 uppercase tracking-wide">
-                    Keywords:
+                    {t("content.keywordsLabel")}
                   </span>
                   {idea.keywords.map((k) => (
                     <span

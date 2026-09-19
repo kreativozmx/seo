@@ -131,6 +131,7 @@ export interface ProjectDTO {
   aiQueryCrossRefUpdatedAt: string | null;
   contentIdeasJson: string | null;
   contentIdeasUpdatedAt: string | null;
+  contentIdeasLanguage: string | null;
   shopifyShopDomain: string | null;
   shopifyConnectedAt: string | null;
   shopifyOrders28d: number | null;

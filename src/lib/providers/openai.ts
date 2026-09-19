@@ -2,6 +2,7 @@
 // description suggestions for YouTube videos. Cheap, on-demand, one video
 // at a time (never run automatically in bulk).
 // Docs: https://platform.openai.com/docs/api-reference/chat
+import { LANGUAGE_PROMPT_NAMES } from "@/lib/locations";
 
 const BASE_URL = "https://api.openai.com/v1/chat/completions";
 const MODEL = "gpt-4o-mini";
@@ -162,8 +163,10 @@ export async function generateContentIdeas(params: {
   domain: string;
   queries: { query: string; clicks: number; impressions: number }[];
   existingTitles?: string[];
+  languageCode?: string;
 }): Promise<ContentIdea[]> {
-  const { domain, queries, existingTitles = [] } = params;
+  const { domain, queries, existingTitles = [], languageCode = "es" } = params;
+  const languageName = LANGUAGE_PROMPT_NAMES[languageCode] ?? "español";
 
   const queryLines = queries
     .slice(0, 60)
@@ -183,9 +186,9 @@ export async function generateContentIdeas(params: {
 Estas son las busquedas reales que la gente hizo en Google en los ultimos 7 dias y que ya le traen trafico o impresiones al sitio (datos de Google Search Console):
 ${queryLines}${existingTitlesBlock}
 
-Con base en esas busquedas reales, genera exactamente 12 ideas de titulos de blog en español, pensados para ayudar a posicionar mejor el dominio en Google. Cada idea debe:
+Con base en esas busquedas reales, genera exactamente 12 ideas de titulos de blog escritos en ${languageName}, pensados para ayudar a posicionar mejor el dominio en Google. Cada idea debe:
 - Tener un titulo de blog atractivo y especifico (no generico), inspirado en una o varias de las busquedas reales de arriba.
-- Traer 3 a 6 palabras clave relacionadas que ese articulo deberia intentar posicionar (pueden incluir variantes de las busquedas reales, no solo copiarlas literal).
+- Traer 3 a 6 palabras clave relacionadas que ese articulo deberia intentar posicionar, tambien en ${languageName} (pueden incluir variantes de las busquedas reales, no solo copiarlas literal; si una busqueda real esta en otro idioma, adaptala a ${languageName}).
 - No repetir tema ni titulo con ningun articulo que el blog ya tenga publicado (ver lista arriba, si existe).
 
 Responde SOLO como JSON valido, sin texto adicional, con esta forma exacta:

@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Footer from "@/components/Footer";
 import { PresentationModeToggle } from "@/components/PresentationMode";
+import { cookies } from "next/headers";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
+import { LOCALE_COOKIE, Locale } from "@/lib/i18n/dictionaries";
 import "./globals.css";
 
 // Linear/Vercel-style geometric sans. Loaded via next/font/google so it's
@@ -23,14 +26,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieLocale = cookies().get(LOCALE_COOKIE)?.value;
+  const locale: Locale = cookieLocale === "en" ? "en" : "es";
   return (
-    <html lang="es">
+    <html lang={locale}>
       <body
         className={`${inter.variable} font-sans antialiased bg-surface text-on-surface min-h-screen flex flex-col`}
       >
-        <div id="presentation-content" className="flex-1">{children}</div>
-        <Footer />
-        <PresentationModeToggle />
+        <LocaleProvider initialLocale={locale}>
+          <div id="presentation-content" className="flex-1">{children}</div>
+          <Footer />
+          <PresentationModeToggle />
+        </LocaleProvider>
       </body>
     </html>
   );

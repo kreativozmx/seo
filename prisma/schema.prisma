@@ -116,6 +116,7 @@ model Project {
   // queries of the last 7 days, aimed at helping the domain rank.
   contentIdeasJson      String? // cached array of {title, keywords: string[]}
   contentIdeasUpdatedAt DateTime?
+  contentIdeasLanguage  String? // languageCode the cached ideas were written in
   gaAnalyticsUpdatedAt  DateTime?
 
   // Shopify Admin API (own store only) — one-click OAuth install, not a

@@ -37,3 +37,14 @@ export const LANGUAGES = [
   { code: "de", label: "Aleman" },
   { code: "it", label: "Italiano" },
 ] as const;
+
+// Language names as used inside AI prompts ("escribe en ..."), by the
+// project's languageCode.
+export const LANGUAGE_PROMPT_NAMES: Record<string, string> = {
+  es: "español",
+  en: "inglés",
+  pt: "portugués",
+  fr: "francés",
+  de: "alemán",
+  it: "italiano",
+};

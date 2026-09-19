@@ -39,7 +39,12 @@ export async function POST(
     }
 
     const existingTitles = await fetchExistingBlogTitles(project.domain).catch(() => []);
-    const ideas = await generateContentIdeas({ domain: project.domain, queries, existingTitles });
+    const ideas = await generateContentIdeas({
+      domain: project.domain,
+      queries,
+      existingTitles,
+      languageCode: project.languageCode,
+    });
     const ideasWithDone = ideas.map((idea) => ({ ...idea, done: false }));
 
     await prisma.project.update({
@@ -47,6 +52,7 @@ export async function POST(
       data: {
         contentIdeasJson: JSON.stringify(ideasWithDone),
         contentIdeasUpdatedAt: new Date(),
+        contentIdeasLanguage: project.languageCode,
       },
     });
 
